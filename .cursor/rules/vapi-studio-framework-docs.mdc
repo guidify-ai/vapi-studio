@@ -1,0 +1,17 @@
+---
+description: Hard rule — expand docs/reference/runtime-api.md whenever the Vapi Studio framework changes
+globs: src/**/*.ts,docs/**/*.md,README.md
+alwaysApply: true
+---
+
+# Vapi Studio runtime reference (hard rule)
+
+`docs/reference/runtime-api.md` is the living runtime reference. Root `README.md` is an **entry index only**.
+
+When you change the framework, update `runtime-api.md` in the **same** change.
+
+Update root `README.md` only when **product framing** changes (tools table, diagram, install path).
+
+Application code belongs under `projects/<name>/` — not in `src/`.
+
+Conversation-design **doctrine** lives in `docs/best-practices/`. Agent entry: `agent/AGENTS.md` / `agent/cursor/vapi-studio-best-practices.mdc`.

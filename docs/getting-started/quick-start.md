@@ -1,0 +1,61 @@
+# Quick start
+
+## 1. Clone, build, test
+
+```bash
+git clone git@github.com:guidify-ai/vapi-studio.git
+cd vapi-studio
+yarn install
+yarn build
+yarn test
+```
+
+## 2. Create a project
+
+```bash
+mkdir -p projects/my-voice-app
+cd projects/my-voice-app
+```
+
+Add to `package.json`:
+
+```json
+{
+  "dependencies": {
+    "@guidify-ai/vapi-studio": "file:.."
+  }
+}
+```
+
+## 3. Minimal Nest wiring
+
+```typescript
+import { Module } from '@nestjs/common';
+import { VapiStudioModule, ChatGptBrainAdapter } from '@guidify-ai/vapi-studio';
+import { GreetNode } from './conversation/nodes/greet.node';
+import { MyEntry } from './conversation/entry';
+
+@Module({
+  imports: [
+    VapiStudioModule.forRoot({
+      entryPoint: MyEntry,
+      brainAdapter: ChatGptBrainAdapter,
+      brain: { model: 'gpt-4.1-mini', confidenceThreshold: 0.4 },
+      nodes: [{ className: 'GreetNode', useClass: GreetNode }],
+    }),
+  ],
+})
+export class AppModule {}
+```
+
+Add `config/flow.yaml` with `start: greet` and Vapi HTTP routes — see [Creating an app](../building-apps/creating-an-app.md).
+
+## 4. Read next
+
+| Topic | Doc |
+| --- | --- |
+| Projects folder | [`projects/README.md`](../../projects/README.md) |
+| Module options | [Module setup](../guide/module-setup.md) |
+| Mental model | [Concepts](../guide/concepts.md) |
+| Runtime API | [runtime-api.md](../reference/runtime-api.md) |
+| Examples | [Example apps](../building-apps/example-apps.md) |

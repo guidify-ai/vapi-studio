@@ -1,0 +1,14 @@
+---
+description: Vapi Studio best practices — read docs/best-practices before changing agent steps/copy
+alwaysApply: true
+---
+
+# Vapi Studio best practices
+
+When editing Vapi Studio or a project under `projects/`:
+
+1. Read `docs/best-practices/README.md` and the matching guide.
+2. Also `agent/AGENTS.md`.
+3. Enforce: **one CTA per turn**; fail-closed constrained extracts; short digit listen timeouts; never store ASR junk as PII; **logs/events must explain the call**; update the matching doc layer in the same change.
+
+Projects mirror this via `node_modules/@guidify-ai/vapi-studio/…` and `.cursor/rules/vapi-studio-best-practices.mdc` (from package postinstall).

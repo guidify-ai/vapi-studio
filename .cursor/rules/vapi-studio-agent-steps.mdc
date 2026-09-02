@@ -1,0 +1,32 @@
+---
+description: Vapi Studio agent-step conventions — intention names and lifecycle method order
+globs: "**/conversation/nodes/**/*.ts,src/node/**/*.ts,projects/**/config/flow.yaml,projects/**/config/poc/*.brain.yml"
+alwaysApply: false
+---
+
+# Vapi Studio agent-step conventions
+
+## Intention naming
+
+- **Actions**: `is{VerbInPast}…` — e.g. `isCollectedFirstName`, `isAcceptedAppointment`
+- **Polarity**: `studio.isPositive`, `studio.isNegative`
+
+## Brain (ChatGPT adapter)
+
+- Live calls MUST be fast: scan abort ≤ 3s; target first speech < 1.5s.
+- Cheap model is set in `VapiStudioModule.forRoot({ brain: { model } })`, not `.env`.
+- Scan candidates = listen intentions + portal intentions + `studio.isUnknownTransition`.
+
+## Lifecycle method order
+
+`before()` → `listen()` → `run()` → `after()` → `catch()`
+
+```ts
+export class ExampleStep extends AgentNode<Schema> {
+  async before(ctx) { /* … */ }
+  async listen(ctx) { /* … */ }
+  async run(ctx) { /* … */ }
+}
+```
+
+Full rules: `docs/guides/node-conventions.md` and `docs/best-practices/`.

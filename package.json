@@ -1,0 +1,53 @@
+{
+  "name": "@guidify-ai/vapi-studio",
+  "version": "0.1.0",
+  "description": "Vapi Studio — deterministic voice agents for Vapi (NestJS)",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./docs/best-practices/*": "./docs/best-practices/*",
+    "./agent/AGENTS.md": "./agent/AGENTS.md"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "agent",
+    "scripts",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
+    "test": "yarn build && node --test test/*.test.mjs",
+    "postinstall": "node -e \"const fs=require('fs');const p=require('path');const s=p.join(__dirname,'scripts','install-agent-refs.cjs');if(fs.existsSync(s)) require('child_process').execFileSync(process.execPath,[s],{stdio:'inherit',env:process.env});\"",
+    "install-agent-refs": "node scripts/install-agent-refs.cjs"
+  },
+  "dependencies": {
+    "uuid": "^11.1.0",
+    "yaml": "^2.7.0"
+  },
+  "peerDependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/typeorm": "^11.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.21"
+  },
+  "devDependencies": {
+    "@nestjs/common": "^11.0.12",
+    "@nestjs/core": "^11.0.12",
+    "@nestjs/typeorm": "^11.0.0",
+    "@types/node": "^22.13.10",
+    "@types/uuid": "^10.0.0",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.21",
+    "typescript": "^5.8.2"
+  }
+}

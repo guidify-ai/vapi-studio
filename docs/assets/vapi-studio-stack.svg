@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 120" role="img" aria-label="Vapi Studio stack">
+  <rect width="800" height="120" fill="#0f1419"/>
+  <g font-family="system-ui, -apple-system, Segoe UI, sans-serif">
+    <rect x="24" y="36" width="150" height="48" rx="8" fill="#1d3557" stroke="#3d5a80"/>
+    <text x="99" y="58" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">Vapi</text>
+    <text x="99" y="74" text-anchor="middle" fill="#a8c0dc" font-size="10">Custom LLM + webhooks</text>
+
+    <text x="192" y="66" fill="#8b9aab" font-size="18">&#8594;</text>
+
+    <rect x="210" y="36" width="170" height="48" rx="8" fill="#0f766e" stroke="#5eead4" stroke-width="2"/>
+    <text x="295" y="58" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="700">Vapi Studio</text>
+    <text x="295" y="74" text-anchor="middle" fill="#ccfbf1" font-size="10">Supervisor + flow.yaml</text>
+
+    <text x="398" y="66" fill="#8b9aab" font-size="18">&#8594;</text>
+
+    <rect x="416" y="36" width="170" height="48" rx="8" fill="#2d6a4f" stroke="#52b788"/>
+    <text x="501" y="58" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">Agent steps</text>
+    <text x="501" y="74" text-anchor="middle" fill="#c8e6d4" font-size="10">typed NestJS classes</text>
+
+    <text x="604" y="66" fill="#8b9aab" font-size="18">&#8594;</text>
+
+    <rect x="622" y="36" width="154" height="48" rx="8" fill="#4a3f6b" stroke="#9b8ec4"/>
+    <text x="699" y="58" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">Brain</text>
+    <text x="699" y="74" text-anchor="middle" fill="#d4c4f0" font-size="10">optional at listen</text>
+  </g>
+</svg>

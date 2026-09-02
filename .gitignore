@@ -1,0 +1,16 @@
+node_modules
+dist
+.idea
+.env
+logs/
+
+# Local tooling (not part of vapi-studio)
+.uv-bin/
+.uv-tools/
+.specify/.cache/
+archive/
+
+# Application projects (content gitignored; README + .gitignore tracked)
+projects/*
+!projects/README.md
+!projects/.gitignore
