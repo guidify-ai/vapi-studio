@@ -41,16 +41,16 @@ export type TurnQueueWorkMeta = {
 };
 
 export class CallTurnQueue {
-  private working = false;
+  private working: boolean = false;
   private readonly pending: string[] = [];
   /** Mutex chain — only one exclusive section runs at a time. */
   private tail: Promise<void> = Promise.resolve();
 
-  get isWorking(): boolean {
+  public get isWorking(): boolean {
     return this.working;
   }
 
-  get pendingCount(): number {
+  public get pendingCount(): number {
     return this.pending.length;
   }
 
@@ -59,7 +59,7 @@ export class CallTurnQueue {
    * Empty string is allowed once — Vapi "assistant speaks first" Custom LLM
    * requests arrive with no user text and must still run the opening node.
    */
-  enqueue(userText: string): void {
+  public enqueue(userText: string): void {
     const text = userText.trim();
     const last = this.pending[this.pending.length - 1];
     if (last === text) return;
@@ -80,7 +80,7 @@ export class CallTurnQueue {
    * only when `continueDraining()` is true. Vapi Custom LLM must leave them
    * for the waiting HTTP request — that is the stream the provider plays.
    */
-  async runExclusive<T>(input: {
+  public async runExclusive<T>(input: {
     userText: string;
     continueDraining?: () => boolean;
     /**
@@ -161,9 +161,9 @@ export class CallTurnQueue {
 
 /** Process-local queues keyed by provider call id. */
 export class CallTurnQueueRegistry {
-  private readonly queues = new Map<string, CallTurnQueue>();
+  private readonly queues: Map<string, CallTurnQueue> = new Map<string, CallTurnQueue>();
 
-  get(providerCallId: string): CallTurnQueue {
+  public get(providerCallId: string): CallTurnQueue {
     let q = this.queues.get(providerCallId);
     if (!q) {
       q = new CallTurnQueue();
@@ -172,7 +172,7 @@ export class CallTurnQueueRegistry {
     return q;
   }
 
-  delete(providerCallId: string): void {
+  public delete(providerCallId: string): void {
     this.queues.delete(providerCallId);
   }
 }

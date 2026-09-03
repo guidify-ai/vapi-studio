@@ -34,10 +34,10 @@ interface BrainProfileFile {
  */
 @Injectable()
 export class MockBrainAdapter implements BrainAdapter {
-  private profiles = new Map<string, string[]>();
-  private activeProfileId = 'state-machine';
+  private profiles: Map<string, string[]> = new Map<string, string[]>();
+  private activeProfileId: string = 'state-machine';
 
-  loadProfile(profileId: string, path: string): void {
+  public loadProfile(profileId: string, path: string): void {
     const raw = parseYaml(readFileSync(path, 'utf8')) as BrainProfileFile;
     if (!raw?.sequence?.length) {
       throw new Error(`Invalid brain profile at ${path}`);
@@ -45,25 +45,25 @@ export class MockBrainAdapter implements BrainAdapter {
     this.setSequence(profileId, raw.sequence);
   }
 
-  setSequence(profileId: string, sequence: string[]): void {
+  public setSequence(profileId: string, sequence: string[]): void {
     if (!sequence.length) {
       throw new Error(`Brain sequence empty for profile ${profileId}`);
     }
     this.profiles.set(profileId, sequence);
   }
 
-  setActiveProfile(profileId: string): void {
+  public setActiveProfile(profileId: string): void {
     if (!this.profiles.has(profileId)) {
       throw new Error(`Unknown brain profile: ${profileId}`);
     }
     this.activeProfileId = profileId;
   }
 
-  getActiveProfileId(): string {
+  public getActiveProfileId(): string {
     return this.activeProfileId;
   }
 
-  async scan(input: BrainScanInput): Promise<BrainScanResult> {
+  public async scan(input: BrainScanInput): Promise<BrainScanResult> {
     const profileId = input.runtime.brainProfileId || this.activeProfileId;
     const sequence = this.profiles.get(profileId);
     if (!sequence) {
@@ -140,7 +140,7 @@ export class MockBrainAdapter implements BrainAdapter {
    * Deterministic clarify for tests — fills required string fields from input text.
    * Empty / reserved marker input → ra9.clarify.cannotAnswer.
    */
-  async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
+  public async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
     request: BrainClarifyRequest,
   ): Promise<BrainClarifyResult<TAnswer>> {
     const text = clarifiableInputToString(request.input).trim();
@@ -187,7 +187,7 @@ export class MockBrainAdapter implements BrainAdapter {
    * Otherwise: any matching failureCondition → fail; all successConditions
    * present (or none given) → pass.
    */
-  async judge<TContext = unknown>(
+  public async judge<TContext = unknown>(
     request: BrainJudgeRequest<TContext>,
   ): Promise<BrainJudgeResult> {
     const text = judgeContextToString(request.context).trim();

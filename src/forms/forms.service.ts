@@ -45,11 +45,11 @@ interface PendingExpose {
 
 @Injectable()
 export class FormsService {
-  private readonly pending = new Map<string, PendingExpose>();
-  private readonly byConversation = new Map<string, Set<string>>();
+  private readonly pending: Map<string, PendingExpose> = new Map<string, PendingExpose>();
+  private readonly byConversation: Map<string, Set<string>> = new Map<string, Set<string>>();
   private readonly adapter: FormDisposeAdapter;
 
-  constructor(
+  public constructor(
     private readonly events: EventService,
     @Optional()
     @Inject(FORM_DISPOSE_ADAPTER)
@@ -63,7 +63,7 @@ export class FormsService {
    * Prefer {@link open} on live Vapi — holding Custom LLM SSE open for minutes
    * truncates TTS and races silence hangup.
    */
-  async expose(
+  public async expose(
     conversationId: string,
     spec: FormExposeSpec,
   ): Promise<FormValues> {
@@ -110,7 +110,7 @@ export class FormsService {
    * Deliver + ACK + onDelivered, return immediately. Caller finishes the channel
    * turn (so TTS can complete). Later: {@link submit} then {@link claimSubmitted}.
    */
-  async open(
+  public async open(
     conversationId: string,
     spec: FormExposeSpec,
   ): Promise<FormExposeHandle> {
@@ -136,7 +136,7 @@ export class FormsService {
   }
 
   /** Studio / channel ACK — form is openable on the client. */
-  ack(exposeId: string): FormExposeHandle | null {
+  public ack(exposeId: string): FormExposeHandle | null {
     const entry = this.pending.get(exposeId);
     if (!entry) return null;
     entry.ackReceived = true;
@@ -146,7 +146,7 @@ export class FormsService {
   }
 
   /** Studio / channel submit — resolves blocking expose() or parks values for claim. */
-  submit(exposeId: string, values: FormValues): FormExposeHandle | null {
+  public submit(exposeId: string, values: FormValues): FormExposeHandle | null {
     const entry = this.pending.get(exposeId);
     if (!entry) return null;
     const cleaned: FormValues = {};
@@ -187,7 +187,7 @@ export class FormsService {
    * Take submitted values for a conversation (open() path) and remove the expose.
    * Returns null when still waiting or nothing pending.
    */
-  claimSubmitted(conversationId: string): FormValues | null {
+  public claimSubmitted(conversationId: string): FormValues | null {
     const ids = this.byConversation.get(conversationId);
     if (!ids) return null;
     for (const id of [...ids]) {
@@ -202,7 +202,7 @@ export class FormsService {
   }
 
   /** True when open() expose has been submitted but not yet claimed. */
-  hasUnclaimedSubmit(conversationId: string): boolean {
+  public hasUnclaimedSubmit(conversationId: string): boolean {
     const ids = this.byConversation.get(conversationId);
     if (!ids) return false;
     for (const id of ids) {
@@ -213,7 +213,7 @@ export class FormsService {
   }
 
   /** Pending undelivered/unsubmitted expose for Studio poll. */
-  getPending(conversationId: string): FormExposeHandle | null {
+  public getPending(conversationId: string): FormExposeHandle | null {
     const ids = this.byConversation.get(conversationId);
     if (!ids) return null;
     for (const id of ids) {
@@ -229,7 +229,7 @@ export class FormsService {
    * All open (unsubmitted) exposes — newest first.
    * Operator / localhost watchers use this when conversationId is unknown.
    */
-  listPending(): FormExposeHandle[] {
+  public listPending(): FormExposeHandle[] {
     const rows: FormExposeHandle[] = [];
     for (const entry of this.pending.values()) {
       if (!entry.values) rows.push(this.toHandle(entry));
@@ -238,11 +238,11 @@ export class FormsService {
   }
 
   /** Newest open expose, or null. */
-  getLatestPending(): FormExposeHandle | null {
+  public getLatestPending(): FormExposeHandle | null {
     return this.listPending()[0] ?? null;
   }
 
-  getByExposeId(exposeId: string): FormExposeHandle | null {
+  public getByExposeId(exposeId: string): FormExposeHandle | null {
     const entry = this.pending.get(exposeId);
     return entry ? this.toHandle(entry) : null;
   }
@@ -251,7 +251,7 @@ export class FormsService {
    * Re-run dispose for the conversation’s open (unsubmitted) expose — e.g. caller
    * says they never got the SMS / link. Same exposeId; adapter may text again.
    */
-  async resend(conversationId: string): Promise<FormExposeHandle | null> {
+  public async resend(conversationId: string): Promise<FormExposeHandle | null> {
     const pending = this.getPending(conversationId);
     if (!pending) return null;
     const entry = this.pending.get(pending.exposeId);

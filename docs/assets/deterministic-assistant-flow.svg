@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 480" role="img" aria-label="Multi-intention flow: hub node with three lanes, re-entry loop, and portals">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1680 420" role="img" aria-label="Multi-intention flow: main path left to right, lane branches, portal row below">
   <defs>
     <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L7,3 L0,6 Z" fill="#8b9aab"/>
@@ -6,83 +6,123 @@
     <marker id="arrow-accent" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
       <path d="M0,0 L7,3 L0,6 Z" fill="#e9c46a"/>
     </marker>
+    <marker id="arrow-portal" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#c1121f" opacity="0.85"/>
+    </marker>
   </defs>
-  <rect width="920" height="480" fill="#0f1419"/>
-  <text x="24" y="32" fill="#8b9aab" font-family="system-ui, sans-serif" font-size="13" font-weight="600">Multi-intention routing (hub + lanes + portals)</text>
 
-  <!-- Supervisor -->
-  <rect x="360" y="48" width="200" height="48" rx="10" fill="#0f766e" stroke="#5eead4" stroke-width="2"/>
-  <text x="460" y="70" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Supervisor</text>
-  <text x="460" y="86" text-anchor="middle" fill="#ccfbf1" font-family="system-ui, sans-serif" font-size="10">picks intention each turn</text>
+  <rect width="1680" height="420" fill="#0f1419"/>
 
-  <!-- acknowledge -->
-  <rect x="360" y="120" width="200" height="52" rx="10" fill="#2d6a4f" stroke="#52b788" stroke-width="1.5"/>
-  <text x="460" y="144" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="14" font-weight="600">acknowledge</text>
-  <text x="460" y="160" text-anchor="middle" fill="#c8e6d4" font-family="system-ui, sans-serif" font-size="10">AcknowledgeStep / start</text>
+  <text x="36" y="30" fill="#8b9aab" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Multi-intention routing - main path left to right, portals below</text>
 
-  <!-- routerTriage hub -->
-  <rect x="336" y="212" width="248" height="64" rx="12" fill="none" stroke="#e9c46a" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>
-  <rect x="340" y="220" width="240" height="56" rx="10" fill="#5c4033" stroke="#e9c46a" stroke-width="2"/>
-  <text x="460" y="244" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="14" font-weight="700">routerTriage</text>
-  <text x="460" y="262" text-anchor="middle" fill="#f5d0a0" font-family="system-ui, sans-serif" font-size="10">RouterTriageStep / hub</text>
+  <!-- ===== edges (behind nodes) ===== -->
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Supervisor (180) -> acknowledge (280) -->
+    <path d="M 180 120 H 268" stroke="#8b9aab" stroke-width="2" marker-end="url(#arrow)"/>
 
-  <!-- lanes -->
-  <rect x="48" y="332" width="188" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
-  <text x="142" y="356" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">promptAddress</text>
-  <text x="142" y="372" text-anchor="middle" fill="#a8c0dc" font-family="system-ui, sans-serif" font-size="10">appointment lane</text>
+    <!-- acknowledge (450) -> routerTriage (710): two intention edges -->
+    <path d="M 450 108 C 520 108, 620 108, 698 114" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
+    <path d="M 450 132 C 520 132, 620 132, 698 126" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
 
-  <rect x="366" y="332" width="188" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
-  <text x="460" y="356" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">offerEstimate</text>
-  <text x="460" y="372" text-anchor="middle" fill="#a8c0dc" font-family="system-ui, sans-serif" font-size="10">instant estimate lane</text>
+    <!-- routerTriage (900) -> lanes (1160) -->
+    <path d="M 900 120 H 980 C 1040 120, 1040 52, 1148 52" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
+    <path d="M 900 120 H 1148" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
+    <path d="M 900 120 H 980 C 1040 120, 1040 210, 1148 210" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
 
-  <rect x="684" y="332" width="188" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
-  <text x="778" y="356" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">existingProject</text>
-  <text x="778" y="372" text-anchor="middle" fill="#a8c0dc" font-family="system-ui, sans-serif" font-size="10">returning caller lane</text>
+    <!-- lane re-entry loop (under main row) -->
+    <path d="M 1160 52 C 1040 52, 1000 268, 820 268 C 740 268, 740 170, 800 150" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
 
-  <!-- portals -->
-  <rect x="48" y="120" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="128" y="142" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">goodbye</text>
-  <text x="128" y="158" text-anchor="middle" fill="#f5c6cb" font-family="system-ui, sans-serif" font-size="10">studio.isGoodbye</text>
+    <!-- portal interrupts (up from portal row) -->
+    <path d="M 420 304 C 420 240, 360 190, 360 160" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.75" marker-end="url(#arrow-portal)"/>
+    <path d="M 820 304 C 820 230, 780 170, 780 148" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.75" marker-end="url(#arrow-portal)"/>
+    <path d="M 1220 304 C 1220 230, 960 170, 860 140" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.75" marker-end="url(#arrow-portal)"/>
+  </g>
 
-  <rect x="48" y="180" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="128" y="202" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">transfer</text>
-  <text x="128" y="218" text-anchor="middle" fill="#f5c6cb" font-family="system-ui, sans-serif" font-size="10">studio.isTransferToHuman</text>
+  <!-- ===== edge labels (sit fully inside corridors; do not overlap boxes) ===== -->
+  <g font-family="system-ui, sans-serif">
+    <!-- corridor 180-280 (~100px) -->
+    <rect x="196" y="98" width="56" height="20" rx="4" fill="#0f1419" opacity="0.95"/>
+    <text x="224" y="112" text-anchor="middle" fill="#8b9aab" font-size="12">start</text>
 
-  <rect x="48" y="240" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
-  <text x="128" y="262" text-anchor="middle" fill="#e7ecf1" font-family="system-ui, sans-serif" font-size="13" font-weight="600">stillThere</text>
-  <text x="128" y="278" text-anchor="middle" fill="#f5c6cb" font-family="system-ui, sans-serif" font-size="10">studio.isStillThere</text>
+    <!-- corridor 450-710 (~260px) -->
+    <rect x="470" y="70" width="220" height="44" rx="6" fill="#1a222c" stroke="#2a3542"/>
+    <text x="580" y="90" text-anchor="middle" fill="#e9c46a" font-size="12" font-weight="600">isRequestedRoofEstimate</text>
+    <text x="580" y="106" text-anchor="middle" fill="#e9c46a" font-size="12" font-weight="600">isRouterReady</text>
 
-  <!-- edges: supervisor -> acknowledge -->
-  <path d="M 460 96 L 460 118" fill="none" stroke="#8b9aab" stroke-width="2" marker-end="url(#arrow)"/>
+    <!-- corridor 900-1160 (~260px) -->
+    <rect x="920" y="16" width="220" height="24" rx="5" fill="#1a222c" stroke="#2a3542"/>
+    <text x="1030" y="33" text-anchor="middle" fill="#e9c46a" font-size="12" font-weight="600">isAcceptedAppointment</text>
 
-  <!-- two intentions into hub -->
-  <path d="M 430 172 C 430 198, 430 198, 430 218" fill="none" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
-  <text x="348" y="200" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">isRequestedRoofEstimate</text>
-  <path d="M 490 172 C 490 198, 490 198, 490 218" fill="none" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)" opacity="0.85"/>
-  <text x="502" y="200" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">isRouterReady</text>
-  <text x="460" y="208" text-anchor="middle" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">2 intentions, same target</text>
+    <rect x="920" y="98" width="220" height="24" rx="5" fill="#1a222c" stroke="#2a3542"/>
+    <text x="1030" y="115" text-anchor="middle" fill="#e9c46a" font-size="12" font-weight="600">isAcceptedInstantEstimate</text>
 
-  <!-- hub fan-out -->
-  <path d="M 400 276 C 400 306, 142 306, 142 330" fill="none" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
-  <text x="250" y="298" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">isAcceptedAppointment</text>
-  <path d="M 460 276 L 460 330" fill="none" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
-  <text x="468" y="308" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">isAcceptedInstantEstimate</text>
-  <path d="M 520 276 C 520 306, 778 306, 778 330" fill="none" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
-  <text x="640" y="298" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">isRequestedExistingProject</text>
-  <text x="460" y="318" text-anchor="middle" fill="#e9c46a" font-family="system-ui, sans-serif" font-size="9" font-weight="600">3 intentions, 3 lanes</text>
+    <rect x="920" y="178" width="220" height="24" rx="5" fill="#1a222c" stroke="#2a3542"/>
+    <text x="1030" y="195" text-anchor="middle" fill="#e9c46a" font-size="12" font-weight="600">isRequestedExistingProject</text>
 
-  <!-- re-entry loop -->
-  <path d="M 95 384 C 45 384, 45 300, 355 276" fill="none" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
-  <text x="52" y="340" fill="#8b9aab" font-family="system-ui, sans-serif" font-size="9">(lane complete)</text>
+    <text x="880" y="286" fill="#8b9aab" font-size="12">lane complete (re-entry)</text>
 
-  <!-- portal edges -->
-  <path d="M 360 146 C 280 146, 280 144, 208 144" fill="none" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
-  <path d="M 340 248 C 280 248, 280 204, 208 204" fill="none" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
-  <path d="M 340 248 C 280 248, 280 264, 208 264" fill="none" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+    <text x="36" y="62" fill="#5eead4" font-size="12" font-weight="600">Main path</text>
+    <text x="36" y="296" fill="#f5c6cb" font-size="12" font-weight="600">Portal nodes</text>
+  </g>
 
-  <g transform="translate(24, 408)">
-    <rect x="0" y="0" width="872" height="56" rx="8" fill="#1a222c" stroke="#2a3542"/>
-    <text x="16" y="22" fill="#8b9aab" font-family="system-ui, sans-serif" font-size="11" font-weight="600">Why flow charts</text>
-    <text x="16" y="42" fill="#8b9aab" font-family="system-ui, sans-serif" font-size="10">One listen, many candidate intentions visible on the graph. Supervisor scores the winning edge each turn. Example apps render the full graph at /flow.</text>
+  <!-- ===== main path nodes ===== -->
+  <g>
+    <rect x="40" y="92" width="140" height="56" rx="10" fill="#0f766e" stroke="#5eead4" stroke-width="2"/>
+    <text x="110" y="116" text-anchor="middle" fill="#e7ecf1" font-size="14" font-weight="700">Supervisor</text>
+    <text x="110" y="134" text-anchor="middle" fill="#ccfbf1" font-size="11">picks intention</text>
+
+    <rect x="280" y="92" width="170" height="56" rx="10" fill="#2d6a4f" stroke="#52b788" stroke-width="1.5"/>
+    <text x="365" y="116" text-anchor="middle" fill="#e7ecf1" font-size="14" font-weight="600">acknowledge</text>
+    <text x="365" y="134" text-anchor="middle" fill="#c8e6d4" font-size="11">node</text>
+
+    <rect x="710" y="88" width="190" height="64" rx="10" fill="#2d6a4f" stroke="#52b788" stroke-width="2"/>
+    <text x="805" y="114" text-anchor="middle" fill="#e7ecf1" font-size="14" font-weight="700">routerTriage</text>
+    <text x="805" y="134" text-anchor="middle" fill="#c8e6d4" font-size="11">node (multi-intention)</text>
+  </g>
+
+  <!-- ===== lane branches (vertical stack) ===== -->
+  <g>
+    <rect x="1160" y="26" width="190" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
+    <text x="1255" y="48" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">promptAddress</text>
+    <text x="1255" y="66" text-anchor="middle" fill="#a8c0dc" font-size="11">appointment lane</text>
+
+    <rect x="1160" y="94" width="190" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
+    <text x="1255" y="116" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">offerEstimate</text>
+    <text x="1255" y="134" text-anchor="middle" fill="#a8c0dc" font-size="11">instant estimate lane</text>
+
+    <rect x="1160" y="184" width="190" height="52" rx="10" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
+    <text x="1255" y="206" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">existingProject</text>
+    <text x="1255" y="224" text-anchor="middle" fill="#a8c0dc" font-size="11">returning caller lane</text>
+  </g>
+
+  <!-- ===== portal row ===== -->
+  <g>
+    <rect x="340" y="304" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="420" y="324" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">goodbye</text>
+    <text x="420" y="340" text-anchor="middle" fill="#f5c6cb" font-size="11">studio.isGoodbye</text>
+
+    <rect x="740" y="304" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="820" y="324" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">transfer</text>
+    <text x="820" y="340" text-anchor="middle" fill="#f5c6cb" font-size="11">studio.isTransferToHuman</text>
+
+    <rect x="1140" y="304" width="160" height="48" rx="10" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="6 4"/>
+    <text x="1220" y="324" text-anchor="middle" fill="#e7ecf1" font-size="13" font-weight="600">stillThere</text>
+    <text x="1220" y="340" text-anchor="middle" fill="#f5c6cb" font-size="11">studio.isStillThere</text>
+  </g>
+
+  <!-- ===== legend ===== -->
+  <g transform="translate(36, 368)">
+    <rect x="0" y="0" width="1608" height="40" rx="8" fill="#1a222c" stroke="#2a3542"/>
+    <rect x="16" y="13" width="24" height="14" rx="3" fill="#2d6a4f" stroke="#52b788" stroke-width="1.5"/>
+    <text x="48" y="24" fill="#c8e6d4" font-size="11">NODE</text>
+    <rect x="120" y="13" width="24" height="14" rx="3" fill="#1d3557" stroke="#3d5a80" stroke-width="1.5"/>
+    <text x="152" y="24" fill="#a8c0dc" font-size="11">lane branch</text>
+    <rect x="280" y="13" width="24" height="14" rx="3" fill="#7b2d3b" stroke="#c1121f" stroke-width="1.5" stroke-dasharray="4 3"/>
+    <text x="312" y="24" fill="#f5c6cb" font-size="11">PORTAL NODE</text>
+    <line x1="440" y1="20" x2="470" y2="20" stroke="#e9c46a" stroke-width="2" marker-end="url(#arrow-accent)"/>
+    <text x="480" y="24" fill="#e9c46a" font-size="11">intention edge</text>
+    <line x1="620" y1="20" x2="650" y2="20" stroke="#8b9aab" stroke-width="1.5" stroke-dasharray="5 3" marker-end="url(#arrow)"/>
+    <text x="660" y="24" fill="#8b9aab" font-size="11">portal / re-entry</text>
+    <text x="820" y="24" fill="#8b9aab" font-size="11">Flow Studio (/flow): same left-to-right layout; future replay can dim unvisited nodes</text>
   </g>
 </svg>

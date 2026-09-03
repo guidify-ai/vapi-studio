@@ -96,7 +96,7 @@ function line(parts: string[]): void {
     lineSink.push(text);
     return;
   }
-  // eslint-disable-next-line no-console
+   
   console.log(text);
 }
 
@@ -105,7 +105,7 @@ function blank(): void {
     lineSink.push('');
     return;
   }
-  // eslint-disable-next-line no-console
+   
   console.log('');
 }
 
@@ -932,7 +932,7 @@ export function printConversationConsole(
     lineSink = null;
     if (consoleOn) {
       for (const row of rows) {
-        // eslint-disable-next-line no-console
+         
         console.log(row);
       }
     }

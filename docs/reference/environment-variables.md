@@ -1,6 +1,8 @@
 # Environment variables
 
-Variables the **framework** reads at runtime. Application-specific vars (database URL, `PUBLIC_BASE_URL`, feature flags) belong in **your app** — document them in your app's `.env.example`.
+Variables the **framework** reads at runtime. Application-specific vars (database URL, `PUBLIC_BASE_URL`, `PROJECT_UUID`, feature flags) belong in **your app** — document them in your app's `.env.example`.
+
+App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJECT_UUID` in `.env` is a mirror for operators/compose. App boot upserts the identity into the `projects` table. Never regenerate `id` at runtime.
 
 **Brain model and confidence** are set in `VapiStudioModule.forRoot({ brain })` — not env.
 
@@ -17,6 +19,7 @@ Variables the **framework** reads at runtime. Application-specific vars (databas
 | `VAPI_TRANSFER_CALL_TOOL_NAME` | `transferCall` | Transfer tool name |
 | `VAPI_HANDOFF_TOOL_NAME` | `handoff` | Squad handoff tool |
 | `VAPI_TRANSFER_DESTINATION` | — | E.164 transfer target |
+| `VAPI_DASHBOARD_CALL_URL` | `https://dashboard.vapi.ai/call/{callId}` | Debug UI link to Vapi call (`{callId}` = `provider_call_id`) |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` root |
 
 ## Related

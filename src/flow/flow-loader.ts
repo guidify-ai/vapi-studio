@@ -72,12 +72,12 @@ export function parseConditionGotoNodeId(intention: string): string | null {
 export class FlowLoader {
   private flow: FlowDefinition | null = null;
 
-  loadFromFile(path: string): FlowDefinition {
+  public loadFromFile(path: string): FlowDefinition {
     const raw = parseYaml(readFileSync(path, 'utf8')) as RawFlowFile;
     return this.loadFromObject(raw);
   }
 
-  loadFromObject(raw: RawFlowFile): FlowDefinition {
+  public loadFromObject(raw: RawFlowFile): FlowDefinition {
     if (!raw?.flow?.id || !raw?.flow?.start || !raw?.nodes) {
       throw new Error('Invalid flow schema object');
     }
@@ -155,14 +155,14 @@ export class FlowLoader {
     return this.flow;
   }
 
-  getFlow(): FlowDefinition {
+  public getFlow(): FlowDefinition {
     if (!this.flow) {
       throw new Error('Flow not loaded');
     }
     return this.flow;
   }
 
-  nodesForIntention(intention: string): FlowNodeDefinition[] {
+  public nodesForIntention(intention: string): FlowNodeDefinition[] {
     const flow = this.getFlow();
     const gotoId = parseConditionGotoNodeId(intention);
     if (gotoId) {
@@ -181,7 +181,7 @@ export class FlowLoader {
   }
 
   /** All intention names declared on portal nodes. */
-  portalIntentionNames(): string[] {
+  public portalIntentionNames(): string[] {
     const flow = this.getFlow();
     const names = new Set<string>();
     for (const node of Object.values(flow.nodes)) {
@@ -194,7 +194,7 @@ export class FlowLoader {
   }
 
   /** All intention names on non-portal nodes. */
-  normalIntentionNames(): string[] {
+  public normalIntentionNames(): string[] {
     const flow = this.getFlow();
     const names = new Set<string>();
     for (const node of Object.values(flow.nodes)) {
@@ -210,7 +210,7 @@ export class FlowLoader {
    * Condition transitions whose `when` is true for this runtime snapshot.
    * Skips when current node is already `to`, or `from` does not include current.
    */
-  matchingConditionTransitions(
+  public matchingConditionTransitions(
     input: {
       currentNodeId: string | null | undefined;
       memory: Record<string, unknown>;

@@ -36,9 +36,9 @@ export function rethrowCatch(): CatchDirective {
  * catch() can map this to restartNode / forceIntention / etc.
  */
 export class FlowUncertainError extends Error {
-  readonly details?: Record<string, unknown>;
+  public readonly details?: Record<string, unknown>;
 
-  constructor(message: string, details?: Record<string, unknown>) {
+  public constructor(message: string, details?: Record<string, unknown>) {
     super(message);
     this.name = 'FlowUncertainError';
     this.details = details;

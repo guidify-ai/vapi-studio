@@ -3,7 +3,7 @@
 **[@guidify-ai/vapi-studio](https://github.com/guidify-ai/vapi-studio)** — a **code-driven toolkit for [Vapi](https://vapi.ai)**.
 
 <p align="center">
-  <img src="./docs/assets/vapi-studio-stack.svg" alt="Vapi to Vapi Studio to agent steps to optional Brain" width="720" />
+  <img src="./docs/assets/vapi-studio-stack.svg" alt="Vapi to Vapi Studio to nodes to optional Brain" width="720" />
 </p>
 
 This repository ships NestJS libraries at the **repo root** (`src/`, `@guidify-ai/vapi-studio`). Your bots live in **`projects/`** in the same clone — no `packages/` layer, no second repository required.
@@ -12,7 +12,7 @@ This repository ships NestJS libraries at the **repo root** (`src/`, `@guidify-a
 vapi-studio/
 ├── src/                  ← framework
 ├── docs/
-├── projects/             ← your NestJS apps (`file:..`)
+├── projects/             ← your NestJS apps (`file:../..`)
 │   └── my-voice-app/
 └── package.json
 ```
@@ -35,24 +35,39 @@ More tools may be added later. Each gets its own section here when shipped.
 
 ---
 
+## How it fits with Vapi
+
+Vapi Studio assistants are **Custom LLM + webhook** endpoints — fully compatible with ordinary Vapi assistants. You choose how much of the call graph lives in Studio:
+
+| # | Mode | When to use |
+| --- | --- | --- |
+| 1 | **Single-assistant flow** | New bots. One Vapi assistant; the complex conversation graph lives in Vapi Studio (`flow.yaml` + nodes). Lane jumps use `continueTo` — no Squad required. |
+| 2 | **Multi-assistant Squad** | Several Studio-backed assistants in one Vapi Squad. Studio `handoff` switches members while keeping one Conversation. See [Workflow & Squad](./docs/guide/workflow-squad.md). |
+| 3 | **Inject into an existing Squad** | Drop Studio assistants into Squads you already run in Vapi. They speak the same Custom LLM / tool / handoff contracts as native members, so you can mix Studio and non-Studio assistants. |
+
+Most greenfield work starts with **(1)**. Use **(2)** when you want separate Vapi assistants per lane. Use **(3)** when Studio owns only part of a larger Squad.
+
+---
+
 ## How multi-intention routing works
 
-One listen can surface **several competing intentions**. The flow chart makes every candidate edge visible before you wire nodes — hub fan-out, merge into the same target, lane loops, and global portals.
+One listen can surface **several competing intentions**. The flow chart reads **left to right** on the main path; lane branches stack with space to breathe; **portal nodes** sit on a row **below** so edges and labels do not cross node text.
 
 <p align="center">
-  <img src="./docs/assets/deterministic-assistant-flow.svg" alt="Multi-intention flow: routerTriage hub with three lanes, re-entry loop, and goodbye, transfer, and stillThere portals" width="720" />
+  <img src="./docs/assets/deterministic-assistant-flow.svg" alt="Multi-intention flow: main path left to right, three lane branches, portal nodes below, re-entry loop" width="1200" />
 </p>
 
-**Supervisor** — framework component that picks the next agent step each turn (scores intentions, checks portals, then follows `flow.yaml`).
+**Supervisor** — framework component that picks the next agent step each turn (scores intentions, checks portal nodes, then follows `flow.yaml`).
 
 | Shape | Meaning |
 | --- | --- |
-| **HUB** | One node, many outbound intentions — e.g. triage after acknowledge |
-| **NODE** | Agent step class — speaks, listens, writes memory |
+| **NODE** | Agent step on the main path — speaks, listens, writes memory; one node may expose many outbound intentions |
+| **PORTAL NODE** | Same agent-step shape with `portal: true` in `flow.yaml` — global interrupt (goodbye, transfer, still-there, …) |
 | **INTENTION** | Routing signal on an edge (app-defined or `studio.is*`) — multiple edges can share a target |
-| **PORTAL** | Global interrupt (`portal: true` in `flow.yaml`) — goodbye, transfer, still-there, … |
 
-Solid arrows = main path and intention routes. Dashed arrows = portal interrupts or lane re-entry loops.
+Solid arrows = main path and intention routes. Dashed arrows = portal-node interrupts or lane re-entry loops.
+
+**Layout convention:** main conversation path **left → right**; lane branches get vertical space; **portal nodes** on a row **below** the main path (so labels and edges stay readable). Example apps should use the same layout in Flow Studio (`/flow`). Future **call replay** can highlight visited nodes and dim the rest.
 
 Example apps render the full interactive graph at **`/flow`** (Flow Studio).
 
@@ -72,7 +87,14 @@ Example apps render the full interactive graph at **`/flow`** (Flow Studio).
 
 ## Install & run
 
-Requires **Node.js 22+** and **Yarn 1.x**.
+### Requirements
+
+| Layer | Tools |
+| --- | --- |
+| **Framework** (repo root) | **Node.js 22+**, **Yarn 1.x** |
+| **Local dev with Vapi** (in `projects/<name>/`) | **Docker** (Compose), **[ngrok](https://ngrok.com/download)** on your PATH, Vapi account |
+
+Vapi runs in the cloud and must call your machine over **HTTPS**. Local dev uses **ngrok** to tunnel `localhost:<port>` (example apps use **9999**) to a public URL. `yarn start` in a project starts Docker **and** ngrok, writes `PUBLIC_BASE_URL` to `.env`, and prints the Webhook + Conversation links below.
 
 ### 1. Clone and build
 
@@ -85,6 +107,10 @@ yarn test     # optional verify
 ```
 
 ### 2. Add your project
+
+```bash
+yarn new-project   # interactive name + slug → projects/<slug>/ + project.identity.json
+```
 
 Bots live in **`projects/`** — no second repo, no sibling folder:
 
@@ -99,18 +125,27 @@ vapi-studio/
 // projects/my-voice-app/package.json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
 
 ```bash
 cd projects/my-voice-app
-yarn install
-docker compose up --build
+yarn install   # first time, or after you change dependencies
+yarn start     # Docker + ngrok; prints Vapi-ready URLs (see below)
 ```
 
-Wire `VapiStudioModule`, `config/flow.yaml`, and Vapi routes in the project. See [`projects/README.md`](./projects/README.md) · [Creating an app](./docs/building-apps/creating-an-app.md) · [Installation](./docs/getting-started/installation.md).
+**Wire into Vapi** — `yarn start` prints an HTTPS origin (ngrok) and two URLs to paste into your Vapi assistant:
+
+| Vapi assistant setting | Endpoint |
+| --- | --- |
+| **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
+| **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
+
+`PUBLIC_BASE_URL` is the ngrok HTTPS origin (new each time ngrok restarts unless you use a reserved domain). Example apps use `scripts/start.sh` (invoked by `yarn start`) — Docker stack, health check, ngrok tunnel, then the link block above.
+
+Before the first call, wire `VapiStudioModule`, `config/flow.yaml`, and Vapi HTTP routes in the project. See [`projects/README.md`](./projects/README.md) · [Creating an app](./docs/building-apps/creating-an-app.md) · [Installation](./docs/getting-started/installation.md).
 
 After framework changes: `yarn build` at the repo root, then reinstall in the project if needed.
 

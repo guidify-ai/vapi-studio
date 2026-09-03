@@ -8,6 +8,7 @@ Call forensics — every turn should be explainable from logs + `conversation_ev
 | --- | --- |
 | `emit({ type, conversationId, payload })` | In-process listeners + optional persist |
 | `persist(conversationId, type, payload)` | Postgres `conversation_events` |
+| `persistAnalyticsTag(conversationId, tag, payload?)` | Funnel milestone — type `ANALYTICS_TAG`, `payload.tag` |
 | `log(...)` | Structured console / daily file |
 
 Apps add `eventListeners` in `VapiStudioModule.forRoot`.
@@ -36,6 +37,7 @@ Files: `logs/dailyYYYYMMDD.log`
 | Event | Answers |
 | --- | --- |
 | `ROUTE_DECISION` | Why this node ran (`resolvedVia`, intention, boosts) |
+| `UNKNOWN_ORIGIN_CONSUME` | Unknown portal accepted the restatement against the origin listen (`unknown_origin_consume`) |
 | `ROUTE_FAILED` | `before()` refusal, catch, unknown transition |
 | `CONDITION_TRANSITION` | YAML/code force jump |
 | `FLOW_CONTINUE` | `continueTo` target + reason |
@@ -47,9 +49,26 @@ Files: `logs/dailyYYYYMMDD.log`
 
 Full doctrine: [Debugging and observability](../best-practices/debugging-and-observability.md)
 
+## Analytics tags & funnels
+
+Conversations are funnels. Stamp milestones with `persistAnalyticsTag` (or bind funnel steps to existing event types so history still scores).
+
+| Piece | Role |
+| --- | --- |
+| `ANALYTICS_TAG` | Durable tag event (`payload.tag`, optional `funnel` / `label`) |
+| Funnel catalog (app) | Ordered steps → `eventTypes[]` and/or `tags[]` |
+| Aggregation | Distinct conversations per step / top tags, scoped by `conversations.project_id` |
+
+Operator UI (example): `/analytics` — conversion bars + top tags for the project.
+
 ## App events
 
 Applications may persist custom events via `EventService.persist` — name and document them in the app repo.
+
+| Event | Payload | When |
+| --- | --- | --- |
+| `CONVERSATION_PATH` | `signature`, `branchLabel`, `nodes[]`, `portalHits` | App teardown — actual node path |
+| `CALL_OUTCOME` | `outcome` (`success` \| `failure` \| `unknown`), `reasoning[]`, `confidence`, `source` | App teardown — Brain judge triage |
 
 ## Related
 

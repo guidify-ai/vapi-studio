@@ -12,50 +12,50 @@ import {
 } from './conversation-history';
 
 export class SupervisedConversation {
-  readonly runtimeInstanceId: string;
-  readonly conversationId: string;
-  readonly providerCallId: string;
-  readonly flowId: string;
-  readonly createdAt: Date;
+  public readonly runtimeInstanceId: string;
+  public readonly conversationId: string;
+  public readonly providerCallId: string;
+  public readonly flowId: string;
+  public readonly createdAt: Date;
 
   /** Currently executing node id (portal or normal). */
-  currentNodeId: string | null;
+  public currentNodeId: string | null;
   /** Last normal (non-portal) flow node — survives portal interruptions. */
-  normalFlowNodeId: string | null;
-  brainProfileId: string;
-  brainSequenceIndex: number;
-  portalState: PortalState;
-  memory: Record<string, unknown>;
+  public normalFlowNodeId: string | null;
+  public brainProfileId: string;
+  public brainSequenceIndex: number;
+  public portalState: PortalState;
+  public memory: Record<string, unknown>;
   /** App-seeded basics for the whole Conversation (typed at the app boundary). */
-  variables: Variables;
+  public variables: Variables;
   /**
    * Active listen registration from the last Node (opened before its speech).
    * Next Brain scan uses this for intention boosts + hints.
    */
-  listenExpectation: ListenExpectation | null;
+  public listenExpectation: ListenExpectation | null;
   /**
    * False until flow.start Node has run() once.
    * Vapi Custom LLM "assistant speaks first" requires this opening turn
    * without a Brain intention scan.
    */
-  openingCompleted: boolean;
-  turn: TurnState;
-  status: SupervisedStatus;
-  metadata: Record<string, unknown>;
+  public openingCompleted: boolean;
+  public turn: TurnState;
+  public status: SupervisedStatus;
+  public metadata: Record<string, unknown>;
   /**
    * Compact transcript + node path for Brain scan and Node.before().
    * This is RA9's session memory — Chat Completions is stateless, so we
    * resend this rolling window instead of a vendor-side GPT thread.
    */
-  history: ConversationHistory;
+  public history: ConversationHistory;
   /**
    * Full assistant utterances from the last completed turn (not compact history).
    * Replayed on a coalesced Custom LLM waiter so Vapi's *latest* HTTP request
    * still has speech — empty skip SSE is dead air.
    */
-  lastAssistantSpeech: string[];
+  public lastAssistantSpeech: string[];
 
-  constructor(input: {
+  public constructor(input: {
     conversationId: string;
     providerCallId: string;
     flowId: string;
@@ -77,6 +77,7 @@ export class SupervisedConversation {
     this.portalState = {
       activePortalId: null,
       originNodeId: null,
+      originListenExpectation: null,
       transferToHuman: { reengagementAttempts: 0 },
       stillThere: { attempts: 0 },
     };
@@ -91,19 +92,22 @@ export class SupervisedConversation {
     this.lastAssistantSpeech = [];
   }
 
-  enterPortal(portalNodeId: string): void {
+  public enterPortal(portalNodeId: string): void {
     if (!this.portalState.activePortalId) {
       this.portalState.originNodeId =
         this.normalFlowNodeId ?? this.currentNodeId;
+      // Capture before the portal Node overwrites runtime.listenExpectation.
+      this.portalState.originListenExpectation = this.listenExpectation;
     }
     this.portalState.activePortalId = portalNodeId;
     this.currentNodeId = portalNodeId;
   }
 
-  exitPortal(): string | null {
+  public exitPortal(): string | null {
     const origin = this.portalState.originNodeId ?? this.normalFlowNodeId;
     this.portalState.activePortalId = null;
     this.portalState.originNodeId = null;
+    this.portalState.originListenExpectation = null;
     if (origin) {
       this.currentNodeId = origin;
       this.normalFlowNodeId = origin;
@@ -111,7 +115,7 @@ export class SupervisedConversation {
     return origin;
   }
 
-  enterNormalNode(nodeId: string): void {
+  public enterNormalNode(nodeId: string): void {
     if (this.portalState.activePortalId) {
       this.exitPortal();
     }
@@ -119,7 +123,7 @@ export class SupervisedConversation {
     this.normalFlowNodeId = nodeId;
   }
 
-  snapshot(): Record<string, unknown> {
+  public snapshot(): Record<string, unknown> {
     return {
       runtimeInstanceId: this.runtimeInstanceId,
       conversationId: this.conversationId,
@@ -144,7 +148,7 @@ export class SupervisedConversation {
   }
 
   /** Rebuild an in-memory runtime from a DB checkpoint (crash recovery). */
-  static fromSnapshot(raw: Record<string, unknown>): SupervisedConversation {
+  public static fromSnapshot(raw: Record<string, unknown>): SupervisedConversation {
     const conversationId = String(raw.conversationId ?? '');
     const providerCallId = String(raw.providerCallId ?? '');
     const flowId = String(raw.flowId ?? '');
@@ -183,6 +187,7 @@ export class SupervisedConversation {
       runtime.portalState = {
         activePortalId: ps.activePortalId ?? null,
         originNodeId: ps.originNodeId ?? null,
+        originListenExpectation: null,
         transferToHuman: {
           reengagementAttempts:
             ps.transferToHuman?.reengagementAttempts ?? 0,

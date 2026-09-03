@@ -39,7 +39,9 @@ When the caller must choose between product paths (appointment vs instant estima
 
 On unknown / off-path speech, tell the caller what you can help with **from this node’s real options** (“I can help with A, B, or C”), not a generic “sorry, try again.”
 
-Advertise the **same product intentions** the origin was listening for (with cheap `resolveIntention` when possible). Prefer those over `isContinue`. Continue silently resumes the origin — it must never speak “Okay, continuing.”
+Advertise the **same product intentions** the origin was listening for (with cheap `resolveIntention` when possible). Prefer those over `isContinue`. Continue silently resumes the origin — it must never speak “Okay, continuing.” or name the origin node.
+
+**Framework:** while the unknown portal is active, the next utterance is **consumed against the origin listen first** (same turn). Short answers like “ASAP” / “as soon as possible” must resolve on the origin ask — do not leave them to unknown’s Brain guess.
 
 ## Ghosting
 
@@ -50,3 +52,87 @@ Idle / still-there behavior is a portal concern. Keep the product happy path fre
 - Prefer short questions ending in one ask.
 - Confirmations should repeat **validated** values only (never raw ASR garbage).
 - Do not re-ask a settled consent flag later in the same Conversation.
+
+## Human-like UX (no implementation leakage)
+
+**Hard rule:** Everything the caller hears must sound like a human on a business phone call — not like a developer debugging a state machine.
+
+Forensics (node ids, transition reasons, event types, memory keys, analytics) belong in **logs, Postgres, Flow Studio, and operator UIs only**. They must **never** be spoken, paraphrased, or implied in assistant copy.
+
+### Flow chart layout (Flow Studio / docs)
+
+- **Main path:** left → right (conversation time flows forward).
+- **Lane branches:** stack vertically with space between nodes — no overlapping edges on node labels.
+- **Portal nodes:** separate row **below** the main path; dashed edges rise to the nodes they can interrupt.
+- **Edges behind nodes;** intention names in corridors between boxes, not on top of them.
+- **Spacing (hard minimums):** arrow corridors ≥ **2.0 × node width**; vertical gap between stacked nodes ≥ **1.5 × node height**. Intention labels must remain readable without overlapping boxes.
+- **Replay (future):** highlight visited nodes on a call; dim unvisited nodes with a semi-transparent overlay.
+
+Example apps (`/flow`) should follow this layout instead of a cramped vertical graph.
+
+### Never say aloud
+
+| Forbidden (examples) | Speak like this instead |
+| --- | --- |
+| “We were at `stillThere` / `routerTriage`.” | “Where were we — still working on your estimate?” (product language only) |
+| “Continuing where we left off.” (after resume / portal) | Silent `isContinue` — re-ask the **same product CTA** the origin had |
+| “I see you came from the identity node.” | “Let me confirm your details.” |
+| “That transition didn’t match.” / “force: need_sms_phone” | “I still need your mobile number for the text.” |
+| “I have analytics events showing…” / “our logs say…” | (never — operators read logs; callers don’t) |
+| Intention names: `isAcceptedFormSend`, `studio.isPause` | Plain English for the one CTA |
+| Class names: `IdentityCollectNode`, portal ids | Never |
+| “Your `memory.formSendConsent` is undefined.” | “Can I text you a short form for your details?” |
+
+### Product language vs graph language
+
+| OK (caller-facing) | Internal only (never spoken) |
+| --- | --- |
+| “roof estimate”, “appointment”, “text you a form” | `routerTriage`, `askSmsPhone`, `isRouterReady` |
+| “Are you still there?” (when the **still-there portal** owns the turn) | “stillThere portal attempt 2” |
+| “Let me connect you to someone.” | `transferToHuman`, `WORKFLOW_HANDOFF` |
+
+`listen()` **hints** and **note** fields, Brain `reason`, and `continueTo({ reason })` are for routing and forensics — **not** TTS.
+
+### Resume and portals
+
+- **No cross-call resume copy** in MVP (“pick up where we left off”, “we were just speaking”) unless product explicitly ships returning-caller UX — and even then, **never** cite node/module ids.
+- **Continue** after a portal exits silently: restore the origin listen and re-offer its **product** menu — not “okay, continuing” or “back to node X”.
+
+### Code review gate
+
+Before merging agent-step copy, ask: *“Could this sentence only make sense to someone reading `flow.yaml`?”* If yes, rewrite.
+
+See also [brain-and-prompt-injection.md](./brain-and-prompt-injection.md) (no spoken Brain/debug text) and [debugging-and-observability.md](./debugging-and-observability.md) (forensics are operator-only).
+
+## Personal treatment (names)
+
+Personal tone is good — using the caller’s first name can build trust. **Repeating the name in the same turn (or back-to-back turns) without a reason sounds robotic.**
+
+### Default rule
+
+- **At most one spoken use of the first name per assistant turn** — including across chained `say` + `continueTo` text in the same Supervisor pass.
+- **Do not stack name patterns** like “Thanks, {name}. … {name}, are you …?” in one breath.
+
+| Bad | Good |
+| --- | --- |
+| “Thanks, Mark. Mark, are you calling about an existing project?” | “Thanks — your details are confirmed.” → next turn: “Are you calling about an existing project, or a new one?” |
+| `say("Thanks, Mark.")` + `continueTo({ text: "Thanks, Mark." })` | One thanks line **or** silent `continueTo` — not both with the name |
+| Every router prompt prefixed with `{name}, ` | Name once after a milestone (confirm identity, book appointment); plain prompts after that until the next milestone |
+
+### When repeating the name is OK
+
+Use the name again only when there is a **clear conversational reason**, for example:
+
+- Re-engaging after a long pause or portal interrupt (“Mark — still with me?”).
+- Empathy on a sensitive turn (“I’m sorry about that, Mark.”).
+- Disambiguation in a multi-party scenario (rare on phone).
+
+If you cannot state the reason in one sentence, you probably do not need the name on that turn.
+
+### Implementation
+
+- Centralize copy helpers (e.g. `thanksWithFirstName`, `callerNamePrefix`) and **track whether the name was already spoken this segment** — do not sprinkle `` `${firstName}` `` in every node.
+- `continueTo({ text })` is spoken too: never duplicate a line the previous `say` already delivered.
+- Goodbye may use the name once; do not also use it in the sentence immediately before.
+
+See also [identity-and-pii.md](./identity-and-pii.md) (names in verify summaries).

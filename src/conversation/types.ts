@@ -1,3 +1,5 @@
+import type { ListenExpectation } from './listen-expectation';
+
 export type ConversationStatus = 'ACTIVE' | 'ENDED';
 
 export type SupervisedStatus = 'ACTIVE' | 'FINALIZING' | 'ENDED';
@@ -38,6 +40,13 @@ export interface StillTherePortalState {
 export interface PortalState {
   activePortalId?: string | null;
   originNodeId?: string | null;
+  /**
+   * Listen that was active when the portal opened (may include `sayAndListen`
+   * overrides). Used so unknown / Continue can re-consume the next utterance
+   * against the origin ask — not a fresh `origin.listen()` that drops overrides.
+   * In-memory only (callbacks); cleared on portal exit.
+   */
+  originListenExpectation?: ListenExpectation | null;
   transferToHuman: TransferPortalState;
   stillThere: StillTherePortalState;
 }

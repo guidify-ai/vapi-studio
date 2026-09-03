@@ -30,12 +30,13 @@ function sanitizeHeaders(
 
 @Injectable()
 export class ProviderIngressRepository {
-  constructor(
+  public constructor(
     @InjectRepository(ProviderIngressEntity)
     private readonly rows: Repository<ProviderIngressEntity>,
   ) {}
 
-  async record(input: {
+  public async record(input: {
+    projectId?: string | null;
     channel?: string;
     kind: string;
     providerCallId?: string | null;
@@ -48,6 +49,7 @@ export class ProviderIngressRepository {
     responseBody?: Record<string, unknown> | null;
   }): Promise<ProviderIngressEntity> {
     const row = this.rows.create({
+      projectId: input.projectId ?? null,
       channel: input.channel ?? 'vapi',
       kind: input.kind,
       providerCallId: input.providerCallId ?? null,
@@ -62,7 +64,7 @@ export class ProviderIngressRepository {
     return this.rows.save(row);
   }
 
-  async setResponse(
+  public async setResponse(
     id: string,
     responseStatus: number,
     responseBody?: Record<string, unknown> | null,

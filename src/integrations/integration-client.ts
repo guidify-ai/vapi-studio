@@ -80,9 +80,9 @@ async function parseBody(res: Response): Promise<unknown> {
  */
 @Injectable()
 export class IntegrationClient {
-  constructor(private readonly events: EventService) {}
+  public constructor(private readonly events: EventService) {}
 
-  async request<T = unknown>(
+  public async request<T = unknown>(
     input: IntegrationRequest,
   ): Promise<IntegrationResponse<T>> {
     const method = (input.method ?? 'POST').toUpperCase() as IntegrationHttpMethod;

@@ -40,6 +40,8 @@ import { ConversationEventEntity } from './persistence/conversation-event.entity
 import { ConversationRepository } from './persistence/conversation.repository';
 import { ProviderIngressEntity } from './persistence/provider-ingress.entity';
 import { ProviderIngressRepository } from './persistence/provider-ingress.repository';
+import { ProjectEntity } from './persistence/project.entity';
+import { ProjectRepository } from './persistence/project.repository';
 import { Supervisor } from './supervisor/supervisor';
 import { VapiSseCompiler } from './adapters/vapi/vapi-sse.compiler';
 import { WorkflowLoader } from './workflow/workflow-loader';
@@ -86,7 +88,7 @@ export interface Ra9ModuleOptions {
 
 @Module({})
 export class Ra9Module {
-  static forRoot(options: Ra9ModuleOptions): DynamicModule {
+  public static forRoot(options: Ra9ModuleOptions): DynamicModule {
     const nodeProviders: Provider[] = options.nodes.map((n) => n.useClass);
     const intentionDefs = options.intentions ?? [];
     const intentionProviders: Provider[] = intentionDefs.map((c) => c);
@@ -137,6 +139,7 @@ export class Ra9Module {
           ConversationEntity,
           ConversationEventEntity,
           ProviderIngressEntity,
+          ProjectEntity,
         ]),
       ],
       providers: [
@@ -155,6 +158,7 @@ export class Ra9Module {
         SupervisedConversationRegistry,
         ConversationRepository,
         ProviderIngressRepository,
+        ProjectRepository,
         PostgresEventListener,
         ...extraListeners,
         {
@@ -184,6 +188,7 @@ export class Ra9Module {
         SupervisedConversationRegistry,
         ConversationRepository,
         ProviderIngressRepository,
+        ProjectRepository,
         EventService,
         IntegrationClient,
         BrainUsageTracker,

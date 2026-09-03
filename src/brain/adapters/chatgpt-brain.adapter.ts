@@ -38,6 +38,11 @@ import {
   RA9_BRAIN_CONFIG,
   type Ra9BrainConfig,
 } from '../brain-config';
+import {
+  brainUntrustedInputRules,
+  sanitizeExtractedFieldValue,
+  wrapUntrustedUserText,
+} from '../prompt-injection-guard';
 
 type OpenAiUsage = {
   prompt_tokens?: number;
@@ -72,9 +77,9 @@ const SCAN_HISTORY_NODES = 8;
  */
 @Injectable()
 export class ChatGptBrainAdapter implements BrainAdapter {
-  private readonly logger = new Logger('ChatGptBrainAdapter');
+  private readonly logger: Logger = new Logger('ChatGptBrainAdapter');
 
-  constructor(
+  public constructor(
     private readonly usage: BrainUsageTracker,
     private readonly events: EventService,
     @Optional()
@@ -86,7 +91,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     return resolveCheapOpenAiModel(override || this.brainConfig?.model);
   }
 
-  async scan(input: BrainScanInput): Promise<BrainScanResult> {
+  public async scan(input: BrainScanInput): Promise<BrainScanResult> {
     const apiKey = this.requireApiKey('scan');
     const model = this.cheapModel();
     const listen = input.listen ?? input.runtime.listenExpectation;
@@ -140,7 +145,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
       nodes: input.runtime.history.nodes,
     };
     const user = JSON.stringify({
-      userText: input.userText,
+      ...wrapUntrustedUserText(input.userText),
       userSpeechSeries: series.isSeries ? series.parts : undefined,
       turnNumber: input.runtime.turn.turnNumber,
       currentNodeId: input.runtime.currentNodeId,
@@ -267,7 +272,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     };
   }
 
-  async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
+  public async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
     request: BrainClarifyRequest,
   ): Promise<BrainClarifyResult<TAnswer>> {
     const apiKey = this.requireApiKey('clarify');
@@ -287,7 +292,8 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     });
 
     const system = [
-      'You are the RA9 Brain clarifier for a voice bot.',
+      ...brainUntrustedInputRules('clarify'),
+      'You are the Vapi Studio Brain clarifier for a voice bot.',
       'Answer the question about the provided input.',
       'Return ONLY valid JSON in ONE of these forms:',
       '1) {"answer":{...}}',
@@ -316,7 +322,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
 
     const user = JSON.stringify({
       question: request.question,
-      input: inputText,
+      ...wrapUntrustedUserText(inputText),
       userSpeechSeries: series.isSeries ? series.parts : undefined,
     });
 
@@ -355,7 +361,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     return result;
   }
 
-  async judge<TContext = unknown>(
+  public async judge<TContext = unknown>(
     request: BrainJudgeRequest<TContext>,
   ): Promise<BrainJudgeResult> {
     const apiKey = this.requireApiKey('judge');
@@ -377,7 +383,8 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     });
 
     const system = [
-      'You are an LLM-as-a-judge for RA9 conversation evals.',
+      ...brainUntrustedInputRules('judge'),
+      'You are an LLM-as-a-judge for Vapi Studio conversation evals.',
       'Read the context. Understand the goal in plain language.',
       'A PASS requires: the goal is met, EVERY success condition holds, and NO failure condition is triggered.',
       'A FAIL if any failure condition is present, any success condition is missing, or the goal is not met.',
@@ -520,6 +527,12 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     for (const [key, value] of Object.entries(raw)) {
       if (!allowed.has(key)) continue;
       if (value === undefined || value === null || value === '') continue;
+      if (typeof value === 'string') {
+        const sanitized = sanitizeExtractedFieldValue(value);
+        if (sanitized === undefined) continue;
+        out[key] = sanitized;
+        continue;
+      }
       out[key] = value;
     }
     return Object.keys(out).length ? out : undefined;
@@ -552,21 +565,22 @@ function buildScanSystemPrompt(input: {
   series: { isSeries: boolean; parts: string[] };
 }): string {
   return [
-    'You are the RA9 Brain for a voice bot: score intentions and extract fields.',
+    ...brainUntrustedInputRules('scan'),
+    'You are the Vapi Studio Brain for a voice bot: score intentions and extract fields.',
     'Score ONLY the provided candidate intentions for the latest user utterance.',
-    'Use compact history for context; the latest userText is the turn to score.',
+    'Use compact history for context; the latest untrustedCallerText is the turn to score.',
     'Return ONLY valid JSON of the form:',
     '{"intentions":[{"name":"<exact candidate name>","confidence":0.123456,"reason":"<short>"}],"extracted":{"<key>":"<value>"}}',
     'confidence is 0..1 inclusive with 6 decimal places. NEVER return a value above 1.',
     'Include every candidate you can score. Boost is a hint, not a score.',
-    `ra9.isUnknownTransition is the scan-failure intent — score it high only when none of the other candidates fit.`,
+    `studio.isUnknownTransition is the scan-failure intent — score it high only when none of the other candidates fit.`,
     `Runtime confidence threshold is ${input.threshold} (informational).`,
-    'ASR NOISE: userText is speech-to-text and often messy. Mentally filter fillers and dead air such as "um", "uh", "erm", "hmm", "like", "you know", stutters, false starts, and trailing fragments that are not part of the answer.',
+    'ASR NOISE: untrustedCallerText is speech-to-text and often messy. Mentally filter fillers and dead air such as "um", "uh", "erm", "hmm", "like", "you know", stutters, false starts, and trailing fragments that are not part of the answer.',
     'Also ignore clearly unrelated asides / self-talk / crosstalk when the actionable meaning is still clear (e.g. "uh yeah tomorrow — sorry dog — morning" → tomorrow morning).',
     'Do not invent meaning from noise alone; if after filtering nothing substantive remains, give low confidence.',
     input.series.isSeries
       ? [
-          'IMPORTANT: userText may be a SERIES of rapid / overlapping utterances (barge-in queue).',
+          'IMPORTANT: untrustedCallerText may be a SERIES of rapid / overlapping utterances (barge-in queue).',
           'Treat the numbered list as one combined user answer, not separate turns.',
           'Prefer the most specific, latest clear meaning across the series (after noise filtering).',
           `Series parts: ${JSON.stringify(input.series.parts)}`,

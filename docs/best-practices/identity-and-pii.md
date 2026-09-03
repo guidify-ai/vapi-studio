@@ -28,6 +28,8 @@ Unless the app explicitly supports other regions:
 
 A person name is letters (and limited punctuation), not digits, not “hello”, not a full sentence. Reject and re-ask; never place digit strings into `firstName` / profile verify summaries (“I have 2 3 6 … on file”).
 
+**Spoken name frequency:** personal treatment is fine; saying the first name **more than once per turn** (or in consecutive sentences across `say` + `continueTo`) usually sounds wrong. At most one use per assistant turn unless there is an explicit reason (re-engage after silence, empathy, disambiguation). Prefer shared helpers and a “name already used this segment” flag — see [conversation-design.md](./conversation-design.md#personal-treatment-names).
+
 ## Email
 
 Prefer a real extract + spelled-email parser. Do not hardcode demo emails in production paths; PoC mocks belong behind clearly named constants and mock-only branches.

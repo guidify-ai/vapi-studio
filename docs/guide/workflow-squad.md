@@ -34,7 +34,7 @@ modules:
 
 ## URLs
 
-- `POST /vapi/:moduleId/chat/completions`
+- `POST /{projectUuid}/vapi/:moduleId/chat/completions`
 - Header `X-Vapi-Studio-Module` also accepted
 
 ## Vapi handoff tool

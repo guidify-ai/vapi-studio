@@ -14,25 +14,27 @@ yarn build
 ## 2. Create `projects/<name>/`
 
 ```bash
-mkdir -p projects/my-voice-app
-cd projects/my-voice-app
+# from repo root
+yarn new-project
+# or: yarn new-project --name "My Voice App" --slug my-voice-app --yes
+cd projects/<slug>
 ```
 
-Scaffold a NestJS app (or copy from an [example](./example-apps.md)).
+This writes a Nest skeleton plus **`config/project.identity.json`** (stable ingress UUID). Prefer that over hand-mkdir. You can still copy patterns from an [example](./example-apps.md).
 
-Minimum: `app.module.ts`, `main.ts`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
+Minimum: `app.module.ts`, `main.ts`, `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
 
 ## 3. Depend on Vapi Studio
 
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
 
-`file:..` points at the **repository root** (the framework package), not a sibling directory.
+`file:../..` points at the **repository root** (two levels up from `projects/<name>/`).
 
 ```bash
 yarn install
@@ -60,12 +62,25 @@ See [Vapi adapter](../guide/vapi-adapter.md) for contracts.
 
 ## 6. Run
 
+Local dev needs **Docker** and **[ngrok](https://ngrok.com/download)**. The app listens on `localhost`; ngrok publishes HTTPS so Vapi can POST webhooks and Custom LLM traffic.
+
 ```bash
 cd projects/my-voice-app
-docker compose up --build
+yarn start   # Docker + ngrok (see scripts/start.sh in example apps)
 ```
 
-(Or whatever run command your project defines.)
+Ship a `start` script in `package.json` that brings up Docker, waits for `/health`, starts **ngrok** on the app port, writes `PUBLIC_BASE_URL` to `.env`, and prints the two URLs your Vapi assistant needs:
+
+| Vapi assistant setting | Endpoint |
+| --- | --- |
+| **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
+| **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
+
+Each app owns a stable UUID in **`config/project.identity.json`**. `yarn start` / app boot **upserts** it into the Postgres `projects` table (create or exist). Do not regenerate the id after wiring Vapi.
+
+Example apps use `scripts/start.sh` → `docker compose up -d --build`, health checks, then ngrok on the app port. Callers should use **`yarn start`**, not raw `docker compose`.
+
+First time in the project: `yarn install` after you add the `file:../..` dependency.
 
 ## 7. Environment
 

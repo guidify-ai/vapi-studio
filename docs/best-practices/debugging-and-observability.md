@@ -2,6 +2,8 @@
 
 **Hard rule:** logs and persisted events must always be enough to answer any question about what happened on a call — without replaying the call or guessing.
 
+**Operator-only:** Event types (`ROUTE_DECISION`, `CONDITION_TRANSITION`, …), node ids, and memory keys exist for **you** and Studio UIs — the bot must never mention them to the caller. See [conversation-design.md](./conversation-design.md) § Human-like UX.
+
 If you change routing, listens, extracts, identity, or speech and cannot reconstruct the turn from `conversation_events` + daily file logs alone, the change is incomplete: add structured fields in the **same** work.
 
 ## Where forensics live
@@ -9,7 +11,7 @@ If you change routing, listens, extracts, identity, or speech and cannot reconst
 | Source | What it answers |
 | --- | --- |
 | `{LOG_DIR}/dailyYYYYMMDD.log` + console | Full turn stream: user text, condition transitions, Brain/listen resolve, `ROUTE_DECISION`, `NODE_*`, `SAY`, memory diffs |
-| `conversation_events` (Postgres via `emit`/`persist`) | Durable subset: lifecycle, `CONDITION_TRANSITION`, `FORM_SENDOUT`, `ROUTE_DECISION` / `ROUTE_FAILED`, `FLOW_CONTINUE`, app events (`PHONE_DIGITS_EVAL`, `FORM_LINK_READY`, caller CRM) |
+| `conversation_events` (Postgres via `emit`/`persist`) | Durable subset: lifecycle, `CONDITION_TRANSITION`, `FORM_SENDOUT`, `ROUTE_DECISION` / `ROUTE_FAILED`, `FLOW_CONTINUE`, app events (`PHONE_DIGITS_EVAL`, `FORM_LINK_READY`, caller CRM), funnel `ANALYTICS_TAG` |
 | `provider_ingress` | Raw Vapi webhook / Custom LLM bodies (ASR archaeology) |
 | `conversations.runtime_state` / `final_state` | Full memory checkpoint |
 
@@ -30,6 +32,10 @@ Before merging conversation/routing work, confirm logs can answer:
 ## App-owned events
 
 Apps should `ctx.events.persist(conversationId, TYPE, { … })` for domain decisions that framework routing does not cover (phone digit eval, form mock wait, CRM hydrate). Include `runtimeInstanceId`, `providerCallId`, `turnNumber`, and the raw + normalized inputs — never only the spoken apology text.
+
+For **admin funnel stats**, also stamp milestones with `persistAnalyticsTag` (or bind catalog steps to existing event types). Keep tag ids stable (`snake_case`); one project = one analytics page with top branches, outcomes, milestone funnels, and top tags.
+
+Ended calls should persist **`CONVERSATION_PATH`** (node signature) and **`CALL_OUTCOME`** (`success` / `failure` / `unknown` via Brain judge at teardown).
 
 ## Anti-patterns
 

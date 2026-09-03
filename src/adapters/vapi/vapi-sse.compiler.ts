@@ -213,14 +213,14 @@ export class VapiSseCompiler {
   private readonly id: string;
   private readonly tools: unknown;
 
-  constructor(opts?: { model?: string; id?: string; tools?: unknown }) {
+  public constructor(opts?: { model?: string; id?: string; tools?: unknown }) {
     this.model = opts?.model ?? 'ra9-poc';
     this.id = opts?.id ?? `chatcmpl-${Date.now()}`;
     this.tools = opts?.tools;
   }
 
   /** Replay prior assistant utterances onto this SSE (coalesced waiter). */
-  replayAssistantSpeech(writer: VapiStreamWriter, texts: string[]): void {
+  public replayAssistantSpeech(writer: VapiStreamWriter, texts: string[]): void {
     const spoken = texts.map((t) => t.trim()).filter(Boolean);
     if (spoken.length === 0) {
       this.writeAssistantText(writer, '');
@@ -231,7 +231,7 @@ export class VapiSseCompiler {
     }
   }
 
-  writeAssistantText(writer: VapiStreamWriter, text: string): void {
+  public writeAssistantText(writer: VapiStreamWriter, text: string): void {
     writer.write(
       sseData({
         id: this.id,
@@ -249,7 +249,7 @@ export class VapiSseCompiler {
     );
   }
 
-  writeToolCall(
+  public writeToolCall(
     writer: VapiStreamWriter,
     name: string,
     args: Record<string, unknown>,
@@ -330,7 +330,7 @@ export class VapiSseCompiler {
   }
 
   /** Close stream after normal speech (no tool call). */
-  finish(writer: VapiStreamWriter): void {
+  public finish(writer: VapiStreamWriter): void {
     writer.write(
       sseData({
         id: this.id,
@@ -345,12 +345,12 @@ export class VapiSseCompiler {
   }
 
   /** Close stream after a tool call — do not emit finish_reason=stop. */
-  finishAfterToolCalls(writer: VapiStreamWriter): void {
+  public finishAfterToolCalls(writer: VapiStreamWriter): void {
     writer.write('data: [DONE]\n\n');
     writer.end();
   }
 
-  async streamTerminalActions(
+  public async streamTerminalActions(
     writer: VapiStreamWriter,
     actions: OutputAction[],
   ): Promise<{ emittedTools: string[] }> {

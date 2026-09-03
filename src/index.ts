@@ -22,11 +22,17 @@ export {
   Ra9Intention as CodeIntention,
   intentionContextFromRuntime,
   RA9_INTENTION_REGISTRY,
+  INTENTION_CASCADE_PHASE,
+  INTENTION_RUN_KIND,
+  ROUTE_RESOLVED_VIA,
+  DEFAULT_FORCE_INTENTION_PRIORITY,
 } from './intention/ra9-intention';
 export type {
   IntentionCascadePhase,
   IntentionContext,
   IntentionRunResult,
+  IntentionRunKind,
+  RouteResolvedVia,
   Ra9IntentionRegistry,
 } from './intention/ra9-intention';
 
@@ -208,6 +214,14 @@ export type {
 } from './brain/brain-ranking';
 
 export {
+  brainUntrustedInputRules,
+  looksLikePromptInjection,
+  sanitizeExtractedFieldValue,
+  wrapUntrustedUserText,
+  MAX_EXTRACTED_STRING_LENGTH,
+} from './brain/prompt-injection-guard';
+
+export {
   applyListenBoosts,
   mergeSayAndListenOptions,
   missingRequiredExtractKeys,
@@ -274,8 +288,18 @@ export { ConversationEntity } from './persistence/conversation.entity';
 export { ConversationEventEntity } from './persistence/conversation-event.entity';
 export { ConversationRepository, extractCallerIdFromBags } from './persistence/conversation.repository';
 export type { ResumableConversation } from './persistence/conversation.repository';
+export {
+  ANALYTICS_TAG_EVENT,
+} from './analytics/analytics-tags';
+export type {
+  AnalyticsTagPayload,
+  AnalyticsFunnelStep,
+  AnalyticsFunnelDefinition,
+} from './analytics/analytics-tags';
 export { ProviderIngressEntity } from './persistence/provider-ingress.entity';
 export { ProviderIngressRepository } from './persistence/provider-ingress.repository';
+export { ProjectEntity } from './persistence/project.entity';
+export { ProjectRepository } from './persistence/project.repository';
 
 export { IntegrationClient } from './integrations/integration-client';
 export type {

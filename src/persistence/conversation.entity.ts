@@ -8,19 +8,26 @@ import {
 import type { ConversationStatus } from '../conversation/types';
 
 @Entity({ name: 'conversations' })
+@Index('uq_conversations_project_provider_call', ['projectId', 'providerCallId'], {
+  unique: true,
+})
 export class ConversationEntity {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  public id!: string;
+
+  /** Owning project (ingress UUID). */
+  @Index()
+  @Column({ name: 'project_id', type: 'uuid' })
+  public projectId!: string;
 
   @Column({ type: 'varchar', length: 64, default: 'vapi' })
-  provider!: string;
+  public provider!: string;
 
-  @Index({ unique: true })
   @Column({ name: 'provider_call_id', type: 'varchar', length: 128 })
-  providerCallId!: string;
+  public providerCallId!: string;
 
   @Column({ type: 'varchar', length: 32, default: 'ACTIVE' })
-  status!: ConversationStatus;
+  public status!: ConversationStatus;
 
   /**
    * Stable caller key for cross-call resume (phone ANI or Studio cookie).
@@ -33,7 +40,7 @@ export class ConversationEntity {
     length: 128,
     nullable: true,
   })
-  callerId!: string | null;
+  public callerId!: string | null;
 
   @Column({
     name: 'runtime_instance_id',
@@ -41,16 +48,16 @@ export class ConversationEntity {
     length: 64,
     nullable: true,
   })
-  runtimeInstanceId!: string | null;
+  public runtimeInstanceId!: string | null;
 
   @Column({ type: 'jsonb', default: {} })
-  metadata!: Record<string, unknown>;
+  public metadata!: Record<string, unknown>;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  public createdAt!: Date;
 
   @Column({ name: 'ended_at', type: 'timestamptz', nullable: true })
-  endedAt!: Date | null;
+  public endedAt!: Date | null;
 
   /** Bumped on every checkpoint / finalize — drives the resume window. */
   @Index()
@@ -59,15 +66,15 @@ export class ConversationEntity {
     type: 'timestamptz',
     nullable: true,
   })
-  lastActivityAt!: Date | null;
+  public lastActivityAt!: Date | null;
 
   /**
    * Latest durable SupervisedConversation snapshot while ACTIVE (crash recovery).
    * Updated after each Supervisor turn. Cleared / superseded by finalState on end.
    */
   @Column({ name: 'runtime_state', type: 'jsonb', nullable: true })
-  runtimeState!: Record<string, unknown> | null;
+  public runtimeState!: Record<string, unknown> | null;
 
   @Column({ name: 'final_state', type: 'jsonb', nullable: true })
-  finalState!: Record<string, unknown> | null;
+  public finalState!: Record<string, unknown> | null;
 }

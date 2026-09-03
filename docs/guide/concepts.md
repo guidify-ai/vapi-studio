@@ -64,7 +64,7 @@ Named signals routing the supervisor:
 
 - **Standard** — `studio.isGoodbye`, `studio.isTransferToHuman`, `studio.isStillThere`, …
 - **App** — `isAcceptedAppointment`, `isDidNotReceiveForm`, …
-- **Code intention classes** — `phase: 'force' | 'match' | 'scan'` (see handbook)
+- **Code intention classes** — `INTENTION_CASCADE_PHASE` (`Force` \| `Match` \| `Scan`; see handbook)
 
 ## Brain
 
@@ -87,10 +87,12 @@ Vapi Custom LLM and webhooks translate wire format ↔ Vapi Studio I/O.
 
 `EventService` emits and persists forensic events. Logs must explain **why** a turn routed. See [Events & logging](../reference/events-and-logging.md).
 
-## Resume & recovery
+## Resume & recovery (post-MVP)
 
-- **Cross-call resume** — same caller within ~10 minutes may continue prior conversation (`ConversationResumeService`)
-- **Crash recovery** — `restoreAllActive()` reloads ACTIVE rows with `runtime_state` on boot (single-process PoC; not multi-node failover)
+Framework ships optional helpers; **MVP apps start fresh each call** unless you explicitly opt in:
+
+- **Cross-call resume** — `ConversationResumeService` (same caller within ~10 minutes)
+- **Crash recovery** — `restoreAllActive()` on process boot (single-process; not multi-node failover)
 
 ## Workflows (optional)
 

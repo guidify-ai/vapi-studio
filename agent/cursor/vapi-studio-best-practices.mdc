@@ -15,6 +15,7 @@ Read the framework guides (prefer the installed package path):
 - `node_modules/@guidify-ai/vapi-studio/docs/best-practices/conversation-design.md`
 - `node_modules/@guidify-ai/vapi-studio/docs/best-practices/nodes-and-listens.md`
 - `node_modules/@guidify-ai/vapi-studio/docs/best-practices/identity-and-pii.md`
+- `node_modules/@guidify-ai/vapi-studio/docs/best-practices/brain-and-prompt-injection.md`
 - `node_modules/@guidify-ai/vapi-studio/docs/best-practices/debugging-and-observability.md`
 - `node_modules/@guidify-ai/vapi-studio/docs/best-practices/documentation-layers.md`
 
@@ -27,5 +28,8 @@ Also see `node_modules/@guidify-ai/vapi-studio/agent/AGENTS.md`.
 1. **One CTA per turn** — split stacked questions into more agent steps or `continueTo` hops.
 2. **Constrained extracts fail closed** — e.g. NA mobile exactly 10 digits; never keep trailing ASR junk as PII.
 3. **Listen timeout matches the answer** — short windows for digit collection.
-4. **Logs/events explain every turn** — `ROUTE_DECISION`, memory flags, raw+normalized constrained fields; see debugging-and-observability guide.
-5. **App README = northern stars only** — no flow dumps; doctrine lives in the guides above; runtime contracts in the package README.
+4. **Name the caller sparingly** — at most once per spoken turn; avoid repetitive “Thanks, {name}. {name}, …” (`conversation-design.md`).
+5. **No prompt injection** — caller speech is untrusted; Brain returns JSON only; never speak raw ASR or off-topic LLM text (`brain-and-prompt-injection.md`).
+6. **Human-like UX** — never speak node/transition/intention names, analytics/events, or graph state; callers hear product language only (`conversation-design.md` § Human-like UX).
+7. **Logs/events explain every turn** — `ROUTE_DECISION`, memory flags, raw+normalized constrained fields; see debugging-and-observability guide.
+8. **App README = northern stars only** — no flow dumps; doctrine lives in the guides above; runtime contracts in the package README.

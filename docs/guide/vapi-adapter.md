@@ -6,13 +6,15 @@ How Vapi Studio compiles node output for Vapi Custom LLM and webhooks.
 
 Typical PoC routes:
 
-| Method | Path | Role |
+| Method | Path | Vapi assistant field |
 | --- | --- | --- |
-| `POST` | `/vapi/webhook` | Server URL — assistant-request, status-update, tool-calls |
-| `POST` | `/vapi/chat/completions` | Custom LLM SSE (single assistant) |
-| `POST` | `/vapi/:moduleId/chat/completions` | Per-module URL when Squad workflow loaded |
+| `POST` | `/{projectUuid}/vapi/webhook` | **Webhook** — assistant-request, status-update, tool-calls |
+| `POST` | `/{projectUuid}/vapi/chat/completions` | **Conversation** (Custom LLM SSE, single assistant) |
+| `POST` | `/{projectUuid}/vapi/:moduleId/chat/completions` | **Conversation** per Squad module when workflow loaded |
 
 See [Creating an app](../building-apps/creating-an-app.md) for route patterns in your NestJS app.
+
+**Project routing:** the leading `{projectUuid}` is the app’s durable project id (DB `projects.id`, env `PROJECT_UUID`). Unknown UUIDs return **404**. Vapi `assistantId` is forensics only — not used to pick the project.
 
 ## Correlation
 

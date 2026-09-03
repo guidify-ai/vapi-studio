@@ -10,7 +10,7 @@ A NestJS module that provides:
 - **Nodes** — `AgentNode` subclasses with `before` → `listen` → `run` → `after` → `catch`
 - **Flow YAML** — start node, intentions, portals, condition transitions
 - **Brain port** — mock, OpenAI, or your HTTP adapter for intention scan
-- **Output port** — `say`, `sayAndListen`, `endCall`, `transferToHuman`, `handoff`, `continueTo`, `toolCall`, forms
+- **Output port** — `say`, `sayAndListen`, `endCall`, `transferToHuman`, `handoff`, `continueTo`, `invokeAdvertisedTool`, forms
 - **Vapi adapter** — OpenAI-compatible Custom LLM SSE + webhook helpers
 - **Events & logs** — call forensics (`ROUTE_DECISION`, form sendout, daily files)
 

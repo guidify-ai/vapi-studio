@@ -11,10 +11,10 @@ import type {
  */
 @Injectable()
 export class NoopFormDisposeAdapter implements FormDisposeAdapter {
-  readonly id = 'noop';
-  readonly branch = 'unavailable';
+  public readonly id: "noop" = 'noop';
+  public readonly branch: "unavailable" = 'unavailable';
 
-  async dispose(_payload: FormDisposePayload): Promise<void> {
+  public async dispose(_payload: FormDisposePayload): Promise<void> {
     // Intentionally no-op: nothing to show; ACK will never arrive.
   }
 }

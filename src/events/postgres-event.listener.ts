@@ -8,9 +8,9 @@ import type { Ra9Event, Ra9EventListener } from './ra9-event';
  */
 @Injectable()
 export class PostgresEventListener implements Ra9EventListener {
-  constructor(private readonly conversations: ConversationRepository) {}
+  public constructor(private readonly conversations: ConversationRepository) {}
 
-  async handle(event: Ra9Event): Promise<void> {
+  public async handle(event: Ra9Event): Promise<void> {
     if (!event.conversationId) {
       return;
     }

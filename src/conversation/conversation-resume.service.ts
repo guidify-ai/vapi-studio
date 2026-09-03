@@ -46,7 +46,7 @@ export interface ResumePeekResult {
  */
 @Injectable()
 export class ConversationResumeService {
-  constructor(
+  public constructor(
     private readonly conversations: ConversationRepository,
     private readonly events: EventService,
     private readonly registry: SupervisedConversationRegistry,
@@ -54,7 +54,7 @@ export class ConversationResumeService {
     private readonly brainUsage: BrainUsageTracker,
   ) {}
 
-  async peek(input: {
+  public async peek(input: {
     callerId: string;
     excludeConversationId: string;
     withinMs?: number;
@@ -87,7 +87,7 @@ export class ConversationResumeService {
     };
   }
 
-  async applyCloneByConversationId(
+  public async applyCloneByConversationId(
     runtime: SupervisedConversation,
     priorConversationId: string,
   ): Promise<boolean> {
@@ -108,7 +108,7 @@ export class ConversationResumeService {
     return true;
   }
 
-  async applyClone(
+  public async applyClone(
     runtime: SupervisedConversation,
     prior: ResumableConversation,
   ): Promise<void> {
@@ -148,6 +148,7 @@ export class ConversationResumeService {
       runtime.portalState = {
         activePortalId: ps.activePortalId ?? null,
         originNodeId: ps.originNodeId ?? null,
+        originListenExpectation: null,
         transferToHuman: {
           reengagementAttempts:
             ps.transferToHuman?.reengagementAttempts ?? 0,

@@ -3,23 +3,23 @@ import { SupervisedConversation } from './supervised-conversation';
 
 @Injectable()
 export class SupervisedConversationRegistry {
-  private readonly byProviderCallId = new Map<string, SupervisedConversation>();
-  private readonly byConversationId = new Map<string, SupervisedConversation>();
+  private readonly byProviderCallId: Map<string, SupervisedConversation> = new Map<string, SupervisedConversation>();
+  private readonly byConversationId: Map<string, SupervisedConversation> = new Map<string, SupervisedConversation>();
 
-  set(runtime: SupervisedConversation): void {
+  public set(runtime: SupervisedConversation): void {
     this.byProviderCallId.set(runtime.providerCallId, runtime);
     this.byConversationId.set(runtime.conversationId, runtime);
   }
 
-  getByProviderCallId(providerCallId: string): SupervisedConversation | undefined {
+  public getByProviderCallId(providerCallId: string): SupervisedConversation | undefined {
     return this.byProviderCallId.get(providerCallId);
   }
 
-  getByConversationId(conversationId: string): SupervisedConversation | undefined {
+  public getByConversationId(conversationId: string): SupervisedConversation | undefined {
     return this.byConversationId.get(conversationId);
   }
 
-  delete(providerCallId: string): void {
+  public delete(providerCallId: string): void {
     const runtime = this.byProviderCallId.get(providerCallId);
     if (!runtime) {
       return;
@@ -28,16 +28,16 @@ export class SupervisedConversationRegistry {
     this.byConversationId.delete(runtime.conversationId);
   }
 
-  has(providerCallId: string): boolean {
+  public has(providerCallId: string): boolean {
     return this.byProviderCallId.has(providerCallId);
   }
 
-  size(): number {
+  public size(): number {
     return this.byProviderCallId.size;
   }
 
   /** All live runtimes (crash restore / disaster status). */
-  list(): SupervisedConversation[] {
+  public list(): SupervisedConversation[] {
     return [...this.byProviderCallId.values()];
   }
 }

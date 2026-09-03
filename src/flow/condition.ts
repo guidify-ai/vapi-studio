@@ -132,10 +132,10 @@ function tokenize(input: string): Tok[] {
 }
 
 class Parser {
-  private i = 0;
-  constructor(private readonly toks: Tok[]) {}
+  private i: number = 0;
+  public constructor(private readonly toks: Tok[]) {}
 
-  parse(): (ctx: ConditionContext) => boolean {
+  public parse(): (ctx: ConditionContext) => boolean {
     const fn = this.parseOr();
     if (this.i < this.toks.length) {
       throw new Error('Trailing tokens in condition');

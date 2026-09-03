@@ -35,7 +35,7 @@ NestJS apps under **`projects/`** in the same clone.
 | --- | --- |
 | [Projects folder](../projects/README.md) | Where your bots live |
 | [Overview](./building-apps/overview.md) | Framework vs `projects/<app>` boundaries |
-| [Creating an app](./building-apps/creating-an-app.md) | Scaffold, depend (`file:..`), run |
+| [Creating an app](./building-apps/creating-an-app.md) | Scaffold, depend (`file:../..`), run |
 | [Example apps](./building-apps/example-apps.md) | Patterns to copy into `projects/` |
 
 ## Best practices

@@ -46,9 +46,9 @@ interface UsageBucket {
  */
 @Injectable()
 export class BrainUsageTracker {
-  private readonly byCall = new Map<string, UsageBucket>();
+  private readonly byCall: Map<string, UsageBucket> = new Map<string, UsageBucket>();
 
-  beginCall(providerCallId: string, conversationId?: string): void {
+  public beginCall(providerCallId: string, conversationId?: string): void {
     if (!providerCallId) return;
     const existing = this.byCall.get(providerCallId);
     if (existing) {
@@ -62,7 +62,7 @@ export class BrainUsageTracker {
     });
   }
 
-  record(input: {
+  public record(input: {
     providerCallId: string;
     conversationId?: string;
     kind: BrainCallKind;
@@ -94,7 +94,7 @@ export class BrainUsageTracker {
     return record;
   }
 
-  summary(providerCallId: string): BrainUsageSummary | null {
+  public summary(providerCallId: string): BrainUsageSummary | null {
     const bucket = this.byCall.get(providerCallId);
     if (!bucket) return null;
     const byModel: BrainUsageSummary['byModel'] = {};
@@ -131,13 +131,13 @@ export class BrainUsageTracker {
   }
 
   /** Format a short money line for console / logs. */
-  formatMoney(usd: number): string {
+  public formatMoney(usd: number): string {
     if (usd <= 0) return '$0.000000';
     if (usd < 0.01) return `$${usd.toFixed(6)}`;
     return `$${usd.toFixed(4)}`;
   }
 
-  clear(providerCallId: string): void {
+  public clear(providerCallId: string): void {
     this.byCall.delete(providerCallId);
   }
 }

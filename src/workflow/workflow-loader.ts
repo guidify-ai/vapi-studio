@@ -48,12 +48,12 @@ interface RawWorkflowFile {
 export class WorkflowLoader {
   private workflow: WorkflowDefinition | null = null;
 
-  loadFromFile(path: string): WorkflowDefinition {
+  public loadFromFile(path: string): WorkflowDefinition {
     const raw = parseYaml(readFileSync(path, 'utf8')) as RawWorkflowFile;
     return this.loadFromObject(raw);
   }
 
-  loadFromObject(raw: RawWorkflowFile): WorkflowDefinition {
+  public loadFromObject(raw: RawWorkflowFile): WorkflowDefinition {
     if (!raw?.workflow?.id || !raw?.workflow?.entryModule || !raw?.modules) {
       throw new Error('Invalid workflow schema object');
     }
@@ -89,18 +89,18 @@ export class WorkflowLoader {
     return this.workflow;
   }
 
-  getWorkflow(): WorkflowDefinition {
+  public getWorkflow(): WorkflowDefinition {
     if (!this.workflow) {
       throw new Error('Workflow not loaded');
     }
     return this.workflow;
   }
 
-  hasWorkflow(): boolean {
+  public hasWorkflow(): boolean {
     return this.workflow !== null;
   }
 
-  getModule(moduleId: string): WorkflowModuleDefinition {
+  public getModule(moduleId: string): WorkflowModuleDefinition {
     const wf = this.getWorkflow();
     const mod = wf.modules[moduleId];
     if (!mod) {
@@ -109,12 +109,12 @@ export class WorkflowLoader {
     return mod;
   }
 
-  resolveAssistantName(moduleId: string): string {
+  public resolveAssistantName(moduleId: string): string {
     return this.getModule(moduleId).assistantName;
   }
 
   /** Map Vapi assistantName → module id (first match). */
-  findModuleIdByAssistantName(assistantName: string): string | null {
+  public findModuleIdByAssistantName(assistantName: string): string | null {
     if (!this.workflow) return null;
     const needle = assistantName.trim();
     for (const mod of Object.values(this.workflow.modules)) {

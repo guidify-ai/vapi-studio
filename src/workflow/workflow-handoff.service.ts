@@ -13,14 +13,14 @@ import { ConversationBootstrapService } from '../conversation/conversation-boots
  */
 @Injectable()
 export class WorkflowHandoffService {
-  constructor(
+  public constructor(
     private readonly workflows: WorkflowLoader,
     private readonly flows: FlowLoader,
     private readonly events: EventService,
     private readonly bootstrap: ConversationBootstrapService,
   ) {}
 
-  configDir(): string {
+  public configDir(): string {
     return process.env.CONFIG_DIR ?? join(process.cwd(), 'config');
   }
 
@@ -28,7 +28,7 @@ export class WorkflowHandoffService {
    * Enrich handoff actions with Vapi assistantName; apply in-memory module
    * switches and same-flow continueTo jumps. Returns the (possibly enriched) actions.
    */
-  async applyHandoffs(
+  public async applyHandoffs(
     runtime: SupervisedConversation,
     actions: OutputAction[],
   ): Promise<OutputAction[]> {
@@ -136,7 +136,7 @@ export class WorkflowHandoffService {
   }
 
   /** Load entry module flow for a new Conversation. */
-  activateEntryModule(runtime: SupervisedConversation): void {
+  public activateEntryModule(runtime: SupervisedConversation): void {
     if (!this.workflows.hasWorkflow()) return;
     const wf = this.workflows.getWorkflow();
     const mod = this.workflows.getModule(wf.entryModuleId);
@@ -148,7 +148,7 @@ export class WorkflowHandoffService {
   }
 
   /** Ensure the flow for the runtime's active module is loaded. */
-  ensureActiveFlow(runtime: SupervisedConversation): void {
+  public ensureActiveFlow(runtime: SupervisedConversation): void {
     if (!this.workflows.hasWorkflow()) return;
     const moduleId =
       typeof runtime.metadata.activeModuleId === 'string'

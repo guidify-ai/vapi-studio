@@ -55,11 +55,11 @@ export const RA9_CLARIFY_CANNOT_ANSWER = 'ra9.clarify.cannotAnswer' as const;
  * Catch this in Node.run / Node.catch to recover (restartNode, forceIntention, …).
  */
 export class ClarifyCannotAnswerError extends Error {
-  readonly code = RA9_CLARIFY_CANNOT_ANSWER;
-  readonly reason?: string;
-  readonly details?: Record<string, unknown>;
+  public readonly code: "ra9.clarify.cannotAnswer" = RA9_CLARIFY_CANNOT_ANSWER;
+  public readonly reason?: string;
+  public readonly details?: Record<string, unknown>;
 
-  constructor(reason?: string, details?: Record<string, unknown>) {
+  public constructor(reason?: string, details?: Record<string, unknown>) {
     super(
       reason
         ? `${RA9_CLARIFY_CANNOT_ANSWER}: ${reason}`

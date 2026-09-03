@@ -10,7 +10,7 @@ Examples are **NestJS projects under `projects/`** — same clone as the framewo
 // projects/<example>/package.json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
@@ -20,7 +20,7 @@ Examples are **NestJS projects under `projects/`** — same clone as the framewo
 - `VapiStudioModule.forRoot` wiring
 - Vapi webhook + Custom LLM controller shape
 - `flow.yaml` structure and portal nodes
-- Docker + ngrok operator loop (if using Vapi)
+- Docker + **ngrok** local dev loop — `yarn start` tunnels localhost to HTTPS and prints Webhook + Conversation URLs for Vapi
 
 ## What stays in the framework
 

@@ -6,7 +6,7 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Intention } from '../dist/intention/ra9-intention.js';
+import { Ra9Intention, INTENTION_CASCADE_PHASE, DEFAULT_FORCE_INTENTION_PRIORITY } from '../dist/intention/ra9-intention.js';
 import { Ra9Node } from '../dist/node/ra9-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 
@@ -30,9 +30,9 @@ class PhoneNode extends Ra9Node {
 
 class NeedPhoneIntention extends Ra9Intention {
   name = 'isNeedSmsPhone';
-  phase = 'force';
+  phase = INTENTION_CASCADE_PHASE.Force;
   toNodeId = 'askSmsPhone';
-  priority = 1_000_000;
+  priority = DEFAULT_FORCE_INTENTION_PRIORITY;
   reason = 'need_sms_phone';
 
   async before(ctx) {

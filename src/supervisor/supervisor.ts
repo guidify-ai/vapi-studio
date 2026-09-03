@@ -49,6 +49,9 @@ import {
 import {
   RA9_INTENTION_REGISTRY,
   intentionContextFromRuntime,
+  INTENTION_CASCADE_PHASE,
+  INTENTION_RUN_KIND,
+  ROUTE_RESOLVED_VIA,
   type Ra9Intention,
   type Ra9IntentionRegistry,
 } from '../intention/ra9-intention';
@@ -87,7 +90,7 @@ export interface TurnExecutionResult {
 
 @Injectable()
 export class Supervisor {
-  constructor(
+  public constructor(
     @Inject(BRAIN_SERVICE) private readonly brain: BrainService,
     private readonly flowLoader: FlowLoader,
     @Inject(RA9_NODE_REGISTRY) private readonly nodes: Ra9NodeRegistry,
@@ -103,7 +106,7 @@ export class Supervisor {
     private readonly intentions?: Ra9IntentionRegistry,
   ) {}
 
-  async handleTurn(input: {
+  public async handleTurn(input: {
     runtime: SupervisedConversation;
     userText: string;
     /** Channel tool results from this Custom LLM request (`role:tool`). */
@@ -290,7 +293,7 @@ export class Supervisor {
           output,
           ranked,
           forceHop: 0,
-          resolvedVia: 'condition_force',
+          resolvedVia: ROUTE_RESOLVED_VIA.ConditionForce,
           allowMiss: true,
         });
         if (routed) {
@@ -316,6 +319,37 @@ export class Supervisor {
           tried: forced.map((t) => t.id),
           note: 'force transitions matched when but every before() refused; falling through cascade',
         });
+      }
+    }
+
+    /**
+     * Unknown portal: consume the restatement against the origin listen first
+     * (Continue-style). Prevents unknown’s thin candidate list from stealing
+     * the turn to the wrong happy-path node.
+     */
+    if (this.isUnknownPortalActive(runtime) && userText.trim()) {
+      const output = new BufferedConversationOutput(recordSay);
+      const consumed = await this.tryUnknownOriginConsume({
+        runtime,
+        userText,
+        output,
+        forceHop: 0,
+      });
+      if (consumed) {
+        this.stampPendingToolNode(
+          runtime,
+          consumed.result,
+          consumed.selectedNodeId,
+        );
+        return {
+          runtime,
+          intentionNames: consumed.intentionNames,
+          selectedNodeId: consumed.selectedNodeId,
+          selectedClass: consumed.selectedClass,
+          result: consumed.result,
+          actions: output.actions,
+          portalOriginRestored: consumed.portalOriginRestored,
+        };
       }
     }
 
@@ -356,7 +390,9 @@ export class Supervisor {
               {
                 name: resolvedName,
                 confidence: matchResolved?.confidence ?? 1,
-                reason: matchResolved ? 'intention_match' : 'listen_resolve',
+                reason: matchResolved
+                  ? ROUTE_RESOLVED_VIA.IntentionMatch
+                  : ROUTE_RESOLVED_VIA.ListenResolve,
               },
             ],
             candidates,
@@ -384,7 +420,9 @@ export class Supervisor {
           turnNumber: runtime.turn.turnNumber,
           intention: resolvedName,
           userText,
-          via: matchResolved ? 'intention_match' : 'listen_resolve',
+          via: matchResolved
+            ? ROUTE_RESOLVED_VIA.IntentionMatch
+            : ROUTE_RESOLVED_VIA.ListenResolve,
           confidence: matchResolved?.confidence ?? 1,
         },
       );
@@ -497,10 +535,10 @@ export class Supervisor {
       ranked: mergedRanked,
       forceHop: 0,
       resolvedVia: matchResolved
-        ? 'intention_match'
+        ? ROUTE_RESOLVED_VIA.IntentionMatch
         : resolvedName
-          ? 'listen_resolve'
-          : 'brain',
+          ? ROUTE_RESOLVED_VIA.ListenResolve
+          : ROUTE_RESOLVED_VIA.Brain,
       confidenceThreshold,
       activeListen,
     });
@@ -818,6 +856,34 @@ export class Supervisor {
           continue;
         }
 
+        // Idle still-there is forceIntention-only (channel timer). Do not let Brain
+        // promote “hey?” / filler into the still-there portal mid-flow.
+        if (
+          intentionName === STANDARD_INTENTIONS.isStillThere &&
+          runtime.portalState.activePortalId !== 'stillThere' &&
+          resolvedVia !== ROUTE_RESOLVED_VIA.ForceIntention
+        ) {
+          rejected.push({
+            nodeId: candidate.id,
+            class: candidate.class,
+            intention: intentionName,
+            reason: 'still_there_requires_force',
+            confidence: scored.confidence,
+            priority: scored.priority,
+          });
+          this.events.log('info', 'NODE_REJECT', {
+            conversationId: runtime.conversationId,
+            runtimeInstanceId: runtime.runtimeInstanceId,
+            nodeId: candidate.id,
+            class: candidate.class,
+            intention: intentionName,
+            confidence: scored.confidence,
+            priority: scored.priority,
+            reason: 'still_there_requires_force',
+          });
+          continue;
+        }
+
         const ctx = nodeContextFromRuntime({
           runtime,
           userText,
@@ -871,7 +937,7 @@ export class Supervisor {
           await this.emitRouteDecision({
             runtime,
             userText,
-            resolvedVia: resolvedVia ?? 'continue',
+            resolvedVia: resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
             confidenceThreshold,
             activeListen,
             ranked,
@@ -884,6 +950,34 @@ export class Supervisor {
             output,
             forceHop: forceHop + 1,
             fromNodeId: candidate.id,
+          });
+        }
+
+        // Still-there “yes / still here” → silent origin resume (same as Continue).
+        if (
+          this.isStillThereNode(candidate) &&
+          runtime.portalState.activePortalId === candidate.id &&
+          (intentionName === STANDARD_INTENTIONS.isPositive ||
+            intentionName === 'isContinue')
+        ) {
+          runtime.portalState.stillThere.attempts = 0;
+          await this.emitRouteDecision({
+            runtime,
+            userText,
+            resolvedVia: resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
+            confidenceThreshold,
+            activeListen,
+            ranked,
+            rejected,
+            winner: { ...winner, class: `${winner.class}→continue_replay` },
+          });
+          return this.replayOriginAfterContinue({
+            runtime,
+            userText,
+            output,
+            forceHop: forceHop + 1,
+            fromNodeId: candidate.id,
+            resolvedVia: ROUTE_RESOLVED_VIA.Continue,
           });
         }
 
@@ -947,7 +1041,7 @@ export class Supervisor {
               },
             ],
             forceHop: forceHop + 1,
-            resolvedVia: 'force_intention',
+            resolvedVia: ROUTE_RESOLVED_VIA.ForceIntention,
             confidenceThreshold,
             activeListen: runtime.listenExpectation,
           });
@@ -965,7 +1059,7 @@ export class Supervisor {
     await this.emitRouteDecision({
       runtime,
       userText,
-      resolvedVia: resolvedVia ?? 'brain',
+      resolvedVia: resolvedVia ?? ROUTE_RESOLVED_VIA.Brain,
       confidenceThreshold,
       activeListen,
       ranked,
@@ -979,7 +1073,7 @@ export class Supervisor {
     // Brain/listen picked something every Node refused (before_false) — never 500
     // the channel. Recover through the unknown-transition portal once.
     if (
-      resolvedVia !== 'route_fallback_unknown' &&
+      resolvedVia !== ROUTE_RESOLVED_VIA.RouteFallbackUnknown &&
       forceHop < MAX_FORCE_INTENTION_HOPS
     ) {
       this.events.log('warn', 'ROUTE_FALLBACK_UNKNOWN', {
@@ -1003,7 +1097,7 @@ export class Supervisor {
           },
         ],
         forceHop: forceHop + 1,
-        resolvedVia: 'route_fallback_unknown',
+        resolvedVia: ROUTE_RESOLVED_VIA.RouteFallbackUnknown,
         confidenceThreshold,
         activeListen,
       });
@@ -1016,13 +1110,24 @@ export class Supervisor {
     intentionName: string,
     forceHop: number,
   ): string {
-    if (resolvedVia === 'condition_force') return 'condition_force';
-    if (resolvedVia === 'intention_force') return 'intention_force';
-    if (resolvedVia === 'intention_match') return 'intention_match';
-    if (intentionName.startsWith(CONDITION_GOTO_PREFIX)) {
-      return 'condition_boost';
+    if (resolvedVia === ROUTE_RESOLVED_VIA.ConditionForce) {
+      return ROUTE_RESOLVED_VIA.ConditionForce;
     }
-    return resolvedVia ?? (forceHop > 0 ? 'force_intention' : 'brain');
+    if (resolvedVia === ROUTE_RESOLVED_VIA.IntentionForce) {
+      return ROUTE_RESOLVED_VIA.IntentionForce;
+    }
+    if (resolvedVia === ROUTE_RESOLVED_VIA.IntentionMatch) {
+      return ROUTE_RESOLVED_VIA.IntentionMatch;
+    }
+    if (intentionName.startsWith(CONDITION_GOTO_PREFIX)) {
+      return ROUTE_RESOLVED_VIA.ConditionBoost;
+    }
+    return (
+      resolvedVia ??
+      (forceHop > 0
+        ? ROUTE_RESOLVED_VIA.ForceIntention
+        : ROUTE_RESOLVED_VIA.Brain)
+    );
   }
 
   /** Durable + console forensic: why this node won (or none did). */
@@ -1083,6 +1188,196 @@ export class Supervisor {
     );
   }
 
+  private isStillThereNode(candidate: FlowNodeDefinition): boolean {
+    return (
+      candidate.class === 'StillThereNode' ||
+      candidate.id === 'stillThere' ||
+      candidate.intentions.includes(STANDARD_INTENTIONS.isStillThere)
+    );
+  }
+
+  /** True when the active portal owns `studio.isUnknownTransition`. */
+  private isUnknownPortalActive(runtime: SupervisedConversation): boolean {
+    const portalId = runtime.portalState.activePortalId;
+    if (!portalId) return false;
+    const def = this.flowLoader.getFlow().nodes[portalId];
+    if (!def?.portal) return false;
+    return def.intentions.includes(STANDARD_INTENTIONS.isUnknownTransition);
+  }
+
+  /**
+   * While in unknown recovery, try the origin’s listen (snapshot or refresh).
+   * If the utterance resolves / ranks as a non-unknown product (or portal)
+   * intention, exit the portal and route that intention on this turn — do not
+   * re-scan against unknown’s thin candidate list.
+   */
+  private async tryUnknownOriginConsume(input: {
+    runtime: SupervisedConversation;
+    userText: string;
+    output: BufferedConversationOutput;
+    forceHop: number;
+  }): Promise<{
+    intentionNames: string[];
+    selectedNodeId: string;
+    selectedClass: string;
+    result: NodeResult;
+    portalOriginRestored?: string | null;
+  } | null> {
+    const { runtime, userText, output, forceHop } = input;
+    const portalId = runtime.portalState.activePortalId;
+    const originId =
+      runtime.portalState.originNodeId ?? runtime.normalFlowNodeId;
+    if (!portalId || !originId) return null;
+
+    const savedListen = runtime.portalState.originListenExpectation ?? null;
+    const probeListen =
+      savedListen ??
+      (await this.resolveOriginListenForReplay({
+        runtime,
+        userText,
+        output,
+        originId,
+        preferSaved: false,
+        clearSaved: false,
+      }));
+    if (!probeListen) return null;
+
+    const confidenceThreshold = resolveConfidenceThreshold(
+      this.brainConfig?.confidenceThreshold,
+    );
+    const brainCandidates = this.buildBrainCandidates(probeListen, runtime);
+    const resolvedName = await tryResolveListenIntention({
+      listen: probeListen,
+      userText,
+      memory: runtime.memory as Record<string, unknown>,
+    });
+
+    let ranked: IntentionCandidate[];
+    if (resolvedName) {
+      ranked = scoresToRankedCandidates(
+        [
+          {
+            name: resolvedName,
+            confidence: 1,
+            reason: ROUTE_RESOLVED_VIA.UnknownOriginConsume,
+          },
+        ],
+        brainCandidates,
+      );
+      runtime.brainSequenceIndex = (runtime.brainSequenceIndex ?? 0) + 1;
+    } else {
+      const scan = await this.brain.scan({
+        runtime,
+        userText,
+        listen: probeListen,
+        candidates: brainCandidates,
+        confidenceThreshold,
+        history: {
+          chat: runtime.history.chat,
+          nodes: runtime.history.nodes,
+        },
+      });
+      ranked = selectWalkableIntentions(
+        scan.intentions,
+        confidenceThreshold,
+        STANDARD_INTENTIONS.isUnknownTransition,
+      );
+    }
+
+    ranked = ranked.filter(
+      (i) =>
+        i.name !== 'isContinue' &&
+        i.name !== STANDARD_INTENTIONS.isUnknownTransition,
+    );
+    if (ranked.length === 0) {
+      return null;
+    }
+
+    this.events.log('info', 'UNKNOWN_ORIGIN_CONSUME', {
+      conversationId: runtime.conversationId,
+      runtimeInstanceId: runtime.runtimeInstanceId,
+      portalId,
+      originNodeId: originId,
+      userText,
+      resolvedName: resolvedName ?? null,
+      ranked: ranked.map((i) => i.name),
+      usedSavedOriginListen: Boolean(savedListen),
+    });
+
+    const portalOriginRestored = runtime.exitPortal();
+    const targetId = portalOriginRestored ?? originId;
+    runtime.enterNormalNode(targetId!);
+    runtime.listenExpectation = probeListen;
+    const originCandidate = this.flowLoader.getFlow().nodes[targetId!];
+    const originNode = originCandidate
+      ? this.nodes.get(originCandidate.class)
+      : undefined;
+    if (originNode) {
+      this.stampListenTimeout(runtime, originNode);
+    }
+
+    const routed = await this.routeIntentions({
+      runtime,
+      userText,
+      output,
+      ranked,
+      forceHop: forceHop + 1,
+      resolvedVia: ROUTE_RESOLVED_VIA.UnknownOriginConsume,
+    });
+
+    return {
+      intentionNames: ranked.map((i) => i.name),
+      selectedNodeId: routed.selectedNodeId,
+      selectedClass: routed.selectedClass,
+      result: routed.result,
+      portalOriginRestored:
+        portalOriginRestored ?? routed.portalOriginRestored,
+    };
+  }
+
+  /**
+   * Origin listen for Continue / unknown consume: prefer the snapshot taken at
+   * portal enter (keeps `sayAndListen` overrides + resolveIntention).
+   */
+  private async resolveOriginListenForReplay(input: {
+    runtime: SupervisedConversation;
+    userText: string;
+    output: BufferedConversationOutput;
+    originId: string;
+    preferSaved: boolean;
+    clearSaved: boolean;
+  }): Promise<ListenExpectation | null> {
+    const { runtime, userText, output, originId, preferSaved, clearSaved } =
+      input;
+    const saved = preferSaved
+      ? runtime.portalState.originListenExpectation
+      : null;
+    if (clearSaved) {
+      runtime.portalState.originListenExpectation = null;
+    }
+    if (saved) {
+      return saved;
+    }
+
+    const flow = this.flowLoader.getFlow();
+    const originCandidate = flow.nodes[originId];
+    if (!originCandidate) return null;
+    const originNode = this.nodes.get(originCandidate.class);
+    if (!originNode) return null;
+
+    const listenCtx = nodeContextFromRuntime({
+      runtime,
+      userText,
+      output,
+      events: this.events,
+      brain: this.brain,
+      integrations: this.integrations,
+      forms: this.forms,
+      intention: 'isContinue',
+    });
+    return originNode.listen(listenCtx);
+  }
+
   /**
    * Exit the active portal (if any), restore the origin Node, refresh its
    * listen, re-scan the same user text, and route again — without speaking a
@@ -1094,6 +1389,7 @@ export class Supervisor {
     output: BufferedConversationOutput;
     forceHop: number;
     fromNodeId: string;
+    resolvedVia?: string;
   }): Promise<{
     selectedNodeId: string;
     selectedClass: string;
@@ -1112,6 +1408,9 @@ export class Supervisor {
       runtime.portalState.originNodeId ??
       runtime.normalFlowNodeId ??
       runtime.currentNodeId;
+
+    // Keep snapshot before exitPortal clears it.
+    const savedListen = runtime.portalState.originListenExpectation ?? null;
 
     let portalOriginRestored: string | null = null;
     if (runtime.portalState.activePortalId) {
@@ -1158,17 +1457,19 @@ export class Supervisor {
       );
     }
 
-    const listenCtx = nodeContextFromRuntime({
-      runtime,
-      userText,
-      output,
-      events: this.events,
-      brain: this.brain,
-      integrations: this.integrations,
-      forms: this.forms,
-      intention: 'isContinue',
-    });
-    const listenExpectation = await originNode.listen(listenCtx);
+    const listenExpectation =
+      savedListen ??
+      (await this.resolveOriginListenForReplay({
+        runtime,
+        userText,
+        output,
+        originId: targetId,
+        preferSaved: false,
+        clearSaved: false,
+      }));
+    if (!listenExpectation) {
+      throw new Error(`Continue origin listen missing for "${targetId}"`);
+    }
     runtime.listenExpectation = listenExpectation;
     this.stampListenTimeout(runtime, originNode);
 
@@ -1191,7 +1492,8 @@ export class Supervisor {
               {
                 name: resolvedName,
                 confidence: 1,
-                reason: 'continue_replay_resolve',
+                reason:
+                  input.resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
               },
             ],
             brainCandidates,
@@ -1239,6 +1541,8 @@ export class Supervisor {
       resolvedName: resolvedName ?? null,
       ranked: ranked.map((i) => i.name),
       forceHop,
+      via: input.resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
+      usedSavedOriginListen: Boolean(savedListen),
     });
 
     const routed = await this.routeIntentions({
@@ -1247,6 +1551,7 @@ export class Supervisor {
       output,
       ranked,
       forceHop,
+      resolvedVia: input.resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
     });
     return {
       ...routed,
@@ -1408,7 +1713,9 @@ export class Supervisor {
     userText: string;
     onSay?: (text: string) => Promise<void>;
   }): Promise<TurnExecutionResult | null> {
-    const forceList = this.intentionList().filter((i) => i.phase === 'force');
+    const forceList = this.intentionList().filter(
+      (i) => i.phase === INTENTION_CASCADE_PHASE.Force,
+    );
     if (!forceList.length) return null;
 
     const ctx = intentionContextFromRuntime({
@@ -1427,7 +1734,7 @@ export class Supervisor {
       await intention.after(ctx);
 
       const gotoNodeId =
-        runResult?.kind === 'goto'
+        runResult?.kind === INTENTION_RUN_KIND.Goto
           ? runResult.nodeId
           : intention.toNodeId ?? null;
       const reason =
@@ -1441,7 +1748,7 @@ export class Supervisor {
         providerCallId: input.runtime.providerCallId,
         turnNumber: input.runtime.turn.turnNumber,
         intention: intention.name,
-        phase: 'force',
+        phase: INTENTION_CASCADE_PHASE.Force,
         from: input.runtime.currentNodeId,
         to: gotoNodeId,
         confidence,
@@ -1480,7 +1787,7 @@ export class Supervisor {
         output,
         ranked,
         forceHop: 0,
-        resolvedVia: 'intention_force',
+        resolvedVia: ROUTE_RESOLVED_VIA.IntentionForce,
         allowMiss: true,
       });
       if (!routed) {
@@ -1521,7 +1828,9 @@ export class Supervisor {
     | { kind: 'score'; name: string; confidence: number }
     | null
   > {
-    const matchList = this.intentionList().filter((i) => i.phase === 'match');
+    const matchList = this.intentionList().filter(
+      (i) => i.phase === INTENTION_CASCADE_PHASE.Match,
+    );
     if (!matchList.length) return null;
 
     const ctx = intentionContextFromRuntime({
@@ -1552,7 +1861,7 @@ export class Supervisor {
       });
 
       const gotoNodeId =
-        runResult?.kind === 'goto'
+        runResult?.kind === INTENTION_RUN_KIND.Goto
           ? runResult.nodeId
           : intention.toNodeId ?? null;
       if (gotoNodeId) {
@@ -1570,7 +1879,7 @@ export class Supervisor {
             },
           ],
           forceHop: 0,
-          resolvedVia: 'intention_match',
+          resolvedVia: ROUTE_RESOLVED_VIA.IntentionMatch,
           allowMiss: true,
         });
         if (routed) {
@@ -1643,7 +1952,7 @@ export class Supervisor {
     }
 
     for (const intention of this.intentionList()) {
-      if (intention.phase === 'force') continue;
+      if (intention.phase === INTENTION_CASCADE_PHASE.Force) continue;
       upsert({
         name: intention.name,
         boost: intention.boost,

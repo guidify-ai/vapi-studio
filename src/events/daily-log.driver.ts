@@ -16,6 +16,7 @@ let writeChain: Promise<void> = Promise.resolve();
 let lastPurgeAt = 0;
 
 export function stripAnsi(text: string): string {
+  // eslint-disable-next-line no-control-regex -- strip terminal color codes
   return text.replace(/\u001B\[[0-9;]*m/g, '');
 }
 
@@ -111,7 +112,7 @@ export async function purgeOldDailyLogs(input?: {
   const dir = input?.dir ?? resolveLogDir();
   const now = input?.now ?? new Date();
   const logDays = input?.logDays ?? resolveLogDays();
-  let names: string[] = [];
+  let names: string[];
   try {
     names = await readdir(dir);
   } catch {
@@ -168,7 +169,7 @@ export function beginCallLog(input: {
     callerPhone: phone,
   });
   if (shouldPrintCallBannerToConsole()) {
-    // eslint-disable-next-line no-console
+     
     process.stdout.write(banner);
   }
   if (!isFileLogEnabled()) return;

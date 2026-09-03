@@ -40,14 +40,15 @@ export interface ResumableConversation {
 
 @Injectable()
 export class ConversationRepository {
-  constructor(
+  public constructor(
     @InjectRepository(ConversationEntity)
     private readonly conversations: Repository<ConversationEntity>,
     @InjectRepository(ConversationEventEntity)
     private readonly events: Repository<ConversationEventEntity>,
   ) {}
 
-  createActive(input: {
+  public createActive(input: {
+    projectId: string;
     providerCallId: string;
     runtimeInstanceId: string;
     metadata?: Record<string, unknown>;
@@ -60,6 +61,7 @@ export class ConversationRepository {
         ? input.callerId.trim()
         : null) ?? extractCallerIdFromBags(meta);
     const row = this.conversations.create({
+      projectId: input.projectId,
       provider: input.provider ?? 'vapi',
       providerCallId: input.providerCallId,
       status: 'ACTIVE',
@@ -74,18 +76,24 @@ export class ConversationRepository {
     return this.conversations.save(row);
   }
 
-  findByProviderCallId(
+  public findByProviderCallId(
     providerCallId: string,
+    projectId?: string,
   ): Promise<ConversationEntity | null> {
+    if (projectId) {
+      return this.conversations.findOne({
+        where: { providerCallId, projectId },
+      });
+    }
     return this.conversations.findOne({ where: { providerCallId } });
   }
 
-  findById(conversationId: string): Promise<ConversationEntity | null> {
+  public findById(conversationId: string): Promise<ConversationEntity | null> {
     return this.conversations.findOne({ where: { id: conversationId } });
   }
 
   /** ACTIVE rows that have a checkpoint (eligible for crash restore). */
-  listActiveWithState(): Promise<ConversationEntity[]> {
+  public listActiveWithState(): Promise<ConversationEntity[]> {
     return this.conversations
       .createQueryBuilder('c')
       .where('c.status = :status', { status: 'ACTIVE' })
@@ -94,18 +102,53 @@ export class ConversationRepository {
       .getMany();
   }
 
-  listActive(): Promise<ConversationEntity[]> {
+  public listActive(): Promise<ConversationEntity[]> {
     return this.conversations.find({
       where: { status: 'ACTIVE' },
       order: { createdAt: 'ASC' },
     });
   }
 
+  /** Recent conversations for operator debug UIs (newest first). */
+  public async listRecent(input?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: ConversationEntity[]; total: number }> {
+    const limit = Math.min(Math.max(input?.limit ?? 50, 1), 200);
+    const offset = Math.max(input?.offset ?? 0, 0);
+    const [items, total] = await this.conversations.findAndCount({
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: offset,
+    });
+    return { items, total };
+  }
+
+  /** Ended conversations with a final_state snapshot (for analytics backfill). */
+  public listEndedWithFinalState(input: {
+    projectId: string;
+    since?: Date;
+    limit?: number;
+  }): Promise<ConversationEntity[]> {
+    const limit = Math.min(Math.max(input.limit ?? 500, 1), 2000);
+    const qb = this.conversations
+      .createQueryBuilder('c')
+      .where('c.project_id = :projectId', { projectId: input.projectId })
+      .andWhere(`c.status = 'ENDED'`)
+      .andWhere('c.final_state IS NOT NULL')
+      .orderBy('c.ended_at', 'DESC')
+      .take(limit);
+    if (input.since) {
+      qb.andWhere('c.created_at >= :since', { since: input.since });
+    }
+    return qb.getMany();
+  }
+
   /**
    * Latest ENDED (with final_state) or abandoned ACTIVE (with runtime_state)
    * for this caller within the window, excluding the current conversation.
    */
-  async findResumableForCaller(input: {
+  public async findResumableForCaller(input: {
     callerId: string;
     withinMs: number;
     excludeConversationId?: string;
@@ -158,7 +201,7 @@ export class ConversationRepository {
     return null;
   }
 
-  async saveRuntimeCheckpoint(input: {
+  public async saveRuntimeCheckpoint(input: {
     conversationId: string;
     runtimeState: Record<string, unknown>;
     callerId?: string | null;
@@ -187,7 +230,7 @@ export class ConversationRepository {
     );
   }
 
-  async markEnded(input: {
+  public async markEnded(input: {
     conversationId: string;
     finalState: Record<string, unknown>;
     callerId?: string | null;
@@ -215,7 +258,7 @@ export class ConversationRepository {
     await this.conversations.save(row);
   }
 
-  async appendEvent(input: {
+  public async appendEvent(input: {
     conversationId: string;
     type: string;
     payload?: Record<string, unknown>;
@@ -228,18 +271,265 @@ export class ConversationRepository {
     await this.events.save(row);
   }
 
-  listEvents(conversationId: string): Promise<ConversationEventEntity[]> {
+  public listEvents(conversationId: string): Promise<ConversationEventEntity[]> {
     return this.events.find({
       where: { conversationId },
       order: { createdAt: 'ASC', id: 'ASC' },
     });
   }
 
+  public async countConversationsByProject(input: {
+    projectId: string;
+    since?: Date;
+  }): Promise<{ total: number; active: number; ended: number }> {
+    const whereBase: Record<string, unknown> = { projectId: input.projectId };
+    const qbTotal = this.conversations
+      .createQueryBuilder('c')
+      .where('c.project_id = :projectId', whereBase);
+    if (input.since) {
+      qbTotal.andWhere('c.created_at >= :since', { since: input.since });
+    }
+    const total = await qbTotal.getCount();
+
+    const qbActive = this.conversations
+      .createQueryBuilder('c')
+      .where('c.project_id = :projectId', whereBase)
+      .andWhere('c.status = :status', { status: 'ACTIVE' });
+    if (input.since) {
+      qbActive.andWhere('c.created_at >= :since', { since: input.since });
+    }
+    const active = await qbActive.getCount();
+
+    const qbEnded = this.conversations
+      .createQueryBuilder('c')
+      .where('c.project_id = :projectId', whereBase)
+      .andWhere('c.status = :status', { status: 'ENDED' });
+    if (input.since) {
+      qbEnded.andWhere('c.created_at >= :since', { since: input.since });
+    }
+    const ended = await qbEnded.getCount();
+
+    return { total, active, ended };
+  }
+
+  /**
+   * Distinct conversations per event type for a project (top tags / funnel).
+   */
+  public async countConversationsByEventType(input: {
+    projectId: string;
+    since?: Date;
+    types?: string[];
+    limit?: number;
+  }): Promise<Array<{ type: string; conversations: number; events: number }>> {
+    const limit = Math.min(Math.max(input.limit ?? 40, 1), 200);
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select('e.type', 'type')
+      .addSelect('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .addSelect('COUNT(*)', 'events')
+      .where('c.project_id = :projectId', { projectId: input.projectId })
+      .groupBy('e.type')
+      .orderBy('conversations', 'DESC')
+      .addOrderBy('events', 'DESC')
+      .limit(limit);
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+    if (input.types?.length) {
+      qb.andWhere('e.type IN (:...types)', { types: input.types });
+    }
+    const rows = await qb.getRawMany<{
+      type: string;
+      conversations: string;
+      events: string;
+    }>();
+    return rows.map((r) => ({
+      type: r.type,
+      conversations: Number(r.conversations) || 0,
+      events: Number(r.events) || 0,
+    }));
+  }
+
+  /**
+   * Distinct conversations that hit ANALYTICS_TAG with a given payload.tag.
+   */
+  public async countConversationsByAnalyticsTag(input: {
+    projectId: string;
+    since?: Date;
+    limit?: number;
+  }): Promise<Array<{ tag: string; conversations: number; events: number }>> {
+    const limit = Math.min(Math.max(input.limit ?? 40, 1), 200);
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select(`e.payload->>'tag'`, 'tag')
+      .addSelect('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .addSelect('COUNT(*)', 'events')
+      .where('c.project_id = :projectId', { projectId: input.projectId })
+      .andWhere('e.type = :type', { type: 'ANALYTICS_TAG' })
+      .andWhere(`e.payload->>'tag' IS NOT NULL`)
+      .andWhere(`e.payload->>'tag' <> ''`)
+      .groupBy(`e.payload->>'tag'`)
+      .orderBy('conversations', 'DESC')
+      .addOrderBy('events', 'DESC')
+      .limit(limit);
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+    const rows = await qb.getRawMany<{
+      tag: string;
+      conversations: string;
+      events: string;
+    }>();
+    return rows.map((r) => ({
+      tag: r.tag,
+      conversations: Number(r.conversations) || 0,
+      events: Number(r.events) || 0,
+    }));
+  }
+
+  /**
+   * Distinct conversations matching any of the given event types or analytics tags.
+   * Used to score funnel steps.
+   */
+  public async countConversationsMatchingStep(input: {
+    projectId: string;
+    since?: Date;
+    eventTypes?: string[];
+    tags?: string[];
+  }): Promise<number> {
+    const types = input.eventTypes?.filter(Boolean) ?? [];
+    const tags = input.tags?.filter(Boolean) ?? [];
+    if (!types.length && !tags.length) return 0;
+
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .where('c.project_id = :projectId', { projectId: input.projectId });
+
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+
+    const parts: string[] = [];
+    if (types.length) {
+      parts.push('e.type IN (:...types)');
+      qb.setParameter('types', types);
+    }
+    if (tags.length) {
+      parts.push(
+        `(e.type = :analyticsType AND e.payload->>'tag' IN (:...tags))`,
+      );
+      qb.setParameter('analyticsType', 'ANALYTICS_TAG');
+      qb.setParameter('tags', tags);
+    }
+    qb.andWhere(`(${parts.join(' OR ')})`);
+
+    const raw = await qb.getRawOne<{ conversations: string }>();
+    return Number(raw?.conversations) || 0;
+  }
+
+  /** Top conversation path signatures (CONVERSATION_PATH events). */
+  public async countTopConversationPaths(input: {
+    projectId: string;
+    since?: Date;
+    limit?: number;
+  }): Promise<
+    Array<{
+      signature: string;
+      branchLabel: string;
+      nodes: string[];
+      conversations: number;
+    }>
+  > {
+    const limit = Math.min(Math.max(input.limit ?? 5, 1), 20);
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select(`e.payload->>'signature'`, 'signature')
+      .addSelect(`MAX(e.payload->>'branchLabel')`, 'branchLabel')
+      .addSelect(
+        `(array_agg(e.payload->'nodes' ORDER BY e.created_at DESC))[1]`,
+        'nodes',
+      )
+      .addSelect('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .where('c.project_id = :projectId', { projectId: input.projectId })
+      .andWhere('e.type = :type', { type: 'CONVERSATION_PATH' })
+      .andWhere(`e.payload->>'signature' IS NOT NULL`)
+      .andWhere(`e.payload->>'signature' <> ''`)
+      .groupBy(`e.payload->>'signature'`)
+      .orderBy('conversations', 'DESC')
+      .limit(limit);
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+    const rows = await qb.getRawMany<{
+      signature: string;
+      branchLabel: string;
+      nodes: string | string[];
+      conversations: string;
+    }>();
+    return rows.map((r) => {
+      let nodes: string[] = [];
+      if (Array.isArray(r.nodes)) {
+        nodes = r.nodes.map(String);
+      } else if (typeof r.nodes === 'string') {
+        try {
+          const parsed = JSON.parse(r.nodes) as unknown;
+          if (Array.isArray(parsed)) nodes = parsed.map(String);
+        } catch {
+          nodes = [];
+        }
+      }
+      return {
+        signature: r.signature,
+        branchLabel: r.branchLabel || 'Other path',
+        nodes,
+        conversations: Number(r.conversations) || 0,
+      };
+    });
+  }
+
+  /** Distinct conversations per CALL_OUTCOME payload.outcome. */
+  public async countConversationsByCallOutcome(input: {
+    projectId: string;
+    since?: Date;
+  }): Promise<
+    Array<{ outcome: string; conversations: number; events: number }>
+  > {
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select(`e.payload->>'outcome'`, 'outcome')
+      .addSelect('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .addSelect('COUNT(*)', 'events')
+      .where('c.project_id = :projectId', { projectId: input.projectId })
+      .andWhere('e.type = :type', { type: 'CALL_OUTCOME' })
+      .andWhere(`e.payload->>'outcome' IN ('success','failure','unknown')`)
+      .groupBy(`e.payload->>'outcome'`)
+      .orderBy('conversations', 'DESC');
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+    const rows = await qb.getRawMany<{
+      outcome: string;
+      conversations: string;
+      events: string;
+    }>();
+    return rows.map((r) => ({
+      outcome: r.outcome,
+      conversations: Number(r.conversations) || 0,
+      events: Number(r.events) || 0,
+    }));
+  }
+
   /**
    * Copy all events from one conversation onto another.
    * Preserves original type; stamps clone provenance into payload.
    */
-  async cloneEvents(input: {
+  public async cloneEvents(input: {
     fromConversationId: string;
     toConversationId: string;
   }): Promise<number> {

@@ -10,27 +10,45 @@ vapi-studio/
     └── my-voice-app/     ← your NestJS app (Docker, flow.yaml, Vapi routes)
 ```
 
+## Local development
+
+Example apps run the Nest app and Postgres in **Docker** on `localhost` (port **9999** by default). **Vapi cannot reach localhost** — local dev uses **[ngrok](https://ngrok.com/download)** to expose that port as HTTPS. Install ngrok once (`brew install ngrok` or download from ngrok.com), sign in if prompted, then use `yarn start` (not raw `docker compose`).
+
+```text
+Vapi (cloud)  →  ngrok HTTPS URL  →  localhost:9999  →  Docker (app + Postgres)
+```
+
 ## Create a project
 
-```bash
-# from repo root, after yarn install && yarn build
-mkdir -p projects/my-voice-app
-cd projects/my-voice-app
-# scaffold NestJS app, then in package.json:
-```
-
-```json
-{
-  "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
-  }
-}
-```
+From the **repo root** (after `yarn install && yarn build`):
 
 ```bash
+yarn new-project
+# asks for display name + slug; writes projects/<slug>/ with a stable UUID
+```
+
+Or non-interactive:
+
+```bash
+yarn new-project --name "My Voice App" --slug my-voice-app --yes
+```
+
+Canonical identity lives in **`config/project.identity.json`** (`id` / `slug` / `name`). The UUID is generated **once** at scaffold time — never with `uuidV4()` at runtime. Do not rotate `id` after wiring Vapi.
+
+```bash
+cd projects/<slug>
 yarn install
-docker compose up --build   # or your app's run command
+yarn start     # Docker + ngrok; upserts UUID into Postgres; prints Vapi URLs
 ```
+
+`yarn start` reads the identity file, mirrors `PROJECT_UUID` into `.env`, boots the app (which **upserts** the row into the `projects` table), then prints:
+
+| Vapi assistant setting | Endpoint |
+| --- | --- |
+| **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
+| **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
+
+Paste those into your Vapi assistant before placing a test call. Do not call `docker compose` directly unless debugging.
 
 After framework changes: `yarn build` at the repo root, then reinstall in the project if needed.
 

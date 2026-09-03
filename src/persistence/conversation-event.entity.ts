@@ -9,18 +9,18 @@ import {
 @Entity({ name: 'conversation_events' })
 export class ConversationEventEntity {
   @PrimaryGeneratedColumn('uuid')
-  id!: string;
+  public id!: string;
 
   @Index()
   @Column({ name: 'conversation_id', type: 'uuid' })
-  conversationId!: string;
+  public conversationId!: string;
 
   @Column({ type: 'varchar', length: 64 })
-  type!: string;
+  public type!: string;
 
   @Column({ type: 'jsonb', default: {} })
-  payload!: Record<string, unknown>;
+  public payload!: Record<string, unknown>;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
-  createdAt!: Date;
+  public createdAt!: Date;
 }

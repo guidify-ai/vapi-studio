@@ -30,8 +30,12 @@ vapi-studio/
 ├── docs/
 └── projects/
     └── my-voice-app/         ← Docker, flow.yaml, Vapi webhooks
-        package.json          ← "@guidify-ai/vapi-studio": "file:.."
+        package.json          ← "@guidify-ai/vapi-studio": "file:../.."
 ```
+
+## Local development
+
+Bots run in **Docker** on `localhost`. Live Vapi testing uses **[ngrok](https://ngrok.com/download)** to tunnel that port to HTTPS (`yarn start` in a project starts both). See [Installation](./installation.md).
 
 ## Next
 

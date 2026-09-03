@@ -19,10 +19,10 @@ export type { Ra9LogLevel } from './conversation-console';
  */
 @Injectable()
 export class EventService {
-  private readonly logger = new Logger('RA9');
+  private readonly logger: Logger = new Logger('RA9');
   private readonly listeners: Ra9EventListener[];
 
-  constructor(
+  public constructor(
     @Optional()
     @Inject(RA9_EVENT_LISTENERS)
     listeners?: Ra9EventListener[],
@@ -30,7 +30,7 @@ export class EventService {
     this.listeners = listeners ?? [];
   }
 
-  log(
+  public log(
     level: Ra9LogLevel,
     type: string,
     payload: Record<string, unknown> = {},
@@ -58,7 +58,7 @@ export class EventService {
     }
   }
 
-  async emit(input: Ra9EventInput): Promise<Ra9Event> {
+  public async emit(input: Ra9EventInput): Promise<Ra9Event> {
     const event: Ra9Event = {
       id: input.id ?? randomUUID(),
       type: input.type,
@@ -98,7 +98,7 @@ export class EventService {
   }
 
   /** Persist-shaped emit — conversation-scoped event for listeners (Postgres). */
-  async persist(
+  public async persist(
     conversationId: string,
     type: string,
     payload: Record<string, unknown> = {},
@@ -108,6 +108,23 @@ export class EventService {
       conversationId,
       payload,
       level: 'info',
+    });
+  }
+
+  /**
+   * Funnel / dashboard tag. Stored as type `ANALYTICS_TAG` with payload.tag.
+   * Prefer stable snake_case tags; catalogs bind steps to tags and/or event types.
+   */
+  public async persistAnalyticsTag(
+    conversationId: string,
+    tag: string,
+    payload: Record<string, unknown> = {},
+  ): Promise<void> {
+    const clean = tag.trim();
+    if (!clean) return;
+    await this.persist(conversationId, 'ANALYTICS_TAG', {
+      ...payload,
+      tag: clean,
     });
   }
 }

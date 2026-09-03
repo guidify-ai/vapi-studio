@@ -7,12 +7,12 @@ Wire Vapi Studio into a NestJS application.
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
 
-From `projects/<your-app>/`, `file:..` is the framework at the repository root.
+From `projects/<your-app>/`, `file:../..` is the framework at the repository root.
 
 Build the framework before typechecking the project:
 
@@ -30,7 +30,7 @@ cd projects/my-app && yarn install
 | `entryPoint` | Yes | `ConversationEntryPoint` — seed variables, `beforeEach` / `afterEach` |
 | `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, or custom |
 | `brain` | No | `{ model, confidenceThreshold }` for ChatGPT adapter |
-| `intentions` | No | Code intention providers (`phase: 'force' \| 'match' \| 'scan'`) |
+| `intentions` | No | Code intention providers (`INTENTION_CASCADE_PHASE`) |
 | `formDisposeAdapter` | No | Delivers forms (HTML link, Studio modal, SMS later) |
 | `eventListeners` | No | Subscribe to `EventService` (e.g. Studio buffer) |
 
@@ -48,7 +48,7 @@ Every node class must be:
 @Injectable()
 export class MyConversationEntry implements ConversationEntryPoint<MySchema> {
   createVariables(ctx): MyVariables { /* channel, callerId, flags */ }
-  async beforeEach(ctx) { /* resume peek, CRM hydrate */ }
+  async beforeEach(ctx) { /* CRM hydrate, feature flags — not cross-call resume */ }
   async afterEach(ctx) { /* optional */ }
 }
 ```

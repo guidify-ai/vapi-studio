@@ -12,6 +12,25 @@ import type {
 } from '../conversation/conversation-schema';
 import type { EventService } from '../events/event.service';
 import type { ConversationView } from '../node/ra9-node';
+import {
+  INTENTION_CASCADE_PHASE,
+  INTENTION_RUN_KIND,
+} from './intention-constants';
+import type {
+  IntentionCascadePhase,
+} from './intention-constants';
+
+export {
+  INTENTION_CASCADE_PHASE,
+  INTENTION_RUN_KIND,
+  ROUTE_RESOLVED_VIA,
+  DEFAULT_FORCE_INTENTION_PRIORITY,
+} from './intention-constants';
+export type {
+  IntentionCascadePhase,
+  IntentionRunKind,
+  RouteResolvedVia,
+} from './intention-constants';
 
 /**
  * When this intention participates in Supervisor cascade.
@@ -21,8 +40,9 @@ import type { ConversationView } from '../node/ra9-node';
  * - `match` — after force cascade / with listen resolve: `match()` may return a
  *   local confidence and skip Brain for this name.
  * - `scan` — default; name is a Brain/listen candidate only (lifecycle optional).
+ *
+ * Prefer `INTENTION_CASCADE_PHASE` over raw strings in app code.
  */
-export type IntentionCascadePhase = 'force' | 'match' | 'scan';
 
 /**
  * Optional result of `run()` after this intention is selected.
@@ -30,12 +50,12 @@ export type IntentionCascadePhase = 'force' | 'match' | 'scan';
  */
 export type IntentionRunResult =
   | {
-      kind: 'goto';
+      kind: typeof INTENTION_RUN_KIND.Goto;
       nodeId: string;
       reason?: string;
     }
   | {
-      kind: 'score';
+      kind: typeof INTENTION_RUN_KIND.Score;
       confidence: number;
       priority?: number;
       reason?: string;
@@ -72,30 +92,30 @@ export abstract class Ra9Intention<
   TSchema extends ConversationSchema = DefaultConversationSchema,
 > {
   /** Stable id — same string flow.yaml / listen lists / Brain candidates use. */
-  abstract readonly name: string;
+  public abstract readonly name: string;
 
   /**
    * Cascade phase. Default `scan` preserves today’s string-only intentions.
    * Set `force` for Brain-free gates (phone missing, consent gap, …).
    */
-  phase: IntentionCascadePhase = 'scan';
+  public phase: IntentionCascadePhase = INTENTION_CASCADE_PHASE.Scan;
 
   /** Brain scoring hint (listen/Brain). Does not by itself change walk order. */
-  boost = 0;
+  public boost: number = 0;
 
   /** Supervisor walk priority when this intention is ranked (default 1). */
-  priority = 1;
+  public priority: number = 1;
 
   /**
    * Optional hard destination when force/match wins.
-   * Overridden if `run()` returns `{ kind: 'goto', nodeId }`.
+   * Overridden if `run()` returns `{ kind: INTENTION_RUN_KIND.Goto, nodeId }`.
    */
-  toNodeId?: string;
+  public toNodeId?: string;
 
   /** Forensic / diagram label (optional). */
-  reason?: string;
+  public reason?: string;
 
-  async before(_ctx: IntentionContext<TSchema>): Promise<boolean> {
+  public async before(_ctx: IntentionContext<TSchema>): Promise<boolean> {
     return true;
   }
 
@@ -103,16 +123,16 @@ export abstract class Ra9Intention<
    * Local confidence in `[0, 1]`, or `null` to leave scoring to Brain / listen.
    * Force phase defaults to `1` when `before()` passed and this is not overridden.
    */
-  async match(_ctx: IntentionContext<TSchema>): Promise<number | null> {
-    return this.phase === 'force' ? 1 : null;
+  public async match(_ctx: IntentionContext<TSchema>): Promise<number | null> {
+    return this.phase === INTENTION_CASCADE_PHASE.Force ? 1 : null;
   }
 
-  async run(
+  public async run(
     _ctx: IntentionContext<TSchema>,
   ): Promise<IntentionRunResult | null> {
     if (this.toNodeId) {
       return {
-        kind: 'goto',
+        kind: INTENTION_RUN_KIND.Goto,
         nodeId: this.toNodeId,
         reason: this.reason,
       };
@@ -120,7 +140,7 @@ export abstract class Ra9Intention<
     return null;
   }
 
-  async after(_ctx: IntentionContext<TSchema>): Promise<void> {
+  public async after(_ctx: IntentionContext<TSchema>): Promise<void> {
     // no-op
   }
 }

@@ -25,12 +25,12 @@ function isUniqueViolation(error: unknown): boolean {
 export class ConversationBootstrapService {
   private readonly entry: ConversationEntryPoint;
   /** Serialize concurrent bootstrap for the same Vapi call (assistant.started ∥ Custom LLM). */
-  private readonly bootstrapping = new Map<
+  private readonly bootstrapping: Map<string, Promise<SupervisedConversation>> = new Map<
     string,
     Promise<SupervisedConversation>
   >();
 
-  constructor(
+  public constructor(
     private readonly conversations: ConversationRepository,
     private readonly registry: SupervisedConversationRegistry,
     private readonly flowLoader: FlowLoader,
@@ -44,7 +44,8 @@ export class ConversationBootstrapService {
     this.entry = entryPoint ?? new DefaultConversationEntry();
   }
 
-  async bootstrap(input: {
+  public async bootstrap(input: {
+    projectId: string;
     providerCallId: string;
     brainProfileId: string;
     metadata?: Record<string, unknown>;
@@ -77,6 +78,7 @@ export class ConversationBootstrapService {
   }
 
   private async bootstrapExclusive(input: {
+    projectId: string;
     providerCallId: string;
     brainProfileId: string;
     metadata?: Record<string, unknown>;
@@ -103,10 +105,12 @@ export class ConversationBootstrapService {
     let row;
     try {
       row = await this.conversations.createActive({
+        projectId: input.projectId,
         providerCallId: input.providerCallId,
         runtimeInstanceId,
         metadata: {
           ...(input.metadata ?? {}),
+          projectId: input.projectId,
           variables,
         },
         callerId: extractCallerIdFromBags(input.metadata, variables),
@@ -124,6 +128,7 @@ export class ConversationBootstrapService {
       // Parallel webhook + Custom LLM both inserted — attach to the winner.
       const existingRow = await this.conversations.findByProviderCallId(
         input.providerCallId,
+        input.projectId,
       );
       if (!existingRow) {
         throw error;
@@ -221,7 +226,7 @@ export class ConversationBootstrapService {
     });
   }
 
-  async finalizeEnded(providerCallId: string): Promise<void> {
+  public async finalizeEnded(providerCallId: string): Promise<void> {
     const runtime = this.registry.getByProviderCallId(providerCallId);
     if (!runtime) {
       this.events.log('warn', 'FINALIZE_MISSING_RUNTIME', { providerCallId });
@@ -285,7 +290,7 @@ export class ConversationBootstrapService {
   }
 
   /** Persist live runtime so a process crash can restore ACTIVE conversations. */
-  async checkpoint(runtime: SupervisedConversation): Promise<void> {
+  public async checkpoint(runtime: SupervisedConversation): Promise<void> {
     if (runtime.status !== 'ACTIVE') return;
     const runtimeState = runtime.snapshot();
     await this.conversations.saveRuntimeCheckpoint({
@@ -309,7 +314,7 @@ export class ConversationBootstrapService {
    * Simulate process memory loss: drop all in-memory runtimes without ending DB rows.
    * Checkpoints already in Postgres remain ACTIVE for restore.
    */
-  simulateCrash(): {
+  public simulateCrash(): {
     dropped: number;
     providerCallIds: string[];
   } {
@@ -332,7 +337,7 @@ export class ConversationBootstrapService {
   }
 
   /** Reload every ACTIVE conversation that has a runtime_state checkpoint. */
-  async restoreAllActive(): Promise<{
+  public async restoreAllActive(): Promise<{
     restored: number;
     skipped: number;
     conversationIds: string[];
@@ -383,7 +388,7 @@ export class ConversationBootstrapService {
     return { restored, skipped, conversationIds };
   }
 
-  async disasterStatus(): Promise<{
+  public async disasterStatus(): Promise<{
     memoryCount: number;
     dbActiveCount: number;
     dbCheckpointCount: number;

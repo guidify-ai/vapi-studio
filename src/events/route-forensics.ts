@@ -5,7 +5,10 @@ import type {
 import type { IntentionCandidate } from '../conversation/types';
 import type { NodeResult } from '../output/conversation-output';
 
-export type RouteRejectReason = 'before_false' | 'missing';
+export type RouteRejectReason =
+  | 'before_false'
+  | 'missing'
+  | 'still_there_requires_force';
 
 export interface RouteRejectRow {
   nodeId: string;

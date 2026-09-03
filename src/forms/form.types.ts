@@ -70,10 +70,10 @@ export interface FormDisposeAdapter {
 }
 
 export class FormDeliverTimeoutError extends Error {
-  readonly code = 'FORM_DELIVER_TIMEOUT' as const;
-  constructor(
-    readonly exposeId: string,
-    readonly conversationId: string,
+  public readonly code: "FORM_DELIVER_TIMEOUT" = 'FORM_DELIVER_TIMEOUT' as const;
+  public constructor(
+    public readonly exposeId: string,
+    public readonly conversationId: string,
   ) {
     super(
       `Form expose ${exposeId} was not acknowledged within the delivery window`,
@@ -83,10 +83,10 @@ export class FormDeliverTimeoutError extends Error {
 }
 
 export class FormFilloutTimeoutError extends Error {
-  readonly code = 'FORM_FILLOUT_TIMEOUT' as const;
-  constructor(
-    readonly exposeId: string,
-    readonly conversationId: string,
+  public readonly code: "FORM_FILLOUT_TIMEOUT" = 'FORM_FILLOUT_TIMEOUT' as const;
+  public constructor(
+    public readonly exposeId: string,
+    public readonly conversationId: string,
   ) {
     super(`Form expose ${exposeId} fillout timed out`);
     this.name = 'FormFilloutTimeoutError';
@@ -94,8 +94,8 @@ export class FormFilloutTimeoutError extends Error {
 }
 
 export class FormChannelUnavailableError extends Error {
-  readonly code = 'FORM_CHANNEL_UNAVAILABLE' as const;
-  constructor(message = 'No form dispose adapter can deliver on this channel') {
+  public readonly code: "FORM_CHANNEL_UNAVAILABLE" = 'FORM_CHANNEL_UNAVAILABLE' as const;
+  public constructor(message = 'No form dispose adapter can deliver on this channel') {
     super(message);
     this.name = 'FormChannelUnavailableError';
   }

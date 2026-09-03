@@ -74,21 +74,23 @@ export interface ConversationOutput {
     text?: string;
   }): Promise<NodeResult>;
   /**
-   * Terminal: request a channel-side tool by advertised function name.
-   * On Vapi Custom LLM this becomes an OpenAI-compatible `tool_calls` SSE
-   * chunk (same framing as endCall / transfer / handoff). Prefer semantic
-   * helpers (`endCall`, `transferToHuman`, `handoff`) when they apply.
+   * Request a **channel tool by the function name Vapi advertised** on this
+   * assistant (`model.tools[].function.name`). Compiles to OpenAI-compatible
+   * `tool_calls` SSE — same framing as `endCall` / `transferToHuman` / `handoff`.
+   *
+   * Prefer semantic helpers when they apply. This is for app-specific tools
+   * (SMS, CRM lookup, still-there hook, …) that you pre-provision on the assistant.
    */
-  toolCall(input: {
+  invokeAdvertisedTool(input: {
     name: string;
     arguments?: Record<string, unknown>;
     /** Optional speech before the tool call is emitted. */
     text?: string;
   }): Promise<NodeResult>;
   /**
-   * Alias of `toolCall` — request a Vapi/advertised channel tool by name.
+   * @deprecated Use {@link invokeAdvertisedTool}. Kept for older app code.
    */
-  callTool(input: {
+  toolCall(input: {
     name: string;
     arguments?: Record<string, unknown>;
     text?: string;
@@ -97,21 +99,21 @@ export interface ConversationOutput {
 }
 
 export class BufferedConversationOutput implements ConversationOutput {
-  readonly actions: OutputAction[] = [];
+  public readonly actions: OutputAction[] = [];
   private readonly onSay?: (text: string) => Promise<void>;
 
-  constructor(onSay?: (text: string) => Promise<void>) {
+  public constructor(onSay?: (text: string) => Promise<void>) {
     this.onSay = onSay;
   }
 
-  async say(text: string): Promise<void> {
+  public async say(text: string): Promise<void> {
     this.actions.push({ kind: 'say', text });
     if (this.onSay) {
       await this.onSay(text);
     }
   }
 
-  async sayAndListen(
+  public async sayAndListen(
     text: string,
     options?: SayAndListenOptions,
   ): Promise<NodeResult> {
@@ -127,7 +129,7 @@ export class BufferedConversationOutput implements ConversationOutput {
     return action;
   }
 
-  async endCall(text?: string): Promise<NodeResult> {
+  public async endCall(text?: string): Promise<NodeResult> {
     const action: OutputAction = { kind: 'endCall', text };
     this.actions.push(action);
     if (text && this.onSay) {
@@ -136,13 +138,13 @@ export class BufferedConversationOutput implements ConversationOutput {
     return action;
   }
 
-  async transferToHuman(destination?: string): Promise<NodeResult> {
+  public async transferToHuman(destination?: string): Promise<NodeResult> {
     const action: OutputAction = { kind: 'transferToHuman', destination };
     this.actions.push(action);
     return action;
   }
 
-  async handoff(input: {
+  public async handoff(input: {
     to: string;
     reason?: string;
     payload?: Record<string, unknown>;
@@ -166,7 +168,7 @@ export class BufferedConversationOutput implements ConversationOutput {
     return action;
   }
 
-  async continueTo(input: {
+  public async continueTo(input: {
     nodeId: string;
     reason?: string;
     text?: string;
@@ -188,14 +190,16 @@ export class BufferedConversationOutput implements ConversationOutput {
     return action;
   }
 
-  async toolCall(input: {
+  public async invokeAdvertisedTool(input: {
     name: string;
     arguments?: Record<string, unknown>;
     text?: string;
   }): Promise<NodeResult> {
     const name = input.name?.trim();
     if (!name) {
-      throw new Error('toolCall.name is required (advertised tool function name)');
+      throw new Error(
+        'invokeAdvertisedTool.name is required (Vapi assistant tool function name)',
+      );
     }
     const action: OutputAction = {
       kind: 'toolCall',
@@ -212,12 +216,12 @@ export class BufferedConversationOutput implements ConversationOutput {
     return action;
   }
 
-  async callTool(input: {
+  public async toolCall(input: {
     name: string;
     arguments?: Record<string, unknown>;
     text?: string;
   }): Promise<NodeResult> {
-    return this.toolCall(input);
+    return this.invokeAdvertisedTool(input);
   }
 }
 

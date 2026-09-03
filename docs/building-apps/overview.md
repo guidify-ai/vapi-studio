@@ -10,7 +10,7 @@ vapi-studio/                    ← one git clone
 ├── docs/
 └── projects/
     └── my-voice-app/           ← your bot
-        ├── package.json        ← "file:.." → repo root
+        ├── package.json        ← "file:../.." → repo root
         ├── config/flow.yaml
         ├── docker-compose.yml
         └── src/
@@ -26,7 +26,7 @@ No second folder beside the clone. No dedicated app repository required.
 | --- | --- |
 | `VapiStudioModule`, supervisor, adapters | `flow.yaml`, agent steps, copy |
 | Standard intentions, forms API | Domain intentions, CRM, forms UI |
-| Vapi SSE compiler | `POST /vapi/webhook`, Custom LLM routes |
+| Vapi SSE compiler | `POST /{projectUuid}/vapi/webhook`, Custom LLM routes |
 | Event driver, persistence entities | `.env`, Docker, Vapi dashboard config |
 | Best-practice doctrine | Project `README.md` (northern stars) |
 
@@ -35,10 +35,10 @@ Do not add customer-specific agent steps or copy under `src/` — only under `pr
 ## Dependency
 
 ```json
-"@guidify-ai/vapi-studio": "file:.."
+"@guidify-ai/vapi-studio": "file:../.."
 ```
 
-Path is always **one level up** from `projects/<name>/` to the framework root.
+Path is **two levels up** from `projects/<name>/` to the framework root (`projects/<name>` → `projects/` → repo root).
 
 ## Next
 

@@ -45,15 +45,15 @@ export interface ConversationEntryPoint<TVars extends object = object> {
 export const CONVERSATION_ENTRY_POINT = Symbol('CONVERSATION_ENTRY_POINT');
 
 export class DefaultConversationEntry implements ConversationEntryPoint<object> {
-  createVariables(): object {
+  public createVariables(): object {
     return {};
   }
 
-  async beforeEach(_ctx: ConversationHookContext<object>): Promise<void> {
+  public async beforeEach(_ctx: ConversationHookContext<object>): Promise<void> {
     // no-op
   }
 
-  async afterEach(_ctx: ConversationHookContext<object>): Promise<void> {
+  public async afterEach(_ctx: ConversationHookContext<object>): Promise<void> {
     // no-op
   }
 }

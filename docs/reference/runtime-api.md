@@ -23,7 +23,7 @@ Application-specific agent steps, copy, and flows do **not** belong in this repo
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
@@ -60,31 +60,31 @@ VapiStudioModule.forRoot({
 | **Events** | `EventService.emit` → console + listeners (Postgres by default) |
 | **Integrations** | Signed outbound HTTP from Nodes via `ctx.integrations.request` |
 
-Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom LLM turns → checkpoint to Postgres after each turn → `status-update: ended` finalize. **Crash recovery:** ACTIVE rows keep `runtime_state`; on process boot (and via `ConversationBootstrapService.restoreAllActive()`) runtimes are rebuilt into the registry. `simulateCrash()` drops memory only for drills.
+Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom LLM turns → checkpoint to Postgres after each turn → `status-update: ended` finalize. Checkpoints are for **forensics and durability**, not automatic session restore in the MVP.
 
-**Cross-call resume (≤10 min):** `conversations.caller_id` + `last_activity_at` index prior ENDED/`final_state` or abandoned ACTIVE/`runtime_state` for the same caller. Apps peek via `ConversationResumeService.peek`, ask the caller, then `applyClone` overlays memory/history/portal/node/module onto the **new** call and clones `conversation_events` (with `clonedFrom*` provenance). Abandoned ACTIVE priors are finalized so they cannot be offered again.
+**Post-MVP (framework only, opt-in):** `ConversationBootstrapService.restoreAllActive()` / `simulateCrash()` / `disasterStatus()` rebuild in-memory runtimes after process restart. Apps must not call these on boot unless you explicitly ship crash recovery.
+
+**Post-MVP (apps opt-in):** `ConversationResumeService` — same `caller_id` within ~10 minutes may clone a prior conversation into a new call after the caller confirms. Not part of the default MVP happy path.
 
 ## Conversation lifecycle
 
-1. Channel bootstrap (`assistant-request`, `assistant.started`, lazy Custom LLM, or early `status-update`) calls `ConversationBootstrapService.bootstrap({ providerCallId, brainProfileId, metadata })`.
+1. Channel bootstrap (`assistant-request`, `assistant.started`, lazy Custom LLM, or early `status-update`) calls `ConversationBootstrapService.bootstrap({ projectId, providerCallId, brainProfileId, metadata })`.
 2. Postgres row `conversations` (ACTIVE) + in-memory `SupervisedConversation` with a `runtimeInstanceId`. Concurrent bootstrap for the same call is serialized and reused. `caller_id` is stamped from metadata/variables and refreshed on every checkpoint.
 3. Optional `ConversationEntryPoint.createVariables` + `beforeEach`, then an initial `runtime_state` checkpoint. If a workflow is loaded, set `workflowId` / `activeModuleId` and load the entry module’s flow.
 4. Each Custom LLM / studio turn: correlate call id → same runtime → ensure active module flow → `Supervisor.handleTurn` → **checkpoint** (`conversations.runtime_state`, bumps `last_activity_at`). `output.continueTo` jumps within one flow (`FLOW_CONTINUE`); `output.handoff` switches workflow module on the same Conversation (`WORKFLOW_HANDOFF`). Neither finalizes.
-5. Process restart: `restoreAllActive()` rebuilds every ACTIVE row that has `runtime_state` into the registry (apps typically call this on boot).
-6. `status-update: ended` / studio hangup / farewell `endCall` → `afterEach` → persist `final_state` → drop registry + turn queue.
-7. Optional: same `caller_id` returns within the resume window → app asks → `ConversationResumeService.applyClone` continues at the prior node/module on the new Conversation.
+5. `status-update: ended` / studio hangup / farewell `endCall` → `afterEach` → persist `final_state` → drop registry + turn queue.
 
-Identity is the **provider call id**. One supervised runtime per active call. Disaster drill helpers: `simulateCrash()`, `restoreAllActive()`, `disasterStatus()`.
+Identity is the **provider call id**. One supervised runtime per active call.
 
 ## Supervisor routing
 
 Turn routing is a **cascade** (first hit wins; later steps are skipped):
 
-1. **Code intentions `phase: 'force'`** — `CodeIntention.before()` / `match()` / `run()` with full memory/history/regex freedom. No listen resolve, no Brain. Forensic: `INTENTION_FORCE` + `resolvedVia: intention_force`. Console **IFORCE**.
+1. **Code intentions `INTENTION_CASCADE_PHASE.Force`** — `CodeIntention.before()` / `match()` / `run()` with full memory/history/regex freedom. No listen resolve, no Brain. Forensic: `INTENTION_FORCE` + `ROUTE_RESOLVED_VIA.IntentionForce`. Console **IFORCE**.
 2. **YAML condition `force: true` transitions** — declarative sugar over memory/variables. Forensic: `CONDITION_TRANSITION`. Console **FORCE**.
-3. **Code intentions `phase: 'match'`** — local `match()` confidence; may `goto` or inject a score and skip Brain (`intention_match` / **IMATCH**).
-4. **Listen `resolveIntention`** — cheap local match → Brain skipped (`listen_resolve`).
-5. **Brain `scan`** — scores candidates; soft YAML conditions + registered intention `boost`/`priority` feed the walk.
+3. **Code intentions `INTENTION_CASCADE_PHASE.Match`** — local `match()` confidence; may `goto` or inject a score and skip Brain (`ROUTE_RESOLVED_VIA.IntentionMatch` / **IMATCH**).
+4. **Listen `resolveIntention`** — cheap local match → Brain skipped (`ROUTE_RESOLVED_VIA.ListenResolve`).
+5. **Brain `INTENTION_CASCADE_PHASE.Scan`** — scores candidates; soft YAML conditions + registered intention `boost`/`priority` feed the walk.
 6. **Walk** — Node `before()` → enter → `listen` / `run` / `after`.
 
 ## Intentions (code)
@@ -92,16 +92,32 @@ Turn routing is a **cascade** (first hit wins; later steps are skipped):
 Intentions are classes — same spirit as Nodes. Register on `VapiStudioModule.forRoot({ intentions: [...] })`.
 
 ```ts
+import {
+  CodeIntention,
+  DEFAULT_FORCE_INTENTION_PRIORITY,
+  INTENTION_CASCADE_PHASE,
+  INTENTION_RUN_KIND,
+} from '@guidify-ai/vapi-studio';
+
+/** App-owned ids — colocate with `flow.yaml` and node classes (`as const`, not raw strings). */
+const APP_INTENTIONS = {
+  needSmsPhone: 'isNeedSmsPhone',
+} as const;
+
+const APP_NODES = {
+  askSmsPhone: 'askSmsPhone',
+} as const;
+
 @Injectable()
 export class NeedSmsPhoneIntention extends CodeIntention {
-  readonly name = 'isNeedSmsPhone';
-  phase = 'force';          // run BEFORE Brain
-  toNodeId = 'askSmsPhone'; // or return { kind: 'goto', nodeId } from run()
-  priority = 1_000_000;
-  boost = 0;                // Brain hint when phase is scan/match
-  reason = 'need_sms_phone';
+  public readonly name: string = APP_INTENTIONS.needSmsPhone;
+  public phase: IntentionCascadePhase = INTENTION_CASCADE_PHASE.Force;
+  public toNodeId: string = APP_NODES.askSmsPhone;
+  public priority: number = DEFAULT_FORCE_INTENTION_PRIORITY;
+  public boost: number = 0;
+  public reason: string = 'need_sms_phone';
 
-  async before(ctx) {
+  public async before(ctx): Promise<boolean> {
     return (
       ctx.memory.formSendConsent === true &&
       ctx.memory.phoneConfirmed !== true
@@ -113,11 +129,13 @@ export class NeedSmsPhoneIntention extends CodeIntention {
 
 | Field | Role |
 | --- | --- |
-| `name` | Stable id (same string listens / flow / Brain use) |
-| `phase` | `force` \| `match` \| `scan` (default) |
+| `name` | Stable id (same string listens / flow / Brain use) — prefer app `as const` maps |
+| `phase` | `INTENTION_CASCADE_PHASE.Force` \| `.Match` \| `.Scan` (default) |
 | `boost` | Brain scoring hint |
-| `priority` | Walk order when ranked |
-| `toNodeId` | Destination when force/match wins (optional if `run()` returns `goto`) |
+| `priority` | Walk order when ranked (`DEFAULT_FORCE_INTENTION_PRIORITY` for gates) |
+| `toNodeId` | Destination when force/match wins (optional if `run()` returns `INTENTION_RUN_KIND.Goto`) |
+
+Framework constants: `INTENTION_CASCADE_PHASE`, `INTENTION_RUN_KIND`, `ROUTE_RESOLVED_VIA` (forensics), `STANDARD_INTENTIONS` (studio portals).
 
 Lifecycle: `before` → `match` → `run` → `after`. YAML `transitions` remain for visualization; **code force intentions run first**.
 
@@ -167,7 +185,7 @@ A Node may `say()` several times in one turn. It must finish with exactly one of
 - `transferToHuman(destination?)` — phone transfer (Vapi → `transferCall` tool)
 - `handoff({ to, reason?, payload?, text? })` — leave this **workflow module** without ending the Conversation (`to` = module id; Vapi → Squad handoff tool). Requires a loaded `workflow.yaml`.
 - `continueTo({ nodeId, reason?, text? })` — jump to another Node in the **same** loaded flow and speak its entry next (Studio / single-assistant Vapi). Emits `FLOW_CONTINUE`; does **not** emit a Squad handoff tool.
-- `toolCall({ name, arguments?, text? })` / `callTool(...)` — request a channel tool **by name** (Vapi Custom LLM → OpenAI-compatible `tool_calls` SSE). Use for app/Vapi tools that are not the three semantic helpers above. `callTool` is an alias of `toolCall`.
+- `invokeAdvertisedTool({ name, arguments?, text? })` — request a **Vapi assistant tool by function name** (must already exist on `model.tools`). Compiles to OpenAI `tool_calls` SSE. Use for app tools (SMS, CRM, …) when semantic helpers (`endCall`, `transferToHuman`, `handoff`) do not apply. `toolCall` is a deprecated alias.
 
 ```ts
 // Prefer semantic helpers when they apply:
@@ -176,17 +194,15 @@ await ctx.output.transferToHuman('+15551234567');
 await ctx.output.continueTo({ nodeId: 'identityCollect' });
 await ctx.output.handoff({ to: 'identity' }); // Squad only — needs workflow.yaml
 
-// Convention — request by name; the Vapi assistant must already have that tool:
-return ctx.output.toolCall({
+// App tool — name must match a function on the live Vapi assistant:
+return ctx.output.invokeAdvertisedTool({
   name: 'send_sms_form',
   arguments: { to: ctx.memory.contactPhone, formId: 1 },
   text: 'I am texting that form now.', // optional speech before the tool call
 });
-// same:
-return ctx.output.callTool({ name: 'send_sms_form', arguments: { … } });
 ```
 
-`endCall` / `transferToHuman` / `handoff` stay adapter-owned name resolution. `toolCall` / `callTool` emit the exact `name` you pass — they do **not** look up a shared inventory. Operator convention: that name is pre-provisioned on the Vapi assistant (`model.tools`).
+`endCall` / `transferToHuman` / `handoff` resolve tool names via adapter env. `invokeAdvertisedTool` emits the exact `name` you pass — it does **not** sync or invent the assistant tool list. Provision matching tools on the Vapi assistant before you call.
 ### Forms (`ctx.forms.expose`)
 
 Blocking structured collection. Apps deliver via a dispose adapter — Studio modal, **first-party HTML** (`renderFormHtml` + `GET/POST /forms/:exposeId`), or later SMS.
@@ -255,7 +271,7 @@ modules:
 - `WorkflowLoader` — load / resolve module id ↔ Vapi `assistantName`
 - `WorkflowHandoffService.applyHandoffs` — enrich actions with `assistantName`, set `metadata.activeModuleId`, load the next Vapi Studio flow, emit `WORKFLOW_HANDOFF`, checkpoint; **never** `finalizeEnded`
 - After handoff, `metadata.moduleNeedsEntrySpeak` — Supervisor speaks the destination entry Node on the next empty/module-entry turn (Studio may do this in-process; Vapi after Squad switch)
-- One deployment can serve all Vapi Studio members via `POST /vapi/:moduleId/chat/completions` or header `X-Vapi-Studio-Module`
+- One deployment can serve all Vapi Studio members via `POST /{projectUuid}/vapi/:moduleId/chat/completions` or header `X-Vapi-Studio-Module`
 
 Native Vapi members use `kind: vapi` (no flow file) — Vapi Studio only emits the handoff tool; Vapi owns that assistant.
 
@@ -350,6 +366,10 @@ Stock adapters:
 - `MockBrainAdapter` — deterministic sequences / profiles (PoC default)
 - `ChatGptBrainAdapter` — cheap OpenAI whitelist only (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Scan HTTP timeout **3s**; failure → unknown. Live path: no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code**.
 
+**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on extract. Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
+
+Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
+
 Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
 Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })`. Only `OPENAI_API_KEY` belongs in `.env`. End of call may log `BRAIN_COST_SUMMARY` when the ChatGPT adapter recorded usage.
@@ -374,7 +394,11 @@ Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engage
 
 **Mad is sticky:** once in the `mad` portal, Supervisor does not offer other portals (or unknown) until the caller continues / goodbyes. Other listens may still escalate *into* mad via `studio.isMad`.
 
-**`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId`, refreshes that Node’s `listen()`, re-scans the **same** user utterance, and routes again (skips re-selecting `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior.
+**Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` **Continue-replays** the origin listen (same utterance) — do not steal a new “how can I help?” CTA.
+
+**`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId`, refreshes that Node’s listen (preferring the **listen snapshot** taken when the portal opened — so `sayAndListen` overrides and `resolveIntention` survive), re-scans the **same** user utterance, and routes again (skips re-selecting `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior.
+
+**Unknown origin consume:** While `studio.isUnknownTransition` is the active portal, the **next** user utterance is first matched against the **origin listen** (same snapshot). If `resolveIntention` or Brain yields a walkable non-unknown intention, Supervisor exits the portal and routes that intention on **this turn** (`ROUTE_DECISION.resolvedVia = unknown_origin_consume`) — it must not steal the turn via unknown’s thin candidate list (e.g. mapping “as soon as possible” to an unrelated roof-estimate path). If the origin still cannot accept the utterance, the normal unknown listen / recovery path runs.
 
 ## Vapi integration
 
@@ -391,25 +415,25 @@ Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engage
 
 The only durable “desync” between Vapi and Vapi Studio is **which tools the assistant really has**. That is a **config convention**, not shared runtime state:
 
-1. Nodes / semantic helpers **request tools by name** (`endCall`, `transferToHuman`, `handoff`, `callTool({ name })`) — blindly, assuming the live assistant was provisioned with them.
+1. Nodes / semantic helpers **request tools by name** (`endCall`, `transferToHuman`, `handoff`, `invokeAdvertisedTool({ name })`) — assuming the live assistant was provisioned with them.
 2. The **Vapi assistant** (Squad member `model.tools[]`, hooks, server tools) must be **pre-provided** with those tools. Vapi Studio does not sync or invent the inventory.
 3. When Custom LLM requests include `body.tools`, Vapi Studio may stash them as `ctx.tools` for **optional** visibility / operator warnings (`TOOL_CALL_NOT_ADVERTISED`). Nodes should **not** treat `ctx.tools` as a required gate — empty ads or Studio turns are normal.
 
 Vapi treats the app as an OpenAI-compatible Custom LLM.
 
 - Webhook: server messages (`assistant-request`, `assistant.started`, `status-update`, `user-interrupted`, `tool-calls`, …). Strategies live in the **app**; helpers live here (`extractVapiCallId`, `extractVapiCallerNumber`, `extractAdvertisedTools`, `extractToolResults`).
-- Custom LLM: `POST …/chat/completions` — **one request per turn**, SSE stream, then close. `VapiSseCompiler` writes chunks and terminal tool calls (`endCall`, `transferCall`, Squad `handoff` with `destination: "<assistantName>"`, plus generic `output.toolCall` / `output.callTool`). Mock Brain may hold `listenTimeoutSeconds` to coalesce ASR crumbs; ChatGPT must not — scan starts immediately.
-- Each Custom LLM turn may stash `body.tools` → `ctx.tools` (optional ads), `role:tool` → `ctx.toolResult(s)`, and call metadata → `ctx.vapi`. Tool-result-only turns (no new user speech) **re-enter the Node** that emitted `toolCall` without a Brain scan of empty text. Idle / still-there uses `Supervisor.handleTurn({ forceIntention: 'studio.isStillThere' })` (Studio timer or server tool from Vapi speech-timeout hooks) — **not** `listenTimeoutSeconds`.
+- Custom LLM: `POST …/chat/completions` — **one request per turn**, SSE stream, then close. `VapiSseCompiler` writes chunks and terminal tool calls (`endCall`, `transferCall`, Squad `handoff`, plus `invokeAdvertisedTool` → internal `toolCall` action). Mock Brain may hold `listenTimeoutSeconds` to coalesce ASR crumbs; ChatGPT must not — scan starts immediately.
+- Each Custom LLM turn may stash `body.tools` → `ctx.tools` (optional ads), `role:tool` → `ctx.toolResult(s)`, and call metadata → `ctx.vapi`. Tool-result-only turns (no new user speech) **re-enter the Node** that emitted `invokeAdvertisedTool` without a Brain scan of empty text. Idle / still-there uses `Supervisor.handleTurn({ forceIntention: 'studio.isStillThere' })` (Studio timer or server tool from Vapi speech-timeout hooks) — **not** `listenTimeoutSeconds`.
 - **LLM-requested tools** (Custom LLM SSE `tool_calls`) vs **server-dispatched tools** (webhook `message.type === 'tool-calls'`) are different paths; apps implement the latter in a webhook strategy.
-- Workflow modules: prefer one app with per-member URLs (`/vapi/:moduleId/chat/completions`) or `X-Vapi-Studio-Module` so the same Conversation + `activeModuleId` serve the Squad. Squad handoff *rules* live on each Vapi assistant (`model.tools` type `handoff`); Vapi Studio only emits the matching tool call when a Node returns `output.handoff`.
+- Workflow modules: prefer one app with per-member URLs (`/{projectUuid}/vapi/:moduleId/chat/completions`) or `X-Vapi-Studio-Module` so the same Conversation + `activeModuleId` serve the Squad. Squad handoff *rules* live on each Vapi assistant (`model.tools` type `handoff`); Vapi Studio only emits the matching tool call when a Node returns `output.handoff`.
 - Helpers: `buildVapiHandoffToolArgs`, `hasAdvertisedHandoffTool`, `resolveHandoffToolName(tools, assistantName)`.
 - Correlation: call id from body/headers. Missing call id is an error, not a silent new Conversation.
 
 Nodes speak through `ConversationOutput`. They never format SSE.
 
 ```ts
-// Blind request by convention — Vapi assistant must already expose this tool:
-return ctx.output.callTool({
+// Vapi assistant must already expose this function name on model.tools:
+return ctx.output.invokeAdvertisedTool({
   name: 'lookupCustomer',
   arguments: { phone: ctx.vapi.phoneNumber },
 });
@@ -439,6 +463,8 @@ JWT HS256 of the canonical body bytes in `x-signature` (Node `crypto`, no `jsonw
 
 - Default listener: `PostgresEventListener` → `conversation_events`
 - Extra listeners: `VapiStudioModule.forRoot({ eventListeners: [...] })`
+- `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag` for per-project funnel dashboards
+- Aggregation helpers on `ConversationRepository`: `countConversationsByProject`, `countConversationsByEventType`, `countConversationsByAnalyticsTag`, `countConversationsMatchingStep`
 - Console: `RA9_CONSOLE_DEBUG` (default on). Disable with `0` / `false` / `off`
 - File driver: still prints console; also appends ANSI-stripped lines to `{LOG_DIR}/dailyYYYYMMDD.log`
 - **The log directory is owned by the application** (each project keeps a `logs/` folder and sets `LOG_DIR`). The framework only writes there.
@@ -467,6 +493,7 @@ Caller Phone Number: {webhook customer number, or blank}
 | `FLOW_CONTINUE` | persist | Same-flow jump from/to/reason |
 | `NODE_REJECT` | log | Single `before()` refusal (also rolled into `ROUTE_DECISION.rejected`) |
 | `FORM_*` | log/persist | Expose / deliver / submit / timeouts (carry `branch` + `deliveryBranch`) |
+| `ANALYTICS_TAG` | **persist** | Funnel milestone (`payload.tag`) — scored by project analytics dashboards |
 
 Memory console diffs include conversation-critical flags such as `introSpoken` (only bootstrap infra keys are stripped).
 
@@ -476,9 +503,12 @@ Disable file logs with `RA9_FILE_LOG=0`. Tests skip files unless `LOG_DIR` is se
 
 TypeORM + PostgreSQL:
 
-- `conversations` — durable identity, status, metadata, final snapshot
+- `projects` — durable project identity; public ingress UUID for `/{projectUuid}/vapi/...`
+- `conversations` — durable identity (`project_id` + `provider_call_id` unique), status, metadata, final snapshot
 - `conversation_events` — event history
-- `provider_ingress` — raw webhook / Custom LLM bodies for operator inspection
+- `provider_ingress` — raw webhook / Custom LLM bodies for operator inspection (`project_id` when scoped)
+
+Vapi HTTP routes are **app-owned** and must be mounted under `/{projectUuid}/vapi/...`. Apps seed a stable `PROJECT_UUID` on boot. Vapi `assistantId` is forensics only — not used for project routing.
 
 Active-call state (portal counters, listen registration, turn queue) stays **in memory**.
 
@@ -486,13 +516,17 @@ Active-call state (portal counters, listen registration, turn queue) stays **in 
 
 Export surface is `src/index.ts`. Important groups:
 
+- **Lint** — `yarn lint` enforces explicit access modifiers and typed class properties on `src/`
+
 - `VapiStudioModule`, `AgentNode`, `NodeContext`, `Supervisor`
 - `ConversationBootstrapService`, `SupervisedConversation`, registries, `CallTurnQueue`
 - `ConversationEntryPoint`, schema/history types
-- `BrainService` / adapters / `STANDARD_INTENTIONS` / `BrainConfig`
+- `ProjectEntity`, `ProjectRepository`
+- `BrainService` / adapters / `STANDARD_INTENTIONS` / `INTENTION_CASCADE_PHASE` / `INTENTION_RUN_KIND` / `ROUTE_RESOLVED_VIA` / `BrainConfig`
 - `FlowLoader`, `WorkflowLoader`, `WorkflowHandoffService`
 - `FormsService`, `FORM_DISPOSE_ADAPTER`, form types / timeout errors
-- `EventService`, daily-log helpers
+- `EventService` (incl. `persistAnalyticsTag`), daily-log helpers
+- `ANALYTICS_TAG_EVENT`, analytics funnel types (`AnalyticsFunnelDefinition`, …)
 - `IntegrationClient`, JWT helpers
 - `VapiSseCompiler`, `extractVapiCallId`, `extractVapiCallerNumber`, `resolveHandoffToolName`, `buildVapiHandoffToolArgs`, `hasAdvertisedHandoffTool`
 - Listen timeout: `DEFAULT_LISTEN_TIMEOUT_SECONDS`, `AgentNode.listenTimeoutSeconds`, `AgentNode.interruptible`, `listenTimeoutToVapiStartSpeakingPlan`
@@ -539,6 +573,4 @@ Mocked unit tests; no live Vapi or paid Brain unless a future eval slice says so
 
 ## Out of scope (current MVP)
 
-Multi-process runtime registry / production failover, generic CLI app generator, production customer business logic in the framework, default-on ChatGPT, Vapi Evals replacement.
-
-**In scope (PoC):** single-process crash recovery via `restoreAllActive()` and `runtime_state` checkpointing — not multi-node HA.
+Multi-process runtime registry / production failover, generic CLI app generator, production customer business logic in the framework, default-on ChatGPT, Vapi Evals replacement, automatic crash restore on boot, cross-call resume unless an app opts in.

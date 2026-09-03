@@ -22,7 +22,7 @@ Add to `package.json`:
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:.."
+    "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
@@ -50,7 +50,18 @@ export class AppModule {}
 
 Add `config/flow.yaml` with `start: greet` and Vapi HTTP routes — see [Creating an app](../building-apps/creating-an-app.md).
 
-## 4. Read next
+## 4. Run and wire Vapi
+
+Install **[ngrok](https://ngrok.com/download)** if you have not already. Local dev tunnels Docker (`localhost:9999` in example apps) to HTTPS — Vapi cannot call localhost directly.
+
+```bash
+yarn install
+yarn start   # Docker + ngrok; keeps tunnel open until Ctrl+C
+```
+
+`yarn start` prints **Webhook** and **Conversation** URLs on the ngrok origin. Paste them into your Vapi assistant before testing a call. Restart `yarn start` when you need a fresh tunnel URL (or use an ngrok reserved domain).
+
+## 5. Read next
 
 | Topic | Doc |
 | --- | --- |

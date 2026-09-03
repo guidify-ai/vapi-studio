@@ -152,25 +152,25 @@ export abstract class Ra9Node<
    * listen. Override on the subclass. `listen()` / `sayAndListen({ timeoutSeconds })`
    * can still override per turn.
    */
-  listenTimeoutSeconds: number = DEFAULT_LISTEN_TIMEOUT_SECONDS;
+  public listenTimeoutSeconds: number = DEFAULT_LISTEN_TIMEOUT_SECONDS;
 
   /**
    * When false, the next listen is not barge-in: Custom LLM overlap is queued
    * until `listenTimeoutSeconds` of silence after the last fragment.
    */
-  interruptible = true;
+  public interruptible: boolean = true;
 
-  async before(_ctx: NodeContext<TSchema>): Promise<boolean> {
+  public async before(_ctx: NodeContext<TSchema>): Promise<boolean> {
     return true;
   }
 
-  async listen(_ctx: NodeContext<TSchema>): Promise<ListenExpectation | null> {
+  public async listen(_ctx: NodeContext<TSchema>): Promise<ListenExpectation | null> {
     return null;
   }
 
-  abstract run(ctx: NodeContext<TSchema>): Promise<NodeResult>;
+  public abstract run(ctx: NodeContext<TSchema>): Promise<NodeResult>;
 
-  async after(
+  public async after(
     _ctx: NodeContext<TSchema>,
     _result: NodeResult,
   ): Promise<void> {
@@ -182,7 +182,7 @@ export abstract class Ra9Node<
    * Return restartNode() / forceIntention(...) / catchResult(...) / rethrowCatch().
    * Default: rethrow.
    */
-  async catch(
+  public async catch(
     _ctx: NodeContext<TSchema>,
     _error: unknown,
   ): Promise<CatchDirective> {
