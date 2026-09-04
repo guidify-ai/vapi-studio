@@ -49,7 +49,7 @@ Function names on the Vapi assistant **must match** these exactly.
 | `assistant-request` | Bootstrap + return `assistantId` or transient assistant config |
 | `call.started` / `assistant.started` | Bootstrap (saved-assistant path) |
 | `status-update` | Bootstrap on `in-progress`; finalize on `ended` |
-| `tool-calls` | `ra9_still_there` → StillThere portal |
+| `tool-calls` | Still-there portal tool → StillThere portal |
 | `user-interrupted` | Record interrupt |
 
 Guard: reject messages missing `message.call.id` → `400`.

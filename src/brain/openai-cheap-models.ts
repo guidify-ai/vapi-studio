@@ -1,5 +1,5 @@
 /**
- * Whitelisted cheap OpenAI models for ra9-chatgpt Brain testing.
+ * Whitelisted cheap OpenAI models for studio-chatgpt Brain testing.
  * Anything outside this set is rejected — no silent upgrade to expensive models.
  *
  * Prices are approximate USD per 1M tokens (standard, non-batch) for PoC cost estimates.
@@ -59,7 +59,7 @@ export function isCheapOpenAiModel(model: string): model is CheapOpenAiModelId {
 
 /**
  * Resolve a cheap OpenAI model id against the whitelist.
- * Pass the id from application code (`Ra9Module.forRoot({ brain: { model } })`).
+ * Pass the id from application code (`VapiStudioModule.forRoot({ brain: { model } })`).
  * Default: gpt-4.1-nano. Throws if an expensive / unknown model is requested.
  */
 export function resolveCheapOpenAiModel(
@@ -71,8 +71,8 @@ export function resolveCheapOpenAiModel(
   }
   if (!isCheapOpenAiModel(raw)) {
     throw new Error(
-      `OpenAI Brain model "${raw}" is not on the ra9-chatgpt cheap whitelist. ` +
-        `Set it in application code via Ra9Module.forRoot({ brain: { model } }). ` +
+      `OpenAI Brain model "${raw}" is not on the studio-chatgpt cheap whitelist. ` +
+        `Set it in application code via VapiStudioModule.forRoot({ brain: { model } }). ` +
         `Allowed: ${CHEAP_OPENAI_MODEL_IDS.join(', ')}.`,
     );
   }

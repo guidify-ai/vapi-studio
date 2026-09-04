@@ -21,7 +21,7 @@ export interface BrainScanInput {
    * listen-prioritized next-node intentions + all portal intentions.
    */
   candidates?: BrainIntentionOption[];
-  /** Default 0.4 — if all confidences are below this, ra9.isUnknownTransition wins. */
+  /** Default 0.4 — if all confidences are below this, studio.isUnknownTransition wins. */
   confidenceThreshold?: number;
   /** Compact rolling transcript so the scanner has call context. */
   history?: {
@@ -42,7 +42,7 @@ export interface BrainScanResult {
 
 /**
  * Brain port — Supervisor depends only on this.
- * Concrete providers live under `brain/adapters/*` (Mock, ra9-chatgpt, Roofr API, …).
+ * Concrete providers live under `brain/adapters/*` (Mock, studio-chatgpt, Roofr API, …).
  */
 export interface BrainService {
   scan(input: BrainScanInput): Promise<BrainScanResult>;

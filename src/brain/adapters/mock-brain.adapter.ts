@@ -138,7 +138,7 @@ export class MockBrainAdapter implements BrainAdapter {
 
   /**
    * Deterministic clarify for tests — fills required string fields from input text.
-   * Empty / reserved marker input → ra9.clarify.cannotAnswer.
+   * Empty / reserved marker input → studio.clarify.cannotAnswer.
    */
   public async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
     request: BrainClarifyRequest,
@@ -183,7 +183,7 @@ export class MockBrainAdapter implements BrainAdapter {
 
   /**
    * Deterministic judge for tests — no network.
-   * Markers in context: `ra9.judge.pass` / `ra9.judge.fail`.
+   * Markers in context: `studio.judge.pass` / `studio.judge.fail`.
    * Otherwise: any matching failureCondition → fail; all successConditions
    * present (or none given) → pass.
    */
@@ -195,7 +195,7 @@ export class MockBrainAdapter implements BrainAdapter {
     const failure = request.failureConditions ?? [];
     const haystack = text.toLowerCase();
 
-    if (!text || /^ra9\.judge\.fail$/i.test(text)) {
+    if (!text || /^studio\.judge\.fail$/i.test(text)) {
       return normalizeJudgeResult(
         {
           passed: false,
@@ -206,7 +206,7 @@ export class MockBrainAdapter implements BrainAdapter {
       );
     }
 
-    if (/ra9\.judge\.fail\b/i.test(text)) {
+    if (/studio\.judge\.fail\b/i.test(text)) {
       return normalizeJudgeResult(
         {
           passed: false,
@@ -217,7 +217,7 @@ export class MockBrainAdapter implements BrainAdapter {
       );
     }
 
-    if (/ra9\.judge\.pass\b/i.test(text)) {
+    if (/studio\.judge\.pass\b/i.test(text)) {
       return normalizeJudgeResult(
         {
           passed: true,

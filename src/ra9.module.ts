@@ -34,6 +34,11 @@ import {
   resolveRa9BrainConfig,
   type Ra9BrainConfig,
 } from './brain/brain-config';
+import {
+  STUDIO_CONVERSATION_LIMITS,
+  resolveConversationLimits,
+  type ConversationLimitsConfig,
+} from './conversation/conversation-limits';
 import { resolveCheapOpenAiModel } from './brain/openai-cheap-models';
 import { ConversationEntity } from './persistence/conversation.entity';
 import { ConversationEventEntity } from './persistence/conversation-event.entity';
@@ -79,9 +84,14 @@ export interface Ra9ModuleOptions {
    */
   brain?: Ra9BrainConfig;
   /**
+   * Hard conversation caps (turns + wall-clock). Always on — defaults 40 turns /
+   * 20 minutes. Cannot be disabled; values are clamped to safe ceilings.
+   */
+  limits?: ConversationLimitsConfig;
+  /**
    * How to dispose `forms.expose` to the active channel.
    * Default: noop (ACK never arrives → Nodes fall back to voice).
-   * Studio registers `ra9-developer-tools-chat`.
+   * Studio registers a developer-tools chat dispose adapter.
    */
   formDisposeAdapter?: Type<FormDisposeAdapter>;
 }
@@ -96,6 +106,7 @@ export class Ra9Module {
     const extraListeners = options.eventListeners ?? [];
     const brainConfig = resolveRa9BrainConfig(options.brain);
     resolveCheapOpenAiModel(brainConfig.model);
+    const conversationLimits = resolveConversationLimits(options.limits);
     const FormDisposeClass =
       options.formDisposeAdapter ?? NoopFormDisposeAdapter;
 
@@ -155,6 +166,7 @@ export class Ra9Module {
         BrainAdapterClass,
         { provide: BRAIN_SERVICE, useExisting: BrainAdapterClass },
         { provide: RA9_BRAIN_CONFIG, useValue: brainConfig },
+        { provide: STUDIO_CONVERSATION_LIMITS, useValue: conversationLimits },
         SupervisedConversationRegistry,
         ConversationRepository,
         ProviderIngressRepository,
@@ -185,6 +197,7 @@ export class Ra9Module {
         BrainAdapterClass,
         BRAIN_SERVICE,
         RA9_BRAIN_CONFIG,
+        STUDIO_CONVERSATION_LIMITS,
         SupervisedConversationRegistry,
         ConversationRepository,
         ProviderIngressRepository,

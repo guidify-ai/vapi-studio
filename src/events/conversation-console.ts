@@ -1,11 +1,13 @@
 /**
  * Color-coded conversation console for live call debugging.
- * Toggle with RA9_CONSOLE_DEBUG=1|true|yes (default: on unless explicitly 0|false|no|off).
+ * Toggle with STUDIO_CONSOLE_DEBUG=1|true|yes (default: on unless explicitly 0|false|no|off).
  */
 
 import { appendDailyLog } from './daily-log.driver';
+import { envFlag } from '../util/studio-env';
 
 export type Ra9LogLevel = 'debug' | 'info' | 'warn' | 'error';
+export type StudioLogLevel = Ra9LogLevel;
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -84,8 +86,7 @@ export function snapshotUserMemory(
 }
 
 export function isConversationConsoleEnabled(): boolean {
-  const raw = (process.env.RA9_CONSOLE_DEBUG ?? '1').trim().toLowerCase();
-  return !['0', 'false', 'no', 'off'].includes(raw);
+  return envFlag('STUDIO_CONSOLE_DEBUG', 'RA9_CONSOLE_DEBUG', true);
 }
 
 let lineSink: string[] | null = null;
@@ -490,6 +491,29 @@ export function printConversationConsole(
         paint(ANSI.red, 'error'),
         paint(ANSI.white, String(payload.name ?? '')),
         paint(ANSI.dim, String(payload.error ?? '')),
+      ]);
+      return;
+
+    case 'OUTBOUND_NOTIFICATION':
+      line([
+        roleTag(ANSI.bgCyan, ANSI.white, 'NOTIFY'),
+        paint(ANSI.cyan, String(payload.channel ?? 'sms')),
+        payload.dryRun
+          ? paint(ANSI.yellow, 'dry-run')
+          : paint(ANSI.green, String(payload.status ?? 'sent')),
+        paint(ANSI.white, String(payload.to ?? '')),
+        paint(ANSI.dim, String(payload.sid ?? '')),
+        turn,
+      ]);
+      return;
+
+    case 'OUTBOUND_NOTIFICATION_ERROR':
+      line([
+        roleTag(ANSI.bgRed, ANSI.white, 'NOTIFY'),
+        paint(ANSI.red, 'error'),
+        paint(ANSI.cyan, String(payload.channel ?? 'sms')),
+        paint(ANSI.dim, String(payload.reason ?? '')),
+        turn,
       ]);
       return;
 
@@ -919,7 +943,7 @@ export function printConversationConsole(
           paint(level === 'error' ? ANSI.red : ANSI.yellow, type),
           formatValue(payload),
         ]);
-      } else if (process.env.RA9_CONSOLE_DEBUG_ALL === '1') {
+      } else if (envFlag('STUDIO_CONSOLE_DEBUG_ALL', 'RA9_CONSOLE_DEBUG_ALL', false)) {
         line([
           roleTag(ANSI.bgGray, ANSI.white, 'EVT '),
           paint(ANSI.dim, type),

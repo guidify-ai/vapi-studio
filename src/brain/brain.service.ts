@@ -1,6 +1,6 @@
 /**
  * Brain barrel — port + stock adapters.
- * Apps may supply their own adapter (e.g. Roofr HTTP API) via Ra9Module.forRoot({ brainAdapter }).
+ * Apps may supply their own adapter (e.g. Roofr HTTP API) via VapiStudioModule.forRoot({ brainAdapter }).
  */
 export {
   BRAIN_SERVICE,

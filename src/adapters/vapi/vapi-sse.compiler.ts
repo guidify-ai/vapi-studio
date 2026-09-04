@@ -214,7 +214,7 @@ export class VapiSseCompiler {
   private readonly tools: unknown;
 
   public constructor(opts?: { model?: string; id?: string; tools?: unknown }) {
-    this.model = opts?.model ?? 'ra9-poc';
+    this.model = opts?.model ?? 'vapi-studio';
     this.id = opts?.id ?? `chatcmpl-${Date.now()}`;
     this.tools = opts?.tools;
   }

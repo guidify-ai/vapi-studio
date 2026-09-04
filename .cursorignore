@@ -1,0 +1,4 @@
+# Hide legacy / noise from Cursor indexing (agents + semantic search).
+# Runtime code still ships; this only affects what the IDE/agent indexes by default.
+archive/
+.specify/memory/*.bak

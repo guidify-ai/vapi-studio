@@ -20,6 +20,7 @@ In a **vapi-studio** source checkout, the same files live at `docs/best-practice
 ## Hard rules (summary)
 
 - **One CTA per turn** — never stack unrelated questions; prefer more agent steps / `continueTo`.
+- **Conversations must end** — framework `limits.maxTurns` / `limits.maxDurationMs` always apply (defaults 40 / 20m); never ship unlimited calls (`docs/best-practices/conversation-design.md`).
 - **Fail closed** on constrained fields (e.g. NA phone = exactly 10 digits).
 - **Listen timeouts** match answer type (short for digits).
 - **Do not store ASR junk** as names or profile verify summaries.

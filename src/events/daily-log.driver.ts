@@ -6,6 +6,7 @@
 
 import { appendFile, mkdir, readdir, unlink } from 'fs/promises';
 import { join } from 'path';
+import { envFlag } from '../util/studio-env';
 
 const DEFAULT_LOG_DAYS = 14;
 const FILE_RE = /^daily(\d{8})\.log$/;
@@ -46,8 +47,7 @@ export function dailyLogFileName(date = new Date()): string {
 }
 
 export function isFileLogEnabled(): boolean {
-  const raw = (process.env.RA9_FILE_LOG ?? '1').trim().toLowerCase();
-  if (['0', 'false', 'no', 'off'].includes(raw)) return false;
+  if (!envFlag('STUDIO_FILE_LOG', 'RA9_FILE_LOG', true)) return false;
   // node:test — don't litter repo logs unless the test opted in.
   if (process.env.NODE_TEST_CONTEXT && !process.env.LOG_DIR) return false;
   return true;
@@ -96,8 +96,7 @@ export function formatCallLogHeader(input: {
 
 function shouldPrintCallBannerToConsole(): boolean {
   if (process.env.NODE_TEST_CONTEXT) return false;
-  const raw = (process.env.RA9_CONSOLE_DEBUG ?? '1').trim().toLowerCase();
-  return !['0', 'false', 'no', 'off'].includes(raw);
+  return envFlag('STUDIO_CONSOLE_DEBUG', 'RA9_CONSOLE_DEBUG', true);
 }
 
 function enqueue(work: () => Promise<void>): void {

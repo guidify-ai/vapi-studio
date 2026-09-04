@@ -20,7 +20,7 @@ Unless the app explicitly supports other regions:
 - If more than 10 digit characters appear (trailing ASR), take the **first 10**.
 - Fewer than 10 → fail and re-ask phone only.
 - Use a **short** listen timeout while collecting digits.
-- **Read-back confirm is mandatory** after spoken digits: “I heard 236-562-1379. Is that correct?” before SMS/form. Accepting calling-from ANI counts as confirm. Do not proceed on digits alone.
+- **Read-back confirm is mandatory** after spoken digits: “I heard 555-010-0999. Is that correct?” before SMS/form. Accepting calling-from ANI counts as confirm. Do not proceed on digits alone.
 - Incomplete ASR (fewer than 10 digits) → say you only caught N digits and ask again — not a generic “sorry, what’s the number?”
 - First ask for a missing field (e.g. mobile after consent) is a **gap fill**, not a re-ask — never preface with “I’m sorry, I didn’t quite get it.”
 

@@ -68,7 +68,7 @@ describe('Brain judge', () => {
     assert.equal(failed.passed, false);
 
     const marker = await brain.judge({
-      context: 'ra9.judge.fail',
+      context: 'studio.judge.fail',
       goals: 'anything',
       successConditions: [],
       failureConditions: [],

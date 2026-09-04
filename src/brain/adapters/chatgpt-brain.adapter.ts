@@ -106,7 +106,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     );
 
     this.events.log('info', 'BRAIN_SCAN_START', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: input.runtime.providerCallId,
       conversationId: input.runtime.conversationId,
       model: model.id,
@@ -124,7 +124,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
         intentions: [unknownIntention(input, 'no_candidates', threshold)],
       };
       this.events.log('info', 'BRAIN_SCAN_RESULT', {
-        adapter: 'ra9-chatgpt',
+        adapter: 'studio-chatgpt',
         providerCallId: input.runtime.providerCallId,
         winner: STANDARD_INTENTIONS.isUnknownTransition,
         reason: 'no_candidates',
@@ -180,7 +180,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     } catch (error) {
       const durationMs = Date.now() - scanStarted;
       this.events.log('warn', 'BRAIN_SCAN_RESULT', {
-        adapter: 'ra9-chatgpt',
+        adapter: 'studio-chatgpt',
         providerCallId: input.runtime.providerCallId,
         model: model.id,
         winner: STANDARD_INTENTIONS.isUnknownTransition,
@@ -225,7 +225,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
 
     if (allBelowConfidenceThreshold(scores, threshold)) {
       this.events.log('info', 'BRAIN_SCAN_RESULT', {
-        adapter: 'ra9-chatgpt',
+        adapter: 'studio-chatgpt',
         providerCallId: input.runtime.providerCallId,
         model: model.id,
         winner: STANDARD_INTENTIONS.isUnknownTransition,
@@ -250,13 +250,13 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     const ranked = scoresToRankedCandidates(scores, candidates, {
       userText: input.userText,
       hints: listen?.hints,
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       threshold,
       series: series.isSeries,
     });
 
     this.events.log('info', 'BRAIN_SCAN_RESULT', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: input.runtime.providerCallId,
       model: model.id,
       winner: ranked[0]?.name,
@@ -281,7 +281,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     const series = detectUserSpeechSeries(inputText);
 
     this.events.log('info', 'BRAIN_CLARIFY_START', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: request.meta?.providerCallId,
       conversationId: request.meta?.conversationId,
       model: model.id,
@@ -350,7 +350,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     const result = normalizeClarifyResult<TAnswer>(parsed, request.answer);
 
     this.events.log('info', 'BRAIN_CLARIFY_RESULT', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: request.meta?.providerCallId,
       model: model.id,
       question: request.question,
@@ -372,7 +372,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     );
 
     this.events.log('info', 'BRAIN_JUDGE_START', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: request.meta?.providerCallId,
       conversationId: request.meta?.conversationId,
       model: model.id,
@@ -426,7 +426,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     const result = normalizeJudgeResult(parsed, request.options);
 
     this.events.log('info', 'BRAIN_JUDGE_RESULT', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: request.meta?.providerCallId,
       model: model.id,
       passed: result.passed,
@@ -501,7 +501,7 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     });
 
     this.events.log('info', 'BRAIN_USAGE', {
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       providerCallId: input.providerCallId,
       kind: input.kind,
       model: input.model.id,
@@ -628,7 +628,7 @@ function unknownIntention(
       userText: input.userText,
       reason,
       threshold,
-      adapter: 'ra9-chatgpt',
+      adapter: 'studio-chatgpt',
       hints: input.listen?.hints ?? input.runtime.listenExpectation?.hints,
       ...extra,
     },

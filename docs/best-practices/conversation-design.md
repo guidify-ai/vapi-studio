@@ -15,6 +15,10 @@ Ask **one** clear call-to-action per assistant turn. Never combine unrelated dec
 
 Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a different number”) — that is still one decision: confirm destination vs provide another.
 
+## Conversations must end (hard rule)
+
+There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise within hard ceilings in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
+
 ## Fail closed on constrained fields
 
 If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, listed choice 1…N), the extractor must:

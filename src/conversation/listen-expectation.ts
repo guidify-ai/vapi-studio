@@ -3,7 +3,7 @@
  * Guides Brain intention scan + optional field extraction + ASR/LLM hints.
  */
 export interface ListenIntentionBoost {
-  /** Intention name to prioritize (e.g. isAcknowledge, ra9.isGoodbye). */
+  /** Intention name to prioritize (e.g. isAcknowledge, studio.isGoodbye). */
   name: string;
   /**
    * Extra weight for Brain scoring (hint only — does not change Supervisor walk order).

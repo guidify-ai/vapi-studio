@@ -31,7 +31,7 @@ cd projects/my-app && yarn install
 | `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, or custom |
 | `brain` | No | `{ model, confidenceThreshold }` for ChatGPT adapter |
 | `intentions` | No | Code intention providers (`INTENTION_CASCADE_PHASE`) |
-| `formDisposeAdapter` | No | Delivers forms (HTML link, Studio modal, SMS later) |
+| `formDisposeAdapter` | No | Delivers forms (HTML link, Studio modal, Twilio SMS, …) |
 | `eventListeners` | No | Subscribe to `EventService` (e.g. Studio buffer) |
 
 ## Node registration pattern

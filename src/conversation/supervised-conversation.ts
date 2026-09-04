@@ -16,7 +16,7 @@ export class SupervisedConversation {
   public readonly conversationId: string;
   public readonly providerCallId: string;
   public readonly flowId: string;
-  public readonly createdAt: Date;
+  public createdAt: Date;
 
   /** Currently executing node id (portal or normal). */
   public currentNodeId: string | null;
@@ -44,7 +44,7 @@ export class SupervisedConversation {
   public metadata: Record<string, unknown>;
   /**
    * Compact transcript + node path for Brain scan and Node.before().
-   * This is RA9's session memory — Chat Completions is stateless, so we
+   * Session memory for the call — Chat Completions is stateless, so we
    * resend this rolling window instead of a vendor-side GPT thread.
    */
   public history: ConversationHistory;
@@ -215,6 +215,12 @@ export class SupervisedConversation {
     }
     if (Array.isArray(raw.lastAssistantSpeech)) {
       runtime.lastAssistantSpeech = raw.lastAssistantSpeech.map(String);
+    }
+    if (typeof raw.createdAt === 'string') {
+      const parsed = new Date(raw.createdAt);
+      if (!Number.isNaN(parsed.getTime())) {
+        runtime.createdAt = parsed;
+      }
     }
     return runtime;
   }

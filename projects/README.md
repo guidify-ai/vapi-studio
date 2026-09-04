@@ -1,6 +1,6 @@
 # Projects
 
-Your Vapi bots live here — inside the same clone as the framework.
+Your Vapi bots live here — inside the same clone as the framework. Each app is **self-hosted**: you own the Docker stack (app + Postgres). Guidify does not host the conversation runtime.
 
 ```text
 vapi-studio/
@@ -12,7 +12,7 @@ vapi-studio/
 
 ## Local development
 
-Example apps run the Nest app and Postgres in **Docker** on `localhost` (port **9999** by default). **Vapi cannot reach localhost** — local dev uses **[ngrok](https://ngrok.com/download)** to expose that port as HTTPS. Install ngrok once (`brew install ngrok` or download from ngrok.com), sign in if prompted, then use `yarn start` (not raw `docker compose`).
+Example apps run the Nest app and Postgres in **Docker** on `localhost` (port **9999** by default). **Vapi cannot reach localhost** — local dev uses **[ngrok](https://ngrok.com/download)** to expose that port as HTTPS. Install ngrok once (`brew install ngrok` or download from ngrok.com), sign in if prompted, then use `yarn start` (not raw `docker compose` alone if you need the printed Vapi URL block).
 
 ```text
 Vapi (cloud)  →  ngrok HTTPS URL  →  localhost:9999  →  Docker (app + Postgres)

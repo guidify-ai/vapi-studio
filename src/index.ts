@@ -59,6 +59,21 @@ export type {
 export { SupervisedConversation } from './conversation/supervised-conversation';
 export { SupervisedConversationRegistry } from './conversation/supervised-conversation.registry';
 export {
+  STUDIO_CONVERSATION_LIMITS,
+  DEFAULT_MAX_CONVERSATION_TURNS,
+  DEFAULT_MAX_CONVERSATION_DURATION_MS,
+  HARD_MAX_CONVERSATION_TURNS,
+  HARD_MAX_CONVERSATION_DURATION_MS,
+  DEFAULT_CONVERSATION_LIMIT_MESSAGE,
+  resolveConversationLimits,
+  evaluateConversationLimits,
+} from './conversation/conversation-limits';
+export type {
+  ConversationLimitsConfig,
+  ResolvedConversationLimits,
+  ConversationLimitReason,
+} from './conversation/conversation-limits';
+export {
   CallTurnQueue,
   CallTurnQueueRegistry,
   coalesceUserUtterances,
@@ -357,6 +372,33 @@ export { WorkflowHandoffService } from './workflow/workflow-handoff.service';
 export { FormsService } from './forms/forms.service';
 export { FORM_DISPOSE_ADAPTER } from './forms/form.tokens';
 export { NoopFormDisposeAdapter } from './forms/noop-form-dispose.adapter';
+export { TwilioSmsFormDisposeAdapter } from './forms/twilio-sms-form-dispose.adapter';
+export {
+  TWILIO_SMS_ENV,
+  readTwilioSmsConfig,
+  resolveTwilioSmsConfig,
+  twilioSmsCredentialsReady,
+  normalizeSmsToE164,
+  pickSmsDestination,
+  pickSmsFormUrl,
+  buildDefaultSmsBody,
+  resolveSmsBody,
+} from './forms/twilio-sms.env';
+export type {
+  TwilioSmsConfig,
+  TwilioSmsConfigStatus,
+  TwilioSmsDisposeContext,
+} from './forms/twilio-sms.env';
+export {
+  createTwilioSmsSender,
+  DryRunTwilioSmsSender,
+  SdkTwilioSmsSender,
+} from './forms/twilio-sms.sender';
+export type {
+  TwilioSmsSender,
+  TwilioSmsSendInput,
+  TwilioSmsSendResult,
+} from './forms/twilio-sms.sender';
 export {
   renderFormHtml,
   renderFormThanksHtml,

@@ -42,9 +42,9 @@ Templates: `.specify/templates/`
 
 ## Historical artifacts
 
-Completed PoC: [specs/001-ra9-vapi-poc](../reference/historical-specs.md) — may lag shipped code.
+Older SpecKit PoC specs live under `archive/` (not indexed for agents). Prefer current `docs/` and `docs/reference/runtime-api.md`.
 
-**Authority:** `vapi-studio/README.md` and `docs/` over SpecKit contracts.
+**Authority:** root `README.md` and `docs/` over SpecKit contracts.
 
 ## Related
 

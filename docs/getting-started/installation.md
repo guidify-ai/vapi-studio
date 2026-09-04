@@ -1,5 +1,7 @@
 # Installation
 
+Vapi Studio apps are **self-hosted** and **Dockerized**: you run the NestJS app + Postgres (Compose by default). There is no Guidify-hosted runtime. Vapi remains the cloud voice channel; your containers serve Custom LLM + webhook.
+
 ## Requirements
 
 ### Framework (repo root)
@@ -7,13 +9,13 @@
 - **Node.js 22+**
 - **Yarn 1.x**
 
-### Local dev with Vapi (`projects/<name>/`)
+### App runtime (`projects/<name>/`)
 
-- **Docker** with Compose — app + Postgres in containers
-- **[ngrok](https://ngrok.com/download)** on your PATH — tunnels `localhost` to HTTPS so Vapi can reach webhooks and Custom LLM
+- **Docker** with Compose — app + Postgres in containers (required for the live call stack)
+- **[ngrok](https://ngrok.com/download)** on your PATH — local only: tunnels the Compose port to HTTPS so Vapi can reach webhooks and Custom LLM
 - **Vapi** account and assistant configured with the URLs `yarn start` prints
 
-Framework work (`yarn build`, `yarn test`) does not need Docker or ngrok. Running a bot against live Vapi does.
+Framework work (`yarn build`, `yarn test`, `yarn new-project`) does not need Docker or ngrok. Running a bot against live Vapi does — and production deploys the same Docker image/stack without ngrok, behind your own HTTPS.
 
 ## Clone and build
 

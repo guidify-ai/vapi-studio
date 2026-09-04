@@ -110,7 +110,7 @@ describe('FORM_SENDOUT branch forensics', () => {
       fields: [
         { name: 'firstName', label: 'First', type: 'string', required: true },
       ],
-      disposeContext: { contactPhone: '2365621379', channel: 'phone' },
+      disposeContext: { contactPhone: '5550100999', channel: 'phone' },
       filloutTimeoutMs: 5_000,
     });
     assert.equal(disposeCount, 1);

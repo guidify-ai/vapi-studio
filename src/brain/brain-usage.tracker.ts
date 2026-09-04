@@ -41,7 +41,7 @@ interface UsageBucket {
 }
 
 /**
- * Per-call OpenAI usage ledger for ra9-chatgpt.
+ * Per-call OpenAI usage ledger for studio-chatgpt.
  * Printed as $$$ at end of call (finalize).
  */
 @Injectable()

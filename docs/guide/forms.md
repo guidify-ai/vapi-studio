@@ -20,7 +20,7 @@ Apps provide `FormDisposeAdapter`:
 ```typescript
 @Injectable()
 export class LinkFormDisposeAdapter implements FormDisposeAdapter {
-  readonly id = 'ra9-first-party-html';
+  readonly id = 'studio-first-party-html';
   readonly branch = 'html_link';  // delivery lane for forensics
 
   async dispose(payload: FormDisposePayload): Promise<void> {
@@ -31,6 +31,39 @@ export class LinkFormDisposeAdapter implements FormDisposeAdapter {
 ```
 
 `disposeContext` on expose is opaque app data (e.g. `contactPhone`, `channel`) stored for `resend()`.
+
+### Twilio SMS (prepared)
+
+Framework ships `TwilioSmsFormDisposeAdapter` (`branch: sms`). Wire it when you want SMS link delivery:
+
+```ts
+VapiStudioModule.forRoot({
+  formDisposeAdapter: TwilioSmsFormDisposeAdapter,
+  // …
+})
+```
+
+Reserved env (default **dry-run on** — no live Twilio calls until you opt in):
+
+| Variable | Purpose |
+| --- | --- |
+| `TWILIO_ACCOUNT_SID` | Account SID |
+| `TWILIO_AUTH_TOKEN` | Auth token |
+| `TWILIO_FROM_NUMBER` | E.164 from-number **or** |
+| `TWILIO_MESSAGING_SERVICE_SID` | Messaging Service SID |
+| `TWILIO_SMS_DRY_RUN` | Default `1` — still emits durable `OUTBOUND_NOTIFICATION` (`status: dry_run`) and ACKs without API. Set `0` for live send (requires peer package `twilio`) |
+
+Each send (dry-run or live) goes through `EventService.persist` → listeners → Postgres `conversation_events` as `OUTBOUND_NOTIFICATION`. Failures emit `OUTBOUND_NOTIFICATION_ERROR`.
+
+`disposeContext` for this driver:
+
+```ts
+disposeContext: {
+  contactPhone: '5550100999', // or E.164 / `to` / `phone`
+  formUrl: `${process.env.PUBLIC_BASE_URL}/forms/${exposeId}`,
+  // body?: 'optional custom SMS text'
+}
+```
 
 ## Events
 
@@ -51,7 +84,7 @@ Apps own HTTP routes (`GET/POST /forms/:exposeId`). Document routes in the appli
 
 ## Timeouts
 
-- **ACK** — `RA9_FORM_ACK_MS` (default 15s) after dispose
+- **ACK** — `STUDIO_FORM_ACK_MS` (default 15s) after dispose
 - **Fillout** — `filloutTimeoutMs` on expose spec (open path timer)
 
 ## Doctrine

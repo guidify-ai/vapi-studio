@@ -2,11 +2,13 @@
 
 **[@guidify-ai/vapi-studio](https://github.com/guidify-ai/vapi-studio)** — a **code-driven toolkit for [Vapi](https://vapi.ai)**.
 
+**Self-hosted and Dockerized.** You run the NestJS app and Postgres (and any other services you add) on **your** infrastructure — laptop via Docker Compose, or your own cloud/VPS. There is no Guidify-hosted runtime and no managed SaaS for the conversation engine. Vapi stays the voice channel in the cloud; your Studio app is the Custom LLM + webhook endpoint Vapi calls.
+
 <p align="center">
   <img src="./docs/assets/vapi-studio-stack.svg" alt="Vapi to Vapi Studio to nodes to optional Brain" width="720" />
 </p>
 
-This repository ships NestJS libraries at the **repo root** (`src/`, `@guidify-ai/vapi-studio`). Your bots live in **`projects/`** in the same clone — no `packages/` layer, no second repository required.
+This repository ships NestJS libraries at the **repo root** (`src/`, `@guidify-ai/vapi-studio`). Your bots live in **`projects/`** in the same clone — no `packages/` layer, no second repository required. Example apps are **Docker Compose–first**: the supported way to run a call stack is `yarn start` (Compose build/up + optional ngrok for local Vapi HTTPS), not a long-lived host-machine Node process for the app.
 
 ```text
 vapi-studio/
@@ -87,14 +89,25 @@ Example apps render the full interactive graph at **`/flow`** (Flow Studio).
 
 ## Install & run
 
+### Deployment model
+
+| Piece | Where it runs |
+| --- | --- |
+| **Vapi** (telephony, ASR/TTS, assistant config) | Vapi cloud |
+| **Your Studio app** (Supervisor, nodes, Brain, webhooks) | **Self-hosted** — Docker Compose locally, or containers/VM you operate |
+| **Postgres** (conversations, events) | **Self-hosted** beside the app (Compose `db` service by default) |
+
+Local and production alike: ship the app as **containers**. Host Node/Yarn is for **framework build and scaffolding** (`yarn build`, `yarn new-project`); the live call process is Docker.
+
 ### Requirements
 
 | Layer | Tools |
 | --- | --- |
-| **Framework** (repo root) | **Node.js 22+**, **Yarn 1.x** |
-| **Local dev with Vapi** (in `projects/<name>/`) | **Docker** (Compose), **[ngrok](https://ngrok.com/download)** on your PATH, Vapi account |
+| **Framework** (repo root) | **Node.js 22+**, **Yarn 1.x** (build / test / scaffold) |
+| **App runtime** (in `projects/<name>/`) | **Docker** + **Docker Compose** |
+| **Local Vapi calls** | **[ngrok](https://ngrok.com/download)** on your PATH, Vapi account |
 
-Vapi runs in the cloud and must call your machine over **HTTPS**. Local dev uses **ngrok** to tunnel `localhost:<port>` (example apps use **9999**) to a public URL. `yarn start` in a project starts Docker **and** ngrok, writes `PUBLIC_BASE_URL` to `.env`, and prints the Webhook + Conversation links below.
+Vapi runs in the cloud and must call your machine over **HTTPS**. Local dev uses **ngrok** to tunnel the Docker-published port (example apps use **9999**) to a public URL. `yarn start` in a project starts **Docker Compose** **and** ngrok, writes `PUBLIC_BASE_URL` to `.env`, and prints the Webhook + Conversation links below.
 
 ### 1. Clone and build
 
@@ -133,7 +146,7 @@ vapi-studio/
 ```bash
 cd projects/my-voice-app
 yarn install   # first time, or after you change dependencies
-yarn start     # Docker + ngrok; prints Vapi-ready URLs (see below)
+yarn start     # Docker Compose (app + Postgres) + ngrok; prints Vapi-ready URLs
 ```
 
 **Wire into Vapi** — `yarn start` prints an HTTPS origin (ngrok) and two URLs to paste into your Vapi assistant:
@@ -143,7 +156,7 @@ yarn start     # Docker + ngrok; prints Vapi-ready URLs (see below)
 | **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
 | **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
 
-`PUBLIC_BASE_URL` is the ngrok HTTPS origin (new each time ngrok restarts unless you use a reserved domain). Example apps use `scripts/start.sh` (invoked by `yarn start`) — Docker stack, health check, ngrok tunnel, then the link block above.
+`PUBLIC_BASE_URL` is the ngrok HTTPS origin (new each time ngrok restarts unless you use a reserved domain). Example apps use `scripts/start.sh` (invoked by `yarn start`) — **Compose up --build**, health check, ngrok tunnel, then the link block above. For non-local deploys, point the same Vapi URLs at your self-hosted HTTPS origin and run the same Docker image/stack without ngrok.
 
 Before the first call, wire `VapiStudioModule`, `config/flow.yaml`, and Vapi HTTP routes in the project. See [`projects/README.md`](./projects/README.md) · [Creating an app](./docs/building-apps/creating-an-app.md) · [Installation](./docs/getting-started/installation.md).
 

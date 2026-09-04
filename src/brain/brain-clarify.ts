@@ -2,7 +2,7 @@
  * Brain clarify — ask a free-form question with a required object answer shape.
  * Used when the flow has an ambiguous / incomplete answer and needs a Brain judgment.
  *
- * Reserved failure: throws ClarifyCannotAnswerError (`ra9.clarify.cannotAnswer`).
+ * Reserved failure: throws ClarifyCannotAnswerError (`studio.clarify.cannotAnswer`).
  */
 
 /** Anything the runtime can stringify for Brain context. */
@@ -48,14 +48,16 @@ export interface BrainClarifyRequest {
 }
 
 /** Reserved clarify exception code — Brain cannot produce a reliable answer. */
-export const RA9_CLARIFY_CANNOT_ANSWER = 'ra9.clarify.cannotAnswer' as const;
+export const RA9_CLARIFY_CANNOT_ANSWER = 'studio.clarify.cannotAnswer' as const;
+/** Prefer this name in new code. */
+export const STUDIO_CLARIFY_CANNOT_ANSWER = RA9_CLARIFY_CANNOT_ANSWER;
 
 /**
  * Reserved exception thrown by Brain.clarify when it cannot answer.
  * Catch this in Node.run / Node.catch to recover (restartNode, forceIntention, …).
  */
 export class ClarifyCannotAnswerError extends Error {
-  public readonly code: "ra9.clarify.cannotAnswer" = RA9_CLARIFY_CANNOT_ANSWER;
+  public readonly code: "studio.clarify.cannotAnswer" = RA9_CLARIFY_CANNOT_ANSWER;
   public readonly reason?: string;
   public readonly details?: Record<string, unknown>;
 
@@ -119,7 +121,7 @@ function requiredFieldsMissing(
  * or throw ClarifyCannotAnswerError (reserved).
  *
  * Accepts:
- * - `{ outcome: "ra9.clarify.cannotAnswer", reason? }` → throw
+ * - `{ outcome: "studio.clarify.cannotAnswer", reason? }` → throw
  * - `{ cannotAnswer: true, reason? }` → throw
  * - `{ answer: {...} }` / `{ outcome: "answered", answer: {...} }`
  */
@@ -136,6 +138,7 @@ export function normalizeClarifyResult<
 
   if (
     obj.outcome === RA9_CLARIFY_CANNOT_ANSWER ||
+    obj.outcome === 'studio.clarify.cannotAnswer' ||
     obj.cannotAnswer === true
   ) {
     throwClarifyCannotAnswer(

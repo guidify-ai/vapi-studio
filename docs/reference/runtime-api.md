@@ -43,10 +43,15 @@ VapiStudioModule.forRoot({
     model: 'gpt-4.1-nano',               // cheap whitelist; not .env
     confidenceThreshold: 0.4,
   },
+  limits: {
+    maxTurns: 40,                        // default 40; hard ceiling 150
+    maxDurationMs: 20 * 60 * 1000,       // default 20m; hard ceiling 60m
+  },
   eventListeners: [],
 })
 ```
 
+Conversation **limits are always on** (defaults apply when `limits` is omitted). They cannot be disabled — only raised within hard ceilings.
 ## Architecture
 
 | Piece | Role |
@@ -76,9 +81,25 @@ Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom
 
 Identity is the **provider call id**. One supervised runtime per active call.
 
+## Conversation limits (hard rule)
+
+Every conversation has finite bounds. At the start of each `Supervisor` turn (after `turnNumber` bumps), if either cap is exceeded the runtime **skips Brain/routing**, speaks a short goodbye, and returns `endCall`:
+
+| Cap | Default | Hard ceiling |
+| --- | --- | --- |
+| `limits.maxTurns` | 40 | 150 |
+| `limits.maxDurationMs` | 20 minutes | 60 minutes |
+
+- Turn count = `runtime.turn.turnNumber` (opening, user speech, tool-result, force-intention, and module entry-speak each count).
+- Duration = wall clock from `SupervisedConversation.createdAt` (restored from checkpoint so crash recovery keeps the original start).
+- Forensic event: `CONVERSATION_LIMIT_EXCEEDED` (`reason`: `max_turns` \| `max_duration`).
+- Optional `limits.endMessage` overrides the spoken line (still one CTA / farewell).
+
+Apps may raise caps within the ceilings; they must not ship unlimited conversations. Complement with Vapi’s own max-duration / idle policies — Studio only checks at turn boundaries.
+
 ## Supervisor routing
 
-Turn routing is a **cascade** (first hit wins; later steps are skipped):
+Turn routing is a **cascade** (first hit wins; later steps are skipped). Implementation is split under `src/supervisor/` (`supervisor.ts` Nest facade + orchestration / cascade / route / portal / node-exec / special-turns / limits modules).
 
 1. **Code intentions `INTENTION_CASCADE_PHASE.Force`** — `CodeIntention.before()` / `match()` / `run()` with full memory/history/regex freedom. No listen resolve, no Brain. Forensic: `INTENTION_FORCE` + `ROUTE_RESOLVED_VIA.IntentionForce`. Console **IFORCE**.
 2. **YAML condition `force: true` transitions** — declarative sugar over memory/variables. Forensic: `CONDITION_TRANSITION`. Console **FORCE**.
@@ -205,9 +226,11 @@ return ctx.output.invokeAdvertisedTool({
 `endCall` / `transferToHuman` / `handoff` resolve tool names via adapter env. `invokeAdvertisedTool` emits the exact `name` you pass — it does **not** sync or invent the assistant tool list. Provision matching tools on the Vapi assistant before you call.
 ### Forms (`ctx.forms.expose`)
 
-Blocking structured collection. Apps deliver via a dispose adapter — Studio modal, **first-party HTML** (`renderFormHtml` + `GET/POST /forms/:exposeId`), or later SMS.
+Blocking structured collection. Apps deliver via a dispose adapter — Studio modal, **first-party HTML** (`renderFormHtml` + `GET/POST /forms/:exposeId`), or **Twilio SMS** (`TwilioSmsFormDisposeAdapter`, `branch: sms`).
 
 The dispose adapter is the **sendout driver**. It declares a delivery `branch` (`html_link`, `sms`, `unavailable`, …). The app may also pass a conversation `branch` on expose (e.g. `identity_html_form`) so logs show which flow lane requested the form.
+
+**Twilio SMS (prepared):** reserved env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, and `TWILIO_SMS_DRY_RUN` (default **on**). Sends emit durable `OUTBOUND_NOTIFICATION` (and `OUTBOUND_NOTIFICATION_ERROR` on failure) via `EventService` → Postgres listener. Dry-run still persists with `status: dry_run`. Live send needs optional peer `twilio` and `TWILIO_SMS_DRY_RUN=0`. `disposeContext`: `contactPhone` + `formUrl` (optional `body`). See [Forms](../guide/forms.md) and [environment variables](./environment-variables.md).
 
 ```ts
 const values = await ctx.forms.expose({
@@ -217,7 +240,7 @@ const values = await ctx.forms.expose({
     { name: 'firstName', label: 'First name', type: 'string', required: true },
     { name: 'address', label: 'Address', type: 'textarea', required: true },
   ],
-  disposeContext: { contactPhone: '2365621379', channel: 'phone' },
+  disposeContext: { contactPhone: '5550100999', channel: 'phone' },
   onDelivered: async () => {
     await ctx.output.say('I exposed a form — please fill it out. I will wait.');
   },
@@ -394,7 +417,7 @@ Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engage
 
 **Mad is sticky:** once in the `mad` portal, Supervisor does not offer other portals (or unknown) until the caller continues / goodbyes. Other listens may still escalate *into* mad via `studio.isMad`.
 
-**Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` **Continue-replays** the origin listen (same utterance) — do not steal a new “how can I help?” CTA.
+**Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). That path stamps `resolvedVia = force_intention` so the walk accepts still-there; Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` **Continue-replays** the origin listen (same utterance) — do not steal a new “how can I help?” CTA.
 
 **`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId`, refreshes that Node’s listen (preferring the **listen snapshot** taken when the portal opened — so `sayAndListen` overrides and `resolveIntention` survive), re-scans the **same** user utterance, and routes again (skips re-selecting `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior.
 
@@ -465,7 +488,7 @@ JWT HS256 of the canonical body bytes in `x-signature` (Node `crypto`, no `jsonw
 - Extra listeners: `VapiStudioModule.forRoot({ eventListeners: [...] })`
 - `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag` for per-project funnel dashboards
 - Aggregation helpers on `ConversationRepository`: `countConversationsByProject`, `countConversationsByEventType`, `countConversationsByAnalyticsTag`, `countConversationsMatchingStep`
-- Console: `RA9_CONSOLE_DEBUG` (default on). Disable with `0` / `false` / `off`
+- Console: `STUDIO_CONSOLE_DEBUG` (default on). Disable with `0` / `false` / `off`
 - File driver: still prints console; also appends ANSI-stripped lines to `{LOG_DIR}/dailyYYYYMMDD.log`
 - **The log directory is owned by the application** (each project keeps a `logs/` folder and sets `LOG_DIR`). The framework only writes there.
 - Retention: `LOG_DAYS` (default **14**). Files at or older than that are deleted
@@ -497,7 +520,7 @@ Caller Phone Number: {webhook customer number, or blank}
 
 Memory console diffs include conversation-critical flags such as `introSpoken` (only bootstrap infra keys are stripped).
 
-Disable file logs with `RA9_FILE_LOG=0`. Tests skip files unless `LOG_DIR` is set.
+Disable file logs with `STUDIO_FILE_LOG=0`. Tests skip files unless `LOG_DIR` is set.
 
 ## Persistence (PoC)
 
@@ -524,7 +547,7 @@ Export surface is `src/index.ts`. Important groups:
 - `ProjectEntity`, `ProjectRepository`
 - `BrainService` / adapters / `STANDARD_INTENTIONS` / `INTENTION_CASCADE_PHASE` / `INTENTION_RUN_KIND` / `ROUTE_RESOLVED_VIA` / `BrainConfig`
 - `FlowLoader`, `WorkflowLoader`, `WorkflowHandoffService`
-- `FormsService`, `FORM_DISPOSE_ADAPTER`, form types / timeout errors
+- `FormsService`, `FORM_DISPOSE_ADAPTER`, `TwilioSmsFormDisposeAdapter`, form types / timeout errors
 - `EventService` (incl. `persistAnalyticsTag`), daily-log helpers
 - `ANALYTICS_TAG_EVENT`, analytics funnel types (`AnalyticsFunnelDefinition`, …)
 - `IntegrationClient`, JWT helpers
@@ -537,17 +560,17 @@ Export surface is `src/index.ts`. Important groups:
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | — | ChatGPT adapter secret only |
-| `RA9_CONSOLE_DEBUG` | on | Pretty stdout |
-| `RA9_FILE_LOG` | on | Daily files |
+| `STUDIO_CONSOLE_DEBUG` | on | Pretty stdout |
+| `STUDIO_FILE_LOG` | on | Daily files |
 | `LOG_DIR` | `logs` | Directory the **app** owns (project `logs/`); framework writes `dailyYYYYMMDD.log` here |
 | `LOG_DAYS` | `14` | Retention |
-| `RA9_FORM_ACK_MS` | `15000` | Form deliver ACK window (tests may lower) |
+| `STUDIO_FORM_ACK_MS` | `15000` | Form deliver ACK window (tests may lower) |
 | `VAPI_END_CALL_TOOL_NAME` | `end_call_tool` | End-call tool (must match the Vapi tool name) |
 | `VAPI_TRANSFER_CALL_TOOL_NAME` | `transferCall` | Transfer tool |
 | `VAPI_HANDOFF_TOOL_NAME` | `handoff` | Squad module handoff tool |
 | `VAPI_TRANSFER_DESTINATION` | — | E.164 for `transferCall` destination |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` search path |
-| `RA9_CONSOLE_DEBUG_ALL` | off | Verbose console (all events) |
+| `STUDIO_CONSOLE_DEBUG_ALL` | off | Verbose console (all events) |
 
 Apps add their own env (database URL, public base URL, transfer destination). Document in project README / `docs/projects/<app>/environment.md`.
 

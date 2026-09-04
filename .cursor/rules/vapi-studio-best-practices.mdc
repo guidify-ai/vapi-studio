@@ -9,6 +9,6 @@ When editing Vapi Studio or a project under `projects/`:
 
 1. Read `docs/best-practices/README.md` and the matching guide.
 2. Also `agent/AGENTS.md`.
-3. Enforce: **one CTA per turn**; fail-closed constrained extracts; short digit listen timeouts; never store ASR junk as PII; **at most one spoken first name per turn**; **no speaking raw userText / off-topic LLM output** (brain-and-prompt-injection.md); **no speaking node/transition/event names or graph state** (conversation-design.md § Human-like UX); **logs/events must explain the call**; update the matching doc layer in the same change.
+3. Enforce: **one CTA per turn**; **conversations must end** (`limits.maxTurns` / `limits.maxDurationMs`, defaults 40 / 20m — never unlimited); fail-closed constrained extracts; short digit listen timeouts; never store ASR junk as PII; **at most one spoken first name per turn**; **no speaking raw userText / off-topic LLM output** (brain-and-prompt-injection.md); **no speaking node/transition/event names or graph state** (conversation-design.md § Human-like UX); **logs/events must explain the call**; update the matching doc layer in the same change.
 
 Projects mirror this via `node_modules/@guidify-ai/vapi-studio/…` and `.cursor/rules/vapi-studio-best-practices.mdc` (from package postinstall).

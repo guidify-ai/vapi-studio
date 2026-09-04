@@ -18,7 +18,7 @@ describe('snapshotUserMemory (call forensics)', () => {
       introSpoken: true,
       phoneConfirmed: false,
       formSendConsent: true,
-      contactPhone: '2365621379',
+      contactPhone: '5550100999',
       conversationReady: true,
       setupAt: '2026-01-01',
       tornDownAt: null,
@@ -28,7 +28,7 @@ describe('snapshotUserMemory (call forensics)', () => {
     assert.equal(snap.introSpoken, true);
     assert.equal(snap.phoneConfirmed, false);
     assert.equal(snap.formSendConsent, true);
-    assert.equal(snap.contactPhone, '2365621379');
+    assert.equal(snap.contactPhone, '5550100999');
     assert.equal(Object.prototype.hasOwnProperty.call(snap, 'conversationReady'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(snap, 'setupAt'), false);
     assert.equal(Object.prototype.hasOwnProperty.call(snap, 'empty'), false);

@@ -17,10 +17,10 @@ Apps add `eventListeners` in `VapiStudioModule.forRoot`.
 
 | Env | Effect |
 | --- | --- |
-| `RA9_CONSOLE_DEBUG` | Pretty colored turn forensics |
-| `RA9_CONSOLE_DEBUG_ALL` | Verbose (all event types) |
+| `STUDIO_CONSOLE_DEBUG` | Pretty colored turn forensics |
+| `STUDIO_CONSOLE_DEBUG_ALL` | Verbose (all event types) |
 
-Tags include **FORM**, **ROUTE**, **BRAIN**, **INTEGRATION**.
+Tags include **FORM**, **ROUTE**, **BRAIN**, **INTEGRATION**, **NOTIFY**.
 
 ## Daily file logs
 
@@ -28,7 +28,7 @@ Tags include **FORM**, **ROUTE**, **BRAIN**, **INTEGRATION**.
 | --- | --- |
 | `LOG_DIR` | `logs/` |
 | `LOG_DAYS` | `14` |
-| `RA9_FILE_LOG` | on |
+| `STUDIO_FILE_LOG` | on |
 
 Files: `logs/dailyYYYYMMDD.log`
 
@@ -45,7 +45,10 @@ Files: `logs/dailyYYYYMMDD.log`
 | `FORM_SUBMITTED` | Form keys received |
 | `WORKFLOW_HANDOFF` | Squad module switch |
 | `INTEGRATION_*` | Outbound HTTP + JWT |
+| `OUTBOUND_NOTIFICATION` | SMS (Twilio) / future channels — `channel`, `status`, `to`, `sid` |
+| `OUTBOUND_NOTIFICATION_ERROR` | Outbound send failed before/during provider call |
 | `BRAIN_COST_SUMMARY` | Token/cost estimate (ChatGPT path) |
+| `CONVERSATION_LIMIT_EXCEEDED` | Turn or wall-clock cap hit → fail-closed `endCall` |
 
 Full doctrine: [Debugging and observability](../best-practices/debugging-and-observability.md)
 

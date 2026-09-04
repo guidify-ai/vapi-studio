@@ -12,13 +12,13 @@ import {
 } from './form.types';
 import { FORM_DISPOSE_ADAPTER } from './form.tokens';
 import { NoopFormDisposeAdapter } from './noop-form-dispose.adapter';
+import { envNumber } from '../util/studio-env';
 
 const DEFAULT_ACK_MS = 15_000;
 const DEFAULT_FILLOUT_MS = 10 * 60_000;
 
 function resolveAckMs(): number {
-  const n = Number(process.env.RA9_FORM_ACK_MS);
-  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : DEFAULT_ACK_MS;
+  return envNumber('STUDIO_FORM_ACK_MS', 'RA9_FORM_ACK_MS', DEFAULT_ACK_MS);
 }
 
 interface PendingExpose {
