@@ -1,7 +1,7 @@
 /**
  * Optional tool ads from the channel (e.g. Vapi Custom LLM `body.tools`).
  *
- * Convention: rA9 requests tools **by name** assuming the Vapi assistant was
+ * Convention: Vapi Studio requests tools **by name** assuming the Vapi assistant was
  * pre-provisioned with them. This snapshot is visibility for operators / soft
  * warnings — not a required inventory gate, and not shared sync state.
  */

@@ -54,15 +54,20 @@ Full doctrine: [Debugging and observability](../best-practices/debugging-and-obs
 
 ## Analytics tags & funnels
 
-Conversations are funnels. Stamp milestones with `persistAnalyticsTag` (or bind funnel steps to existing event types so history still scores).
+Business funnels are a **code catalog** (`AnalyticsFunnelDefinition[]`). Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag`:
 
 | Piece | Role |
 | --- | --- |
-| `ANALYTICS_TAG` | Durable tag event (`payload.tag`, optional `funnel` / `label`) |
-| Funnel catalog (app) | Ordered steps → `eventTypes[]` and/or `tags[]` |
-| Aggregation | Distinct conversations per step / top tags, scoped by `conversations.project_id` |
+| `ANALYTICS_TAG` | Durable tag (`payload.tag`) |
+| Funnel catalog (app) | Ordered steps → `tags[]` / `eventTypes[]`, or outcome steps → `requireAllTags` + optional `excludeTags` |
+| Scoring | `countConversationsMatchingStep` — omit `funnelId` |
+| Operator UI | Funnel charts (% of funnel entry) + top tags / event types |
 
-Operator UI (example): `/analytics` — conversion bars + top tags for the project.
+| Event | Role |
+| --- | --- |
+| `ANALYTICS_TAG` | Milestone (`payload.tag`, optional `label`) |
+
+Operator UI (example): `/analytics` — trapezoid funnel cards (e.g. appointment only / estimate only / both) + top tags for the project.
 
 ## App events
 

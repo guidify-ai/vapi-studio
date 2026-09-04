@@ -39,6 +39,8 @@ Default listen windows are for natural phrases. Tighten `timeoutSeconds` on digi
 
 When the caller must choose between product paths (appointment vs instant estimate, existing vs new), **offer and wait**. Completing one lane may offer the companion later; never silently pick for them.
 
+Soft affirmatives (“yes”, “yeah, why not”, “sure”) that **do not name a lane** are not a choice — re-ask which option with a cheap `resolveIntention` (map to a ready/reprompt intention). Do not leave “why not” to Brain; scan failures send the caller into unknown recovery for no good reason.
+
 ## Origin-aware recovery
 
 On unknown / off-path speech, tell the caller what you can help with **from this node’s real options** (“I can help with A, B, or C”), not a generic “sorry, try again.”
@@ -51,11 +53,18 @@ Advertise the **same product intentions** the origin was listening for (with che
 
 Idle / still-there behavior is a portal concern. Keep the product happy path free of nested “are you there?” CTAs unless the portal owns that turn.
 
+## Mad callers (hard rule)
+
+Do **not** try to reason with mad callers more than **once**. First hit: one short re-engage. Still mad: transfer to a human (or after-hours block). No multi-turn empathy loops — see [nodes-and-listens.md](./nodes-and-listens.md#mad-one-re-engage-then-human-hard-rule).
+
+Portal re-engages (transfer “I can help instead”, mad apology, after-hours) must still end with **one clear CTA** — never a statement with no ask ([nodes-and-listens.md](./nodes-and-listens.md#portal-re-engage-must-end-with-one-cta-hard-rule)).
+
 ## Copy hygiene
 
 - Prefer short questions ending in one ask.
 - Confirmations should repeat **validated** values only (never raw ASR garbage).
 - Do not re-ask a settled consent flag later in the same Conversation.
+- **Silent handoffs:** `continueTo` / `handoff` between modules must not speak filler that restates what just happened (“That is your estimate for now”, “You are all set”) before the next real CTA or farewell. Let the destination node speak once.
 
 ## Human-like UX (no implementation leakage)
 
@@ -71,6 +80,7 @@ Forensics (node ids, transition reasons, event types, memory keys, analytics) be
 - **Edges behind nodes;** intention names in corridors between boxes, not on top of them.
 - **Spacing (hard minimums):** arrow corridors ≥ **2.0 × node width**; vertical gap between stacked nodes ≥ **1.5 × node height**. Intention labels must remain readable without overlapping boxes.
 - **Replay (future):** highlight visited nodes on a call; dim unvisited nodes with a semi-transparent overlay.
+- **Exit bookend:** the diagram `exit · endCall` (`{module}::__end`) is synthetic — not a real flow node. After a real `endCall`, Studio returns `diagramHighlightNodeId: '__end'` so Flow Studio highlights that bookend (and centers on it). Do **not** leave the last product node (e.g. farewell) as the current highlight — runtime `currentNodeId` may still be farewell for history.
 
 Example apps (`/flow`) should follow this layout instead of a cramped vertical graph.
 

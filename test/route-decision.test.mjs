@@ -6,17 +6,17 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 
-class WinnerNode extends Ra9Node {
+class WinnerNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('winner spoke');
   }
 }
 
-class RejectBeforeNode extends Ra9Node {
+class RejectBeforeNode extends AgentNode {
   async before() {
     return false;
   }
@@ -25,7 +25,7 @@ class RejectBeforeNode extends Ra9Node {
   }
 }
 
-class OpeningNode extends Ra9Node {
+class OpeningNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('opening');
   }

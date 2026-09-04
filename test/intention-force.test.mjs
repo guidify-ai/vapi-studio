@@ -6,29 +6,29 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Intention, INTENTION_CASCADE_PHASE, DEFAULT_FORCE_INTENTION_PRIORITY } from '../dist/intention/ra9-intention.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { CodeIntention, INTENTION_CASCADE_PHASE, DEFAULT_FORCE_INTENTION_PRIORITY } from '../dist/intention/code-intention.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 
-class OpeningNode extends Ra9Node {
+class OpeningNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('opening');
   }
 }
 
-class IdentityNode extends Ra9Node {
+class IdentityNode extends AgentNode {
   async run() {
     throw new Error('identity must not run when force intention fires');
   }
 }
 
-class PhoneNode extends Ra9Node {
+class PhoneNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('need your phone');
   }
 }
 
-class NeedPhoneIntention extends Ra9Intention {
+class NeedPhoneIntention extends CodeIntention {
   name = 'isNeedSmsPhone';
   phase = INTENTION_CASCADE_PHASE.Force;
   toNodeId = 'askSmsPhone';
@@ -63,7 +63,7 @@ function mockBootstrap() {
   return { checkpoint: mock.fn(async () => undefined) };
 }
 
-describe('Ra9Intention force cascade', () => {
+describe('CodeIntention force cascade', () => {
   beforeEach(() => {
     process.env.OPENAI_API_KEY = 'sk-mock-not-real';
   });

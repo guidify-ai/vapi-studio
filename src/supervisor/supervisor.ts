@@ -4,8 +4,8 @@ import {
   type BrainService,
 } from '../brain/brain.service';
 import {
-  RA9_BRAIN_CONFIG,
-  type Ra9BrainConfig,
+  STUDIO_BRAIN_CONFIG,
+  type StudioBrainConfig,
 } from '../brain/brain-config';
 import {
   STUDIO_CONVERSATION_LIMITS,
@@ -18,13 +18,13 @@ import { FormsService } from '../forms/forms.service';
 import { FlowLoader } from '../flow/flow-loader';
 import { IntegrationClient } from '../integrations/integration-client';
 import {
-  RA9_INTENTION_REGISTRY,
-  type Ra9IntentionRegistry,
-} from '../intention/ra9-intention';
+  STUDIO_INTENTION_REGISTRY,
+  type CodeIntentionRegistry,
+} from '../intention/code-intention';
 import {
-  RA9_NODE_REGISTRY,
-  type Ra9NodeRegistry,
-} from '../node/ra9-node';
+  STUDIO_NODE_REGISTRY,
+  type AgentNodeRegistry,
+} from '../node/agent-node';
 import type { ChannelToolResult } from '../channel/channel-tools';
 import {
   createSupervisorEngine,
@@ -54,17 +54,17 @@ export class Supervisor {
   public constructor(
     @Inject(BRAIN_SERVICE) brain: BrainService,
     flowLoader: FlowLoader,
-    @Inject(RA9_NODE_REGISTRY) nodes: Ra9NodeRegistry,
+    @Inject(STUDIO_NODE_REGISTRY) nodes: AgentNodeRegistry,
     events: EventService,
     bootstrap: ConversationBootstrapService,
     @Optional() integrations?: IntegrationClient,
     @Optional() forms?: FormsService,
     @Optional()
-    @Inject(RA9_BRAIN_CONFIG)
-    brainConfig?: Ra9BrainConfig,
+    @Inject(STUDIO_BRAIN_CONFIG)
+    brainConfig?: StudioBrainConfig,
     @Optional()
-    @Inject(RA9_INTENTION_REGISTRY)
-    intentions?: Ra9IntentionRegistry,
+    @Inject(STUDIO_INTENTION_REGISTRY)
+    intentions?: CodeIntentionRegistry,
     @Optional()
     @Inject(STUDIO_CONVERSATION_LIMITS)
     conversationLimits?: ResolvedConversationLimits,

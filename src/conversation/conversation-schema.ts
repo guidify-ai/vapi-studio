@@ -8,7 +8,7 @@ import type { Variables } from './conversation-entry';
  *   variables: { companyName: string };
  *   memory: { conversationReady?: boolean; setupAt?: string };
  * }
- * class AcknowledgeNode extends Ra9Node<RoofrConversationSchema> { ... }
+ * class AcknowledgeNode extends AgentNode<RoofrConversationSchema> { ... }
  */
 export interface ConversationSchema {
   variables: object;

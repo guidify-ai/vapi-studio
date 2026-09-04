@@ -48,24 +48,21 @@ export interface BrainClarifyRequest {
 }
 
 /** Reserved clarify exception code — Brain cannot produce a reliable answer. */
-export const RA9_CLARIFY_CANNOT_ANSWER = 'studio.clarify.cannotAnswer' as const;
-/** Prefer this name in new code. */
-export const STUDIO_CLARIFY_CANNOT_ANSWER = RA9_CLARIFY_CANNOT_ANSWER;
-
+export const STUDIO_CLARIFY_CANNOT_ANSWER = 'studio.clarify.cannotAnswer' as const;
 /**
  * Reserved exception thrown by Brain.clarify when it cannot answer.
  * Catch this in Node.run / Node.catch to recover (restartNode, forceIntention, …).
  */
 export class ClarifyCannotAnswerError extends Error {
-  public readonly code: "studio.clarify.cannotAnswer" = RA9_CLARIFY_CANNOT_ANSWER;
+  public readonly code: "studio.clarify.cannotAnswer" = STUDIO_CLARIFY_CANNOT_ANSWER;
   public readonly reason?: string;
   public readonly details?: Record<string, unknown>;
 
   public constructor(reason?: string, details?: Record<string, unknown>) {
     super(
       reason
-        ? `${RA9_CLARIFY_CANNOT_ANSWER}: ${reason}`
-        : RA9_CLARIFY_CANNOT_ANSWER,
+        ? `${STUDIO_CLARIFY_CANNOT_ANSWER}: ${reason}`
+        : STUDIO_CLARIFY_CANNOT_ANSWER,
     );
     this.name = 'ClarifyCannotAnswerError';
     this.reason = reason;
@@ -80,7 +77,7 @@ export function isClarifyCannotAnswerError(
     error instanceof ClarifyCannotAnswerError ||
     (typeof error === 'object' &&
       error !== null &&
-      (error as { code?: string }).code === RA9_CLARIFY_CANNOT_ANSWER)
+      (error as { code?: string }).code === STUDIO_CLARIFY_CANNOT_ANSWER)
   );
 }
 
@@ -137,7 +134,7 @@ export function normalizeClarifyResult<
   const obj = raw as Record<string, unknown>;
 
   if (
-    obj.outcome === RA9_CLARIFY_CANNOT_ANSWER ||
+    obj.outcome === STUDIO_CLARIFY_CANNOT_ANSWER ||
     obj.outcome === 'studio.clarify.cannotAnswer' ||
     obj.cannotAnswer === true
   ) {

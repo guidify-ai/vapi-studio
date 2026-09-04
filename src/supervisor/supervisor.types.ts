@@ -1,15 +1,15 @@
 import type { SupervisedConversation } from '../conversation/supervised-conversation';
 import type { NodeResult, OutputAction } from '../output/conversation-output';
 import type { BrainService } from '../brain/brain.service';
-import type { Ra9BrainConfig } from '../brain/brain-config';
+import type { StudioBrainConfig } from '../brain/brain-config';
 import type { ResolvedConversationLimits } from '../conversation/conversation-limits';
 import type { ConversationBootstrapService } from '../conversation/conversation-bootstrap.service';
 import type { EventService } from '../events/event.service';
 import type { FormsService } from '../forms/forms.service';
 import type { FlowLoader } from '../flow/flow-loader';
 import type { IntegrationClient } from '../integrations/integration-client';
-import type { Ra9IntentionRegistry } from '../intention/ra9-intention';
-import type { Ra9NodeRegistry } from '../node/ra9-node';
+import type { CodeIntentionRegistry } from '../intention/code-intention';
+import type { AgentNodeRegistry } from '../node/agent-node';
 
 /** Max Node.catch → restartNode loops per turn. */
 export const MAX_NODE_RESTARTS = 2;
@@ -32,14 +32,14 @@ export interface TurnExecutionResult {
 export interface SupervisorServices {
   brain: BrainService;
   flowLoader: FlowLoader;
-  nodes: Ra9NodeRegistry;
+  nodes: AgentNodeRegistry;
   events: EventService;
   /** Optional in unit tests; checkpoint is try/caught. */
   bootstrap?: ConversationBootstrapService;
   integrations?: IntegrationClient;
   forms?: FormsService;
-  brainConfig?: Ra9BrainConfig;
-  intentions?: Ra9IntentionRegistry;
+  brainConfig?: StudioBrainConfig;
+  intentions?: CodeIntentionRegistry;
   conversationLimits?: ResolvedConversationLimits;
 }
 

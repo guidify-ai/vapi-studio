@@ -3,11 +3,11 @@
  * Default listener writes to PostgreSQL. Apps (e.g. roofr-poc) may add more.
  */
 
-import type { Ra9LogLevel } from './conversation-console';
+import type { StudioLogLevel } from './conversation-console';
 
-export const RA9_EVENT_LISTENERS = Symbol('RA9_EVENT_LISTENERS');
+export const STUDIO_EVENT_LISTENERS = Symbol('STUDIO_EVENT_LISTENERS');
 
-export const RA9_EVENTS = {
+export const STUDIO_EVENTS = {
   INTEGRATION_REQUEST: 'INTEGRATION_REQUEST',
   INTEGRATION_RESPONSE: 'INTEGRATION_RESPONSE',
   INTEGRATION_ERROR: 'INTEGRATION_ERROR',
@@ -16,25 +16,25 @@ export const RA9_EVENTS = {
   OUTBOUND_NOTIFICATION_ERROR: 'OUTBOUND_NOTIFICATION_ERROR',
 } as const;
 
-export type Ra9EventType = (typeof RA9_EVENTS)[keyof typeof RA9_EVENTS] | string;
+export type StudioEventType = (typeof STUDIO_EVENTS)[keyof typeof STUDIO_EVENTS] | string;
 
-export interface Ra9Event {
+export interface StudioEvent {
   id: string;
-  type: Ra9EventType;
+  type: StudioEventType;
   ts: string;
-  level: Ra9LogLevel;
+  level: StudioLogLevel;
   conversationId?: string;
   runtimeInstanceId?: string;
   providerCallId?: string;
   payload: Record<string, unknown>;
 }
 
-export type Ra9EventInput = Omit<Ra9Event, 'id' | 'ts' | 'level'> & {
+export type StudioEventInput = Omit<StudioEvent, 'id' | 'ts' | 'level'> & {
   id?: string;
   ts?: string;
-  level?: Ra9LogLevel;
+  level?: StudioLogLevel;
 };
 
-export interface Ra9EventListener {
-  handle(event: Ra9Event): void | Promise<void>;
+export interface StudioEventListener {
+  handle(event: StudioEvent): void | Promise<void>;
 }

@@ -8,8 +8,8 @@ import {
   INTENTION_CASCADE_PHASE,
   INTENTION_RUN_KIND,
   ROUTE_RESOLVED_VIA,
-  type Ra9Intention,
-} from '../intention/ra9-intention';
+  type CodeIntention,
+} from '../intention/code-intention';
 import {
   BufferedConversationOutput,
 } from '../output/conversation-output';
@@ -20,7 +20,7 @@ import type { SupervisorEngine } from './supervisor.types';
 import type { TurnExecutionResult } from './supervisor.types';
 
 
-export function intentionList(this: SupervisorEngine): Ra9Intention[] {
+export function intentionList(this: SupervisorEngine): CodeIntention[] {
   return this.intentions ? [...this.intentions.values()] : [];
 }
 
@@ -242,9 +242,9 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
 /**
  * Limited Brain candidate set for this listen:
  * - listen-prioritized next-node intentions (with boost + priority)
- * - registered Ra9Intention boost/priority overlays
+ * - registered CodeIntention boost/priority overlays
  * - all portal intentions (except: while in `mad`, only the mad portal — sticky)
- * - ra9.isUnknownTransition (scan-failure global; not while sticky mad)
+ * - studio.isUnknownTransition (scan-failure global; not while sticky mad)
  * - if no listen yet: all normal-flow intentions + portals
  */
 
@@ -253,9 +253,9 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
 /**
  * Limited Brain candidate set for this listen:
  * - listen-prioritized next-node intentions (with boost + priority)
- * - registered Ra9Intention boost/priority overlays
+ * - registered CodeIntention boost/priority overlays
  * - all portal intentions (except: while in `mad`, only the mad portal — sticky)
- * - ra9.isUnknownTransition (scan-failure global; not while sticky mad)
+ * - studio.isUnknownTransition (scan-failure global; not while sticky mad)
  * - if no listen yet: all normal-flow intentions + portals
  */
 export function buildBrainCandidates(this: SupervisorEngine, 

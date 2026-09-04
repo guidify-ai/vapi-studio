@@ -206,7 +206,7 @@ function findHandoffToolNameForDestination(
 }
 
 /**
- * Compiles RA9 output actions into OpenAI-compatible SSE for Vapi Custom LLM.
+ * Compiles Vapi Studio output actions into OpenAI-compatible SSE for Vapi Custom LLM.
  */
 export class VapiSseCompiler {
   private readonly model: string;

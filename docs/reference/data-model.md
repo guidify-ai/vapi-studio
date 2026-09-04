@@ -73,4 +73,4 @@ Opt-in: `restoreAllActive()` reloads conversations with `runtime_state` into the
 ## Related
 
 - [Events & logging](./events-and-logging.md)
-- [Handbook](../vapi-studio/handbook.md) — persistence section
+- [Runtime API](./runtime-api.md) — persistence section

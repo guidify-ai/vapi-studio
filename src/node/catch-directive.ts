@@ -1,5 +1,5 @@
 /**
- * Node catch recovery directives — returned from Ra9Node.catch().
+ * Node catch recovery directives — returned from AgentNode.catch().
  * Prefer helpers: restartNode(), forceIntention(...).
  */
 

@@ -55,5 +55,5 @@ Copy to `workflow.yaml` only when deliberately enabling Squad.
 
 ## Related
 
-- [Handbook](./handbook.md) — workflow section
+- [Runtime API](../reference/runtime-api.md) — workflow / handoff
 - [Example apps](../building-apps/example-apps.md) — single-assistant vs squad patterns

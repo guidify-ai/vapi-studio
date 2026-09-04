@@ -47,7 +47,7 @@ export function dailyLogFileName(date = new Date()): string {
 }
 
 export function isFileLogEnabled(): boolean {
-  if (!envFlag('STUDIO_FILE_LOG', 'RA9_FILE_LOG', true)) return false;
+  if (!envFlag('STUDIO_FILE_LOG', undefined, true)) return false;
   // node:test — don't litter repo logs unless the test opted in.
   if (process.env.NODE_TEST_CONTEXT && !process.env.LOG_DIR) return false;
   return true;
@@ -96,7 +96,7 @@ export function formatCallLogHeader(input: {
 
 function shouldPrintCallBannerToConsole(): boolean {
   if (process.env.NODE_TEST_CONTEXT) return false;
-  return envFlag('STUDIO_CONSOLE_DEBUG', 'RA9_CONSOLE_DEBUG', true);
+  return envFlag('STUDIO_CONSOLE_DEBUG', undefined, true);
 }
 
 function enqueue(work: () => Promise<void>): void {

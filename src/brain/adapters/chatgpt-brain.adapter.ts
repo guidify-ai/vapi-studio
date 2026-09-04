@@ -10,7 +10,7 @@ import type {
 import {
   clarifiableInputToString,
   normalizeClarifyResult,
-  RA9_CLARIFY_CANNOT_ANSWER,
+  STUDIO_CLARIFY_CANNOT_ANSWER,
   type BrainClarifyRequest,
   type BrainClarifyResult,
 } from '../brain-clarify';
@@ -35,8 +35,8 @@ import {
 } from '../openai-cheap-models';
 import { BrainUsageTracker } from '../brain-usage.tracker';
 import {
-  RA9_BRAIN_CONFIG,
-  type Ra9BrainConfig,
+  STUDIO_BRAIN_CONFIG,
+  type StudioBrainConfig,
 } from '../brain-config';
 import {
   brainUntrustedInputRules,
@@ -64,7 +64,7 @@ const SCAN_HISTORY_CHAT = 8;
 const SCAN_HISTORY_NODES = 8;
 
 /**
- * RA9 ChatGPT Brain adapter — OpenAI Chat Completions on a **cheap model whitelist**.
+ * Vapi Studio ChatGPT Brain adapter — OpenAI Chat Completions on a **cheap model whitelist**.
  *
  * Implements:
  * - Listen scan: score limited candidates + extract listen fields
@@ -83,8 +83,8 @@ export class ChatGptBrainAdapter implements BrainAdapter {
     private readonly usage: BrainUsageTracker,
     private readonly events: EventService,
     @Optional()
-    @Inject(RA9_BRAIN_CONFIG)
-    private readonly brainConfig?: Ra9BrainConfig,
+    @Inject(STUDIO_BRAIN_CONFIG)
+    private readonly brainConfig?: StudioBrainConfig,
   ) {}
 
   private cheapModel(override?: string | null): CheapModelPricing {
@@ -297,8 +297,8 @@ export class ChatGptBrainAdapter implements BrainAdapter {
       'Answer the question about the provided input.',
       'Return ONLY valid JSON in ONE of these forms:',
       '1) {"answer":{...}}',
-      `2) {"outcome":"${RA9_CLARIFY_CANNOT_ANSWER}","reason":"<short>"}`,
-      `Use ${RA9_CLARIFY_CANNOT_ANSWER} when the input is insufficient, contradictory, or you cannot reliably fill required fields.`,
+      `2) {"outcome":"${STUDIO_CLARIFY_CANNOT_ANSWER}","reason":"<short>"}`,
+      `Use ${STUDIO_CLARIFY_CANNOT_ANSWER} when the input is insufficient, contradictory, or you cannot reliably fill required fields.`,
       'ASR NOISE: input is often speech-to-text. Filter fillers ("um", "uh", "erm", "hmm", "like", "you know"), stutters, false starts, and unrelated asides / crosstalk when the actionable answer is still clear.',
       'Strip that noise from extracted field values; do not invent content from noise alone.',
       'When answered, the answer object MUST use exactly these fields (omit unknown optional keys):',

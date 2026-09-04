@@ -96,5 +96,5 @@ Full rules: [Identity and PII](../best-practices/identity-and-pii.md)
 
 ## Related
 
-- [Handbook](./handbook.md) — full forms section in package README
+- [Runtime API](../reference/runtime-api.md) — forms contracts
 - [Identity and PII](../best-practices/identity-and-pii.md)

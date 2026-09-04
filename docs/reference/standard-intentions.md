@@ -31,13 +31,13 @@ From [Node conventions](../guides/node-conventions.md):
 
 ## Code intentions
 
-Code intention classes with:
+Extend **`CodeIntention`** (register via `VapiStudioModule.forRoot({ intentions })`). Cascade phases (`INTENTION_CASCADE_PHASE`):
 
 | Phase | When |
 | --- | --- |
-| `force` | Preempt before current node (e.g. need SMS consent) |
-| `match` | Node eligibility |
-| `scan` | Brain candidate |
+| `Force` | Preempt before current node (e.g. need SMS consent) |
+| `Match` | Node eligibility |
+| `Scan` | Brain candidate |
 
 ## Application examples
 

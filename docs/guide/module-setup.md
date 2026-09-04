@@ -30,9 +30,10 @@ cd projects/my-app && yarn install
 | `entryPoint` | Yes | `ConversationEntryPoint` — seed variables, `beforeEach` / `afterEach` |
 | `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, or custom |
 | `brain` | No | `{ model, confidenceThreshold }` for ChatGPT adapter |
-| `intentions` | No | Code intention providers (`INTENTION_CASCADE_PHASE`) |
+| `intentions` | No | `CodeIntention[]` providers (`INTENTION_CASCADE_PHASE`) |
+| `limits` | No | Always on: `{ maxTurns?, maxDurationMs?, endMessage? }` (defaults 40 / 20m; ceilings 150 / 60m) |
+| `eventListeners` | No | `StudioEventListener[]` |
 | `formDisposeAdapter` | No | Delivers forms (HTML link, Studio modal, Twilio SMS, …) |
-| `eventListeners` | No | Subscribe to `EventService` (e.g. Studio buffer) |
 
 ## Node registration pattern
 
@@ -73,5 +74,5 @@ INIT_CWD=$PWD node node_modules/@guidify-ai/vapi-studio/scripts/install-agent-re
 ## Related
 
 - [Concepts](./concepts.md)
-- [Handbook](./handbook.md)
-- [Creating a project](../projects/creating-a-project.md)
+- [Runtime API](../reference/runtime-api.md)
+- [Creating an app](../building-apps/creating-an-app.md)

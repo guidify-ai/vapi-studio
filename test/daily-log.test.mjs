@@ -30,11 +30,11 @@ describe('daily log driver', () => {
   beforeEach(async () => {
     prevLogDir = process.env.LOG_DIR;
     prevLogDays = process.env.LOG_DAYS;
-    prevFileLog = process.env.RA9_FILE_LOG;
-    dir = await mkdtemp(join(tmpdir(), 'ra9-logs-'));
+    prevFileLog = process.env.STUDIO_FILE_LOG;
+    dir = await mkdtemp(join(tmpdir(), 'studio-logs-'));
     process.env.LOG_DIR = dir;
     process.env.LOG_DAYS = '14';
-    process.env.RA9_FILE_LOG = '1';
+    process.env.STUDIO_FILE_LOG = '1';
     resetDailyLogState();
   });
 
@@ -44,8 +44,8 @@ describe('daily log driver', () => {
     else process.env.LOG_DIR = prevLogDir;
     if (prevLogDays === undefined) delete process.env.LOG_DAYS;
     else process.env.LOG_DAYS = prevLogDays;
-    if (prevFileLog === undefined) delete process.env.RA9_FILE_LOG;
-    else process.env.RA9_FILE_LOG = prevFileLog;
+    if (prevFileLog === undefined) delete process.env.STUDIO_FILE_LOG;
+    else process.env.STUDIO_FILE_LOG = prevFileLog;
     await rm(dir, { recursive: true, force: true });
   });
 

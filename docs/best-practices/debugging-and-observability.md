@@ -33,7 +33,7 @@ Before merging conversation/routing work, confirm logs can answer:
 
 Apps should `ctx.events.persist(conversationId, TYPE, { … })` for domain decisions that framework routing does not cover (phone digit eval, form mock wait, CRM hydrate). Include `runtimeInstanceId`, `providerCallId`, `turnNumber`, and the raw + normalized inputs — never only the spoken apology text.
 
-For **admin funnel stats**, also stamp milestones with `persistAnalyticsTag` (or bind catalog steps to existing event types). Keep tag ids stable (`snake_case`); one project = one analytics page with top branches, outcomes, milestone funnels, and top tags.
+For **admin funnel stats**, define an `AnalyticsFunnelDefinition[]` catalog in code (ordered steps → `tags[]` and/or `eventTypes[]`). Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag` using stable `snake_case` tags — **catalog membership**, not `payload.funnels`. Charts score via `countConversationsMatchingStep({ tags, eventTypes })`. One project = one analytics page with outcomes, funnel charts, and top tags. Product apps usually model outcome paths (e.g. appointment only / estimate only / both), not internal graph stages.
 
 Ended calls should persist **`CONVERSATION_PATH`** (node signature) and **`CALL_OUTCOME`** (`success` / `failure` / `unknown` via Brain judge at teardown).
 
@@ -43,4 +43,4 @@ Ended calls should persist **`CONVERSATION_PATH`** (node signature) and **`CALL_
 - Skipping flags like `introSpoken` from memory snapshots
 - Relying on assistant speech (“I only caught 9 digits”) as the sole record of a failed extract
 - Shipping a routing fix without a `ROUTE_DECISION`-visible rejection reason
-- Shipping conversation/routing changes without unit tests that lock the behavior (framework `vapi-studio/test/*.test.mjs`, app `projects/*/test/*.test.mjs`)
+- Shipping conversation/routing changes without unit tests that lock the behavior (framework `test/*.test.mjs`, app `projects/*/test/*.test.mjs`)

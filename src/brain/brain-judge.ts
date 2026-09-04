@@ -25,7 +25,7 @@ export interface BrainJudgeOptions {
   confidenceThreshold?: number;
   /**
    * OpenAI model id for this call (studio-chatgpt cheap whitelist).
-   * Ignored by mock. Falls back to Ra9Module brain.model.
+   * Ignored by mock. Falls back to VapiStudioModule brain.model.
    */
   model?: string;
 }

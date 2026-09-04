@@ -14,7 +14,7 @@ import {
 } from '../brain/brain-ranking';
 import { STANDARD_INTENTIONS } from '../intentions/standard-intentions';
 import { BufferedConversationOutput } from '../output/conversation-output';
-import { ROUTE_RESOLVED_VIA } from '../intention/ra9-intention';
+import { ROUTE_RESOLVED_VIA } from '../intention/code-intention';
 import { conditionGotoIntention } from '../flow/flow-loader';
 import { snapshotUserMemory } from '../events/conversation-console';
 import type { SupervisorEngine } from './supervisor.types';

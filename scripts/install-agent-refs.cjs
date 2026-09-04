@@ -11,7 +11,6 @@ const path = require('path');
 const pkgRoot = path.resolve(__dirname, '..');
 const consumerRoot = path.resolve(process.env.INIT_CWD || process.cwd());
 const PKG = '@guidify-ai/vapi-studio';
-const LEGACY_PKG = '@guidify-ai/ra9';
 
 function isSameDir(a, b) {
   return path.resolve(a) === path.resolve(b);
@@ -39,14 +38,12 @@ const deps = {
   ...(consumerPkg.dependencies || {}),
   ...(consumerPkg.devDependencies || {}),
 };
-if (!deps[PKG] && !deps[LEGACY_PKG]) {
+if (!deps[PKG]) {
   process.exit(0);
 }
 
 const BEGIN = '<!-- VAPI-STUDIO-BEST-PRACTICES:BEGIN -->';
 const END = '<!-- VAPI-STUDIO-BEST-PRACTICES:END -->';
-const LEGACY_BEGIN = '<!-- RA9-BEST-PRACTICES:BEGIN -->';
-const LEGACY_END = '<!-- RA9-BEST-PRACTICES:END -->';
 
 const agentsBlock = `${BEGIN}
 ## Vapi Studio best practices
@@ -59,9 +56,11 @@ listens, extracts, or identity flows:
 - \`node_modules/@guidify-ai/vapi-studio/agent/AGENTS.md\`
 - Cursor rule: \`.cursor/rules/vapi-studio-best-practices.mdc\` (installed with the package)
 
-Hard rules (summary): **one CTA per turn**; constrained fields **fail closed**;
-short listen timeouts for digits; never store ASR junk as PII; update the
-matching doc layer in the same change.
+Hard rules (summary): **one CTA per turn**; conversations **must end** (limits always on);
+constrained fields **fail closed**; short listen timeouts for digits; never store ASR junk
+as PII; soft affirmatives on multi-choice → local re-ask; silent handoffs; analytics
+\`funnels[]\` on milestones (omit when standalone); update the matching doc layer in the
+same change. Runtime contracts: \`docs/reference/runtime-api.md\`.
 ${END}
 `;
 
@@ -86,7 +85,7 @@ function upsertAgentsMd() {
   }
 
   const blockPattern = new RegExp(
-    `(?:${escapeRegExp(BEGIN)}|${escapeRegExp(LEGACY_BEGIN)})[\\s\\S]*?(?:${escapeRegExp(END)}|${escapeRegExp(LEGACY_END)})`,
+    `${escapeRegExp(BEGIN)}[\\s\\S]*?${escapeRegExp(END)}`,
   );
 
   if (blockPattern.test(existing)) {

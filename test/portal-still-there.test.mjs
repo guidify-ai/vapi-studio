@@ -7,11 +7,11 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 
-class OriginNode extends Ra9Node {
+class OriginNode extends AgentNode {
   async listen() {
     return {
       intentions: [{ name: 'isOriginContinue', boost: 20 }],
@@ -24,13 +24,13 @@ class OriginNode extends Ra9Node {
   }
 }
 
-class OriginContinueNode extends Ra9Node {
+class OriginContinueNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen(`Resumed with: ${ctx.userText}`);
   }
 }
 
-class StillThereNode extends Ra9Node {
+class StillThereNode extends AgentNode {
   async run(ctx) {
     const portal = ctx.runtime.portalState.stillThere;
     portal.attempts += 1;

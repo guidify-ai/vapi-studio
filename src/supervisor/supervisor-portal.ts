@@ -11,8 +11,8 @@ import {
 } from '../brain/brain-ranking';
 import { STANDARD_INTENTIONS } from '../intentions/standard-intentions';
 import { BufferedConversationOutput, type NodeResult } from '../output/conversation-output';
-import { nodeContextFromRuntime } from '../node/ra9-node';
-import { ROUTE_RESOLVED_VIA } from '../intention/ra9-intention';
+import { nodeContextFromRuntime } from '../node/agent-node';
+import { ROUTE_RESOLVED_VIA } from '../intention/code-intention';
 import type { FlowNodeDefinition } from '../flow/flow-loader';
 import type { SupervisorEngine } from './supervisor.types';
 import { MAX_FORCE_INTENTION_HOPS } from './supervisor.types';

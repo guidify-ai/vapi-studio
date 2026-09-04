@@ -390,15 +390,31 @@ export class ConversationRepository {
   }
 
   /**
-   * Distinct conversations matching any of the given event types or analytics tags.
-   * Used to score funnel steps.
+   * Distinct conversations matching a funnel step.
+   * - Default: any of `eventTypes` OR any of `tags` (OR).
+   * - Outcome steps: `requireAllTags` (AND) with optional `excludeTags`.
+   * - Legacy: when `funnelId` is set with `tags`, also filter payload.funnels.
    */
   public async countConversationsMatchingStep(input: {
     projectId: string;
     since?: Date;
     eventTypes?: string[];
     tags?: string[];
+    requireAllTags?: string[];
+    excludeTags?: string[];
+    /** @deprecated Prefer catalog-only scoring (omit). */
+    funnelId?: string;
   }): Promise<number> {
+    const requireAll = input.requireAllTags?.filter(Boolean) ?? [];
+    if (requireAll.length) {
+      return this.countConversationsMatchingTagRules({
+        projectId: input.projectId,
+        since: input.since,
+        requireTags: requireAll,
+        excludeTags: input.excludeTags,
+      });
+    }
+
     const types = input.eventTypes?.filter(Boolean) ?? [];
     const tags = input.tags?.filter(Boolean) ?? [];
     if (!types.length && !tags.length) return 0;
@@ -419,13 +435,85 @@ export class ConversationRepository {
       qb.setParameter('types', types);
     }
     if (tags.length) {
-      parts.push(
-        `(e.type = :analyticsType AND e.payload->>'tag' IN (:...tags))`,
-      );
+      const funnelId = input.funnelId?.trim();
+      if (funnelId) {
+        // funnels: string[]  OR  legacy singular funnel (incl. old catch-all "main")
+        parts.push(
+          `(e.type = :analyticsType AND e.payload->>'tag' IN (:...tags) AND (` +
+            `e.payload->>'funnel' = :funnelId OR ` +
+            `e.payload->>'funnel' = 'main' OR ` +
+            `(jsonb_typeof(e.payload->'funnels') = 'array' AND e.payload->'funnels' ? :funnelId)` +
+            `))`,
+        );
+        qb.setParameter('funnelId', funnelId);
+      } else {
+        parts.push(
+          `(e.type = :analyticsType AND e.payload->>'tag' IN (:...tags))`,
+        );
+      }
       qb.setParameter('analyticsType', 'ANALYTICS_TAG');
       qb.setParameter('tags', tags);
     }
     qb.andWhere(`(${parts.join(' OR ')})`);
+
+    const raw = await qb.getRawOne<{ conversations: string }>();
+    return Number(raw?.conversations) || 0;
+  }
+
+  /**
+   * Conversations that have every `requireTags` ANALYTICS_TAG and none of
+   * `excludeTags` (within the optional since window on matching events).
+   */
+  public async countConversationsMatchingTagRules(input: {
+    projectId: string;
+    since?: Date;
+    requireTags: string[];
+    excludeTags?: string[];
+  }): Promise<number> {
+    const requireTags = input.requireTags.map(String).filter(Boolean);
+    const excludeTags = (input.excludeTags ?? []).map(String).filter(Boolean);
+    if (!requireTags.length) return 0;
+
+    const qb = this.conversations
+      .createQueryBuilder('c')
+      .select('COUNT(DISTINCT c.id)', 'conversations')
+      .where('c.project_id = :projectId', { projectId: input.projectId });
+
+    for (let i = 0; i < requireTags.length; i += 1) {
+      const tagParam = `reqTag${i}`;
+      const sinceParam = `reqSince${i}`;
+      const sinceClause = input.since
+        ? ` AND e${i}.created_at >= :${sinceParam}`
+        : '';
+      qb.andWhere(
+        `EXISTS (
+          SELECT 1 FROM conversation_events e${i}
+          WHERE e${i}.conversation_id = c.id
+            AND e${i}.type = 'ANALYTICS_TAG'
+            AND e${i}.payload->>'tag' = :${tagParam}${sinceClause}
+        )`,
+      );
+      qb.setParameter(tagParam, requireTags[i]);
+      if (input.since) qb.setParameter(sinceParam, input.since);
+    }
+
+    for (let i = 0; i < excludeTags.length; i += 1) {
+      const tagParam = `exTag${i}`;
+      const sinceParam = `exSince${i}`;
+      const sinceClause = input.since
+        ? ` AND x${i}.created_at >= :${sinceParam}`
+        : '';
+      qb.andWhere(
+        `NOT EXISTS (
+          SELECT 1 FROM conversation_events x${i}
+          WHERE x${i}.conversation_id = c.id
+            AND x${i}.type = 'ANALYTICS_TAG'
+            AND x${i}.payload->>'tag' = :${tagParam}${sinceClause}
+        )`,
+      );
+      qb.setParameter(tagParam, excludeTags[i]);
+      if (input.since) qb.setParameter(sinceParam, input.since);
+    }
 
     const raw = await qb.getRawOne<{ conversations: string }>();
     return Number(raw?.conversations) || 0;
@@ -523,6 +611,112 @@ export class ConversationRepository {
       conversations: Number(r.conversations) || 0,
       events: Number(r.events) || 0,
     }));
+  }
+
+  /**
+   * Duration percentiles (seconds) for ENDED conversations:
+   * `ended_at - created_at`. Returns null percentiles when sample is empty.
+   */
+  public async callDurationPercentiles(input: {
+    projectId: string;
+    since?: Date;
+    /** Inclusive 0–1 values, e.g. 0.8 / 0.9. */
+    percentiles?: number[];
+  }): Promise<{
+    sampleSize: number;
+    /** Keys like `p80`, `p90` → seconds (rounded to 1 decimal) or null. */
+    valuesSec: Record<string, number | null>;
+  }> {
+    const pcts = (input.percentiles?.length ? input.percentiles : [0.8, 0.9])
+      .map((p) => Math.min(1, Math.max(0, Number(p))))
+      .filter((p) => Number.isFinite(p));
+    const unique = [...new Set(pcts)];
+    if (!unique.length) {
+      return { sampleSize: 0, valuesSec: {} };
+    }
+
+    const params: unknown[] = [input.projectId];
+    let sinceSql = '';
+    if (input.since) {
+      params.push(input.since);
+      sinceSql = ` AND c.created_at >= $${params.length}`;
+    }
+    const pctSelects = unique
+      .map(
+        (p, i) =>
+          `percentile_cont(${p}) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (c.ended_at - c.created_at))) AS p${i}`,
+      )
+      .join(', ');
+    const rows = (await this.conversations.query(
+      `
+      SELECT COUNT(*)::int AS sample_size, ${pctSelects}
+      FROM conversations c
+      WHERE c.project_id = $1
+        AND c.status = 'ENDED'
+        AND c.ended_at IS NOT NULL
+        ${sinceSql}
+      `,
+      params,
+    )) as Array<Record<string, string | number | null>>;
+    const raw = rows[0] ?? {};
+    const sampleSize = Number(raw.sample_size) || 0;
+    const valuesSec: Record<string, number | null> = {};
+    unique.forEach((p, i) => {
+      const key = `p${Math.round(p * 100)}`;
+      const v = raw[`p${i}`];
+      if (v == null || sampleSize === 0) {
+        valuesSec[key] = null;
+        return;
+      }
+      const n = typeof v === 'number' ? v : Number(v);
+      valuesSec[key] = Number.isFinite(n) ? Math.round(n * 10) / 10 : null;
+    });
+    return { sampleSize, valuesSec };
+  }
+
+  /**
+   * Distinct conversations matching any of the event matchers (OR).
+   * Optional `payloadEquals` ANDs `payload->>key = value` for that matcher.
+   */
+  public async countConversationsMatchingEventMatchers(input: {
+    projectId: string;
+    since?: Date;
+    matchers: Array<{
+      type: string;
+      payloadEquals?: Record<string, string>;
+    }>;
+  }): Promise<number> {
+    const matchers = input.matchers.filter((m) => m.type?.trim());
+    if (!matchers.length) return 0;
+
+    const qb = this.events
+      .createQueryBuilder('e')
+      .innerJoin(ConversationEntity, 'c', 'c.id = e.conversation_id')
+      .select('COUNT(DISTINCT e.conversation_id)', 'conversations')
+      .where('c.project_id = :projectId', { projectId: input.projectId });
+    if (input.since) {
+      qb.andWhere('e.created_at >= :since', { since: input.since });
+    }
+
+    const parts: string[] = [];
+    matchers.forEach((m, i) => {
+      const typeParam = `mType${i}`;
+      const clauses = [`e.type = :${typeParam}`];
+      qb.setParameter(typeParam, m.type.trim());
+      const eqs = m.payloadEquals ?? {};
+      Object.entries(eqs).forEach(([key, value], j) => {
+        const safeKey = key.replace(/[^a-zA-Z0-9_]/g, '');
+        if (!safeKey) return;
+        const vParam = `mVal${i}_${j}`;
+        clauses.push(`e.payload->>'${safeKey}' = :${vParam}`);
+        qb.setParameter(vParam, value);
+      });
+      parts.push(`(${clauses.join(' AND ')})`);
+    });
+    qb.andWhere(`(${parts.join(' OR ')})`);
+
+    const raw = await qb.getRawOne<{ conversations: string }>();
+    return Number(raw?.conversations) || 0;
   }
 
   /**

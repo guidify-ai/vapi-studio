@@ -14,6 +14,7 @@ Whatever you just asked for, `listen()` should advertise:
 - `hints` for the Brain (short, operational)
 - `extract` fields with **constraint-aware** `description`s when collecting data
 - `resolveIntention` for cheap local matches (skip Brain when obvious) — include short answers like “new one” / “yes” / “ASAP” when the ask is constrained
+- **Multi-choice soft affirmatives** (“yeah, why not”, bare “sure”) that do **not** name an option → re-ask which lane locally; never leave that to Brain/unknown ([conversation-design.md](./conversation-design.md#do-not-auto-pick-lanes))
 - After a resolved binary fork (existing vs new, yes/no), **stamp memory** so the next menu advances; otherwise unknown recovery and re-prompts keep re-asking the same choice
 - Unknown portal: Supervisor re-tries the **origin listen** on the next utterance before unknown’s own candidates — keep origin `resolveIntention` strong so restatements land on this turn
 - `timeoutSeconds` when the answer type needs a non-default window
@@ -41,14 +42,38 @@ Never write PII from raw `userText` without a validator (`looksLikePersonName`, 
 | Action | When |
 | --- | --- |
 | `sayAndListen` | Stay on this Node; wait for the next user turn |
-| `continueTo({ nodeId })` | Same Conversation, same flow, different Node (often same turn entry speak) |
-| `handoff` | Workflow module switch (Squad / multi-assistant). Only when a workflow is loaded |
+| `continueTo({ nodeId })` | Same Conversation, same flow, different Node (often same turn entry speak) — **silent** unless the destination needs a new product CTA; no filler restating the last beat ([conversation-design.md](./conversation-design.md#copy-hygiene)) |
+| `handoff({ to })` | Workflow module switch (Squad / multi-assistant). Same silent-handoff rule. Only when a workflow is loaded |
 
 Keep live PoCs on one assistant + `continueTo` unless you are deliberately testing Squad.
 
 ## Portals stay portals
 
 Transfer, pause, mad, unknown, still-there, goodbye remain high-priority portals. Happy-path Nodes must not reimplement them. Unknown recovery copy can be shared with the unknown portal so menus stay consistent.
+
+### Mad: one re-engage, then human (hard rule)
+
+Do **not** keep reasoning with, apologizing to, or negotiating angry callers across multiple turns. Mad people escalate; a bot that stays in de-escalation loops wastes the call and makes things worse.
+
+| Policy | Detail |
+| --- | --- |
+| **First mad hit** | One short re-engage (acknowledge + invite them to continue productively), then listen |
+| **Second mad hit** (still heated) | **Transfer to a human** (or after-hours block) — no third apology loop |
+| **Calm continue / goodbye** | May leave the portal without transferring |
+| **Do not** | Invent long empathy scripts, argue, or keep `sayAndListen` de-escalation forever |
+
+Framework note: mad is sticky (other portals suppressed while active) so the next utterance stays on the mad listen — that is for routing control, not an excuse to chat with anger. App mad Nodes must enforce the one-re-engage → transfer policy.
+
+### Portal re-engage must end with one CTA (hard rule)
+
+Any portal turn that **defers** the caller’s ask (transfer re-engage, mad first apology, after-hours block) must still obey **one CTA per turn**. Do not leave them on a dead-end statement.
+
+| Bad | Good |
+| --- | --- |
+| “I understand you want a human, but I can resolve it for you.” *(no ask)* | “I can often take care of this without a transfer — **how can I help you?** Or say you'd still like a person.” |
+| “I'm sorry you're frustrated.” *(stops)* | “I'm sorry you're dealing with this — **tell me what's going on**, and I'll help.” |
+
+Listen for that turn must accept: insist again (transfer/mad), calm continue, **or** a product need if you offered help.
 
 ## Flow YAML is paths (+ optional condition transitions)
 

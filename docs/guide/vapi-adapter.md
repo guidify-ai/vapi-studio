@@ -65,5 +65,6 @@ Full dashboard checklist: implement in **your application** — see [Creating an
 
 ## Related
 
-- [Handbook](./handbook.md)
-- [Vapi operator patterns](../guide/vapi-adapter.md)
+- [Runtime API](../reference/runtime-api.md)
+- [Workflow & Squad](./workflow-squad.md)
+- [Creating an app](../building-apps/creating-an-app.md)

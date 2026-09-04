@@ -32,5 +32,5 @@ In the **vapi-studio** repository:
 docs/best-practices/     ← these guides
 docs/README.md           ← doc site index
 agent/AGENTS.md
-README.md                ← handbook (runtime contracts)
+docs/reference/runtime-api.md  ← runtime contracts (handbook)
 ```

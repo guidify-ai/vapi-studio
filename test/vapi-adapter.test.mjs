@@ -55,14 +55,14 @@ describe('VapiSseCompiler OpenAI-compatible SSE', () => {
   });
 
   it('emits chat.completion.chunk assistant content frames', () => {
-    const compiler = new VapiSseCompiler({ id: 'chatcmpl-test', model: 'ra9-poc' });
+    const compiler = new VapiSseCompiler({ id: 'chatcmpl-test', model: 'studio-poc' });
     const raw = collect((w) => {
       compiler.writeAssistantText(w, 'Hello there');
       compiler.finish(w);
     });
     const events = parseSse(raw);
     assert.equal(events[0].object, 'chat.completion.chunk');
-    assert.equal(events[0].model, 'ra9-poc');
+    assert.equal(events[0].model, 'studio-poc');
     assert.equal(events[0].choices[0].delta.role, 'assistant');
     assert.equal(events[0].choices[0].delta.content, 'Hello there');
     assert.equal(events[0].choices[0].finish_reason, null);

@@ -1,40 +1,38 @@
 export { STANDARD_INTENTIONS } from './intentions/standard-intentions';
 export type { StandardIntention } from './intentions/standard-intentions';
 
-export { Ra9Module, Ra9Module as VapiStudioModule } from './ra9.module';
-export type { Ra9ModuleOptions, Ra9ModuleOptions as VapiStudioModuleOptions } from './ra9.module';
+export { VapiStudioModule } from './vapi-studio.module';
+export type { VapiStudioModuleOptions } from './vapi-studio.module';
 
 export {
-  Ra9Node,
-  Ra9Node as AgentNode,
+  AgentNode,
   conversationViewFromRuntime,
   nodeContextFromRuntime,
-} from './node/ra9-node';
+} from './node/agent-node';
 export type {
   NodeContext,
   ConversationView,
-  Ra9NodeRegistry,
-} from './node/ra9-node';
-export { RA9_NODE_REGISTRY } from './node/ra9-node';
+  AgentNodeRegistry,
+} from './node/agent-node';
+export { STUDIO_NODE_REGISTRY } from './node/agent-node';
 
 export {
-  Ra9Intention,
-  Ra9Intention as CodeIntention,
+  CodeIntention,
   intentionContextFromRuntime,
-  RA9_INTENTION_REGISTRY,
+  STUDIO_INTENTION_REGISTRY,
   INTENTION_CASCADE_PHASE,
   INTENTION_RUN_KIND,
   ROUTE_RESOLVED_VIA,
   DEFAULT_FORCE_INTENTION_PRIORITY,
-} from './intention/ra9-intention';
+} from './intention/code-intention';
 export type {
   IntentionCascadePhase,
   IntentionContext,
   IntentionRunResult,
   IntentionRunKind,
   RouteResolvedVia,
-  Ra9IntentionRegistry,
-} from './intention/ra9-intention';
+  CodeIntentionRegistry,
+} from './intention/code-intention';
 
 export {
   restartNode,
@@ -173,8 +171,8 @@ export type {
   CheapOpenAiModelId,
   CheapModelPricing,
 } from './brain/openai-cheap-models';
-export { RA9_BRAIN_CONFIG, resolveRa9BrainConfig } from './brain/brain-config';
-export type { Ra9BrainConfig } from './brain/brain-config';
+export { STUDIO_BRAIN_CONFIG, resolveStudioBrainConfig } from './brain/brain-config';
+export type { StudioBrainConfig } from './brain/brain-config';
 export { detectUserSpeechSeries } from './brain/adapters/chatgpt-brain.adapter';
 export {
   clarifiableInputToString,
@@ -184,7 +182,7 @@ export {
   throwClarifyCannotAnswer,
   isClarifyCannotAnswerError,
   ClarifyCannotAnswerError,
-  RA9_CLARIFY_CANNOT_ANSWER,
+  STUDIO_CLARIFY_CANNOT_ANSWER,
 } from './brain/brain-clarify';
 export type {
   ClarifiableInput,
@@ -267,22 +265,22 @@ export type { VapiStartSpeakingPlanFromListenTimeout } from './conversation/list
 
 export { EventService } from './events/event.service';
 export {
-  RA9_EVENT_LISTENERS,
-  RA9_EVENTS,
-} from './events/ra9-event';
+  STUDIO_EVENT_LISTENERS,
+  STUDIO_EVENTS,
+} from './events/studio-event';
 export type {
-  Ra9Event,
-  Ra9EventInput,
-  Ra9EventListener,
-  Ra9EventType,
-} from './events/ra9-event';
+  StudioEvent,
+  StudioEventInput,
+  StudioEventListener,
+  StudioEventType,
+} from './events/studio-event';
 export { PostgresEventListener } from './events/postgres-event.listener';
 export {
   printConversationConsole,
   snapshotUserMemory,
   isConversationConsoleEnabled,
 } from './events/conversation-console';
-export type { Ra9LogLevel } from './events/conversation-console';
+export type { StudioLogLevel } from './events/conversation-console';
 export {
   beginCallLog,
   appendDailyLog,
@@ -305,6 +303,7 @@ export { ConversationRepository, extractCallerIdFromBags } from './persistence/c
 export type { ResumableConversation } from './persistence/conversation.repository';
 export {
   ANALYTICS_TAG_EVENT,
+  normalizeAnalyticsFunnels,
 } from './analytics/analytics-tags';
 export type {
   AnalyticsTagPayload,

@@ -25,10 +25,10 @@ function mockEvents() {
 
 describe('FORM_SENDOUT branch forensics', () => {
   before(() => {
-    process.env.RA9_FORM_ACK_MS = '40';
+    process.env.STUDIO_FORM_ACK_MS = '40';
   });
   after(() => {
-    delete process.env.RA9_FORM_ACK_MS;
+    delete process.env.STUDIO_FORM_ACK_MS;
   });
 
   it('persists FORM_SENDOUT with conversation branch + deliveryBranch before ACK wait', async () => {

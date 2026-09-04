@@ -11,9 +11,9 @@ import {
   type RouteWinnerRow,
 } from '../events/route-forensics';
 import { snapshotUserMemory } from '../events/conversation-console';
-import { ROUTE_RESOLVED_VIA } from '../intention/ra9-intention';
+import { ROUTE_RESOLVED_VIA } from '../intention/code-intention';
 import { CONDITION_GOTO_PREFIX } from '../flow/flow-loader';
-import { nodeContextFromRuntime } from '../node/ra9-node';
+import { nodeContextFromRuntime } from '../node/agent-node';
 import type { SupervisorEngine } from './supervisor.types';
 import { MAX_FORCE_INTENTION_HOPS } from './supervisor.types';
 
@@ -328,7 +328,7 @@ export async function routeIntentions(this: SupervisorEngine, input: {
       turnNumber: runtime.turn.turnNumber,
       userText,
       rejected,
-      note: 'all candidates before() false — falling back to ra9.isUnknownTransition',
+      note: 'all candidates before() false — falling back to studio.isUnknownTransition',
     });
     return this.routeIntentions({
       runtime,

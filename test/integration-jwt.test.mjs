@@ -10,13 +10,13 @@ import {
 } from '../dist/integrations/jwt-hmac.js';
 import { IntegrationClient } from '../dist/integrations/integration-client.js';
 import { EventService } from '../dist/events/event.service.js';
-import { RA9_EVENTS } from '../dist/events/ra9-event.js';
+import { STUDIO_EVENTS } from '../dist/events/studio-event.js';
 
 describe('JWT HMAC integration auth', () => {
   it('signs and verifies HS256 JWT', () => {
-    const token = signHs256Jwt({ sub: 'ra9', n: 1 }, 'test-secret');
+    const token = signHs256Jwt({ sub: 'studio', n: 1 }, 'test-secret');
     const claims = verifyHs256Jwt(token, 'test-secret');
-    assert.equal(claims.sub, 'ra9');
+    assert.equal(claims.sub, 'studio');
     assert.throws(() => verifyHs256Jwt(token, 'wrong'), /HMAC/);
   });
 
@@ -79,10 +79,10 @@ describe('IntegrationClient events', () => {
     assert.equal(result.ok, true);
     assert.equal(result.status, 200);
     assert.deepEqual(result.body, { slots: 3 });
-    assert.equal(handled[0].type, RA9_EVENTS.INTEGRATION_REQUEST);
+    assert.equal(handled[0].type, STUDIO_EVENTS.INTEGRATION_REQUEST);
     assert.equal(handled[0].conversationId, 'conv-1');
     assert.equal(handled[0].payload.name, 'example.slots');
-    assert.equal(handled[1].type, RA9_EVENTS.INTEGRATION_RESPONSE);
+    assert.equal(handled[1].type, STUDIO_EVENTS.INTEGRATION_RESPONSE);
     assert.equal(handled[1].payload.status, 200);
     fetchMock.mock.restore();
     delete process.env.FAKE_INT_SECRET;

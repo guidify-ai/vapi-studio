@@ -2,7 +2,7 @@
  * How long the channel waits after a user pause before closing a listen.
  *
  * Vapi's default `onPunctuationSeconds` is 0.1 — a transcribed "K." ends the
- * turn before "as soon as possible" lands. RA9's default is long enough to
+ * turn before "as soon as possible" lands. Vapi Studio's default is long enough to
  * catch trailing speech; Nodes override via `listenTimeoutSeconds`.
  */
 

@@ -61,7 +61,7 @@ export class WorkflowLoader {
     for (const [id, def] of Object.entries(raw.modules)) {
       const rawKind = (def.kind ?? (def.flowFile ? 'studio' : 'vapi')) as string;
       const kind: WorkflowModuleKind =
-        rawKind === 'ra9' || rawKind === 'studio' ? 'studio' : 'vapi';
+        rawKind === 'studio' ? 'studio' : 'vapi';
       if (kind === 'studio' && !def.flowFile) {
         throw new Error(`Workflow module "${id}" kind=studio requires flowFile`);
       }

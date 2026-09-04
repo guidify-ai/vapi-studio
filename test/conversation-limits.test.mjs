@@ -12,16 +12,16 @@ import {
   HARD_MAX_CONVERSATION_TURNS,
 } from '../dist/conversation/conversation-limits.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 
-class OpeningNode extends Ra9Node {
+class OpeningNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Hi — what is your name?');
   }
 }
 
-class EchoNode extends Ra9Node {
+class EchoNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Okay, go on.');
   }

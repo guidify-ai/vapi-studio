@@ -6,8 +6,7 @@
 import { appendDailyLog } from './daily-log.driver';
 import { envFlag } from '../util/studio-env';
 
-export type Ra9LogLevel = 'debug' | 'info' | 'warn' | 'error';
-export type StudioLogLevel = Ra9LogLevel;
+export type StudioLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 const ANSI = {
   reset: '\x1b[0m',
@@ -86,7 +85,7 @@ export function snapshotUserMemory(
 }
 
 export function isConversationConsoleEnabled(): boolean {
-  return envFlag('STUDIO_CONSOLE_DEBUG', 'RA9_CONSOLE_DEBUG', true);
+  return envFlag('STUDIO_CONSOLE_DEBUG', undefined, true);
 }
 
 let lineSink: string[] | null = null;
@@ -278,10 +277,10 @@ function listenSummary(listen: unknown): string {
 }
 
 /**
- * Pretty-print a structured RA9 event to stdout with role colors.
+ * Pretty-print a structured Vapi Studio event to stdout with role colors.
  */
 export function printConversationConsole(
-  level: Ra9LogLevel,
+  level: StudioLogLevel,
   type: string,
   payload: Record<string, unknown>,
 ): void {
@@ -943,7 +942,7 @@ export function printConversationConsole(
           paint(level === 'error' ? ANSI.red : ANSI.yellow, type),
           formatValue(payload),
         ]);
-      } else if (envFlag('STUDIO_CONSOLE_DEBUG_ALL', 'RA9_CONSOLE_DEBUG_ALL', false)) {
+      } else if (envFlag('STUDIO_CONSOLE_DEBUG_ALL', undefined, false)) {
         line([
           roleTag(ANSI.bgGray, ANSI.white, 'EVT '),
           paint(ANSI.dim, type),

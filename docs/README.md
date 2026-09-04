@@ -25,7 +25,7 @@ This repo ships the **framework** at the root and your **applications** under [`
 | [Forms](./guide/forms.md) | `expose` / `open` / `resend` |
 | [Vapi adapter](./guide/vapi-adapter.md) | Custom LLM SSE, webhooks |
 | [Workflow & Squad](./guide/workflow-squad.md) | Multi-assistant handoffs (optional) |
-| [Handbook](./guide/handbook.md) | → package root `README.md` |
+| [Handbook](./guide/handbook.md) | Pointer → [Runtime API](./reference/runtime-api.md) |
 
 ## Building applications
 

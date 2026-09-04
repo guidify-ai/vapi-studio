@@ -144,7 +144,7 @@ export interface NodeContext<
  *   after()   → teardown for this Node execution
  *   catch()   → recover from FlowUncertainError / other errors
  */
-export abstract class Ra9Node<
+export abstract class AgentNode<
   TSchema extends ConversationSchema = DefaultConversationSchema,
 > {
   /**
@@ -190,10 +190,10 @@ export abstract class Ra9Node<
   }
 }
 
-export const RA9_NODE_REGISTRY = Symbol('RA9_NODE_REGISTRY');
+export const STUDIO_NODE_REGISTRY = Symbol('STUDIO_NODE_REGISTRY');
 
 /** Runtime registry is schema-erased; Nodes keep compile-time schema via their class generic. */
-export type Ra9NodeRegistry = Map<string, Ra9Node<any>>;
+export type AgentNodeRegistry = Map<string, AgentNode<any>>;
 
 export function conversationViewFromRuntime<
   TSchema extends ConversationSchema = DefaultConversationSchema,

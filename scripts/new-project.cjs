@@ -139,7 +139,7 @@ function renderFiles({ slug, name, uuid }) {
   write(
     path.join(dir, '.env.example'),
     `PORT=9999
-DATABASE_URL=postgres://ra9:ra9@127.0.0.1:15432/ra9
+DATABASE_URL=postgres://studio:studio@127.0.0.1:15432/studio
 PUBLIC_BASE_URL=https://YOUR_NGROK_SUBDOMAIN.ngrok-free.app
 # Mirrored from config/project.identity.json by yarn start (file is source of truth).
 PROJECT_UUID=${uuid}
@@ -491,7 +491,7 @@ import {
   MockBrainAdapter,
   ProjectEntity,
   ProviderIngressEntity,
-  Ra9Module,
+  VapiStudioModule,
 } from '@guidify-ai/vapi-studio';
 import { HealthController } from './health/health.controller';
 import { ProjectSeedService } from './project/project-seed.service';
@@ -505,7 +505,7 @@ import { GoodbyeNode } from './conversation/nodes/goodbye.node';
   imports: [
     TypeOrmModule.forRoot({
       type: 'postgres',
-      url: process.env.DATABASE_URL ?? 'postgres://ra9:ra9@postgres:5432/ra9',
+      url: process.env.DATABASE_URL ?? 'postgres://studio:studio@postgres:5432/studio',
       entities: [
         ConversationEntity,
         ConversationEventEntity,
@@ -514,7 +514,7 @@ import { GoodbyeNode } from './conversation/nodes/goodbye.node';
       ],
       synchronize: true,
     }),
-    Ra9Module.forRoot({
+    VapiStudioModule.forRoot({
       entryPoint: AppConversationEntry,
       brainAdapter: MockBrainAdapter,
       nodes: [
@@ -547,29 +547,29 @@ FROM node:24-bookworm-slim AS build
 
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
-WORKDIR /workspace/guidify-ai/packages/ra9
-COPY --from=ra9 package.json tsconfig.json ./
-COPY --from=ra9 src ./src
-COPY --from=ra9 test ./test
-COPY --from=ra9 scripts ./scripts
-COPY --from=ra9 docs ./docs
-COPY --from=ra9 agent ./agent
+WORKDIR /workspace/guidify-ai/packages/vapi-studio
+COPY --from=vapi-studio package.json tsconfig.json ./
+COPY --from=vapi-studio src ./src
+COPY --from=vapi-studio test ./test
+COPY --from=vapi-studio scripts ./scripts
+COPY --from=vapi-studio docs ./docs
+COPY --from=vapi-studio agent ./agent
 RUN yarn install && yarn build
-RUN mkdir -p /pkg/ra9 && cp package.json /pkg/ra9/ && cp -R dist /pkg/ra9/dist && cp -R test /pkg/ra9/test && cp -R scripts /pkg/ra9/scripts && cp -R docs /pkg/ra9/docs && cp -R agent /pkg/ra9/agent
+RUN mkdir -p /pkg/vapi-studio && cp package.json /pkg/vapi-studio/ && cp -R dist /pkg/vapi-studio/dist && cp -R test /pkg/vapi-studio/test && cp -R scripts /pkg/vapi-studio/scripts && cp -R docs /pkg/vapi-studio/docs && cp -R agent /pkg/vapi-studio/agent
 RUN rm -rf node_modules
 
 WORKDIR /workspace/guidify-ai/projects/${slug}
 COPY package.json tsconfig.json ./
 COPY src ./src
 COPY config ./config
-RUN node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.dependencies['@guidify-ai/vapi-studio']='file:/pkg/ra9'; fs.writeFileSync('package.json', JSON.stringify(p,null,2));" \\
+RUN node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package.json','utf8')); p.dependencies['@guidify-ai/vapi-studio']='file:/pkg/vapi-studio'; fs.writeFileSync('package.json', JSON.stringify(p,null,2));" \\
   && yarn install && yarn build
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /workspace
-COPY --from=build /pkg/ra9 /workspace/guidify-ai/packages/ra9
+COPY --from=build /pkg/vapi-studio /workspace/guidify-ai/packages/vapi-studio
 COPY --from=build /workspace/guidify-ai/projects/${slug} /workspace/guidify-ai/projects/${slug}
-RUN mkdir -p /pkg && ln -sfn /workspace/guidify-ai/packages/ra9 /pkg/ra9
+RUN mkdir -p /pkg && ln -sfn /workspace/guidify-ai/packages/vapi-studio /pkg/vapi-studio
 ENV NODE_ENV=production
 ENV CONFIG_DIR=/workspace/guidify-ai/projects/${slug}/config
 ENV PORT=9999
@@ -586,15 +586,15 @@ CMD ["node", "dist/main.js"]
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ra9
-      POSTGRES_PASSWORD: ra9
-      POSTGRES_DB: ra9
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: studio
+      POSTGRES_DB: studio
     ports:
       - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ra9 -d ra9"]
+      test: ["CMD-SHELL", "pg_isready -U studio -d studio"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -604,13 +604,13 @@ CMD ["node", "dist/main.js"]
       context: .
       dockerfile: Dockerfile
       additional_contexts:
-        ra9: ../..
+        vapi-studio: ../..
     ports:
       - "9999:9999"
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgres://ra9:ra9@postgres:5432/ra9
+      DATABASE_URL: postgres://studio:studio@postgres:5432/studio
       PORT: 9999
       PUBLIC_BASE_URL: \${PUBLIC_BASE_URL:-http://localhost:9999}
       PROJECT_UUID: \${PROJECT_UUID:-${uuid}}

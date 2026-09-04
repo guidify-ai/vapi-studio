@@ -24,11 +24,11 @@ Vapi Studio’s deterministic model:
 
 - **Brain** returns JSON only (intention scores + allowlisted extract fields) — never caller-facing prose
 - **Supervisor + agent steps** own routing and **all spoken copy**
-- Framework Brain adapters apply [`brainUntrustedInputRules`](./best-practices/brain-and-prompt-injection.md), candidate allowlists, and extract sanitization
+- Framework Brain adapters apply [`brainUntrustedInputRules`](../best-practices/brain-and-prompt-injection.md), candidate allowlists, and extract sanitization
 
 App authors must not echo raw `userText` or Brain `reason` to the caller, and must not add unconstrained sidecar LLM chat on the same call.
 
-Full guide: **[Brain and prompt injection](./best-practices/brain-and-prompt-injection.md)**.
+Full guide: **[Brain and prompt injection](../best-practices/brain-and-prompt-injection.md)**.
 
 ## Test doubles
 

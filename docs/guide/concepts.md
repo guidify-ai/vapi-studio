@@ -1,6 +1,6 @@
 # Concepts
 
-Mental model for Vapi Studio. API detail: [handbook](./handbook.md).
+Mental model for Vapi Studio. API detail: [Runtime API](../reference/runtime-api.md).
 
 ## Conversation
 
@@ -64,7 +64,7 @@ Named signals routing the supervisor:
 
 - **Standard** — `studio.isGoodbye`, `studio.isTransferToHuman`, `studio.isStillThere`, …
 - **App** — `isAcceptedAppointment`, `isDidNotReceiveForm`, …
-- **Code intention classes** — `INTENTION_CASCADE_PHASE` (`Force` \| `Match` \| `Scan`; see handbook)
+- **Code intentions** — `CodeIntention` with `INTENTION_CASCADE_PHASE` (`Force` \| `Match` \| `Scan`; see [Runtime API](../reference/runtime-api.md))
 
 ## Brain
 
@@ -85,7 +85,11 @@ Vapi Custom LLM and webhooks translate wire format ↔ Vapi Studio I/O.
 
 ## Events
 
-`EventService` emits and persists forensic events. Logs must explain **why** a turn routed. See [Events & logging](../reference/events-and-logging.md).
+`EventService` emits `StudioEvent`s (`STUDIO_EVENTS` constants) and persists forensic events via `StudioEventListener`s. Logs must explain **why** a turn routed. See [Events & logging](../reference/events-and-logging.md).
+
+## Conversation limits
+
+Every Conversation has always-on caps (`limits.maxTurns` / `limits.maxDurationMs`, defaults 40 / 20m). Fail-closed goodbye + `endCall` when exceeded — see [Runtime API](../reference/runtime-api.md) and [conversation design](../best-practices/conversation-design.md).
 
 ## Resume & recovery (post-MVP)
 

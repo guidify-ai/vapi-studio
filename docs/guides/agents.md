@@ -27,7 +27,7 @@ See [Node conventions](./node-conventions.md) for a human summary of agent-step 
 1. Read app **northern stars** (app repo `README.md`).
 2. Read `AGENTS.md` (app or package).
 3. Open matching [best-practice guide](../best-practices/README.md).
-4. Framework changes → [handbook](../guide/handbook.md) first.
+4. Framework changes → [Runtime API](../reference/runtime-api.md) first.
 5. Update docs in the **same PR** as behavior.
 
 ## Decision tree: which guide?
@@ -35,9 +35,13 @@ See [Node conventions](./node-conventions.md) for a human summary of agent-step 
 | Changing… | Read |
 | --- | --- |
 | Bot copy / CTA | conversation-design.md |
+| Soft affirmatives / silent handoffs / lane choice | conversation-design.md (+ nodes-and-listens.md) |
+| Mad callers (one re-engage → human) | nodes-and-listens.md · conversation-design.md |
 | New agent step / listen / extract | nodes-and-listens.md |
 | Phone, email, forms | identity-and-pii.md |
+| Analytics funnels / tags | debugging-and-observability.md · events-and-logging.md |
 | Logs / events | debugging-and-observability.md |
+| Limits / public API / env | [Runtime API](../reference/runtime-api.md) |
 | README placement | documentation-layers.md |
 
 ## Postinstall

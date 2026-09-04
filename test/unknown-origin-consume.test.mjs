@@ -7,12 +7,12 @@ import { describe, it, beforeEach } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 import { ROUTE_RESOLVED_VIA } from '../dist/intention/intention-constants.js';
 
-class OriginNode extends Ra9Node {
+class OriginNode extends AgentNode {
   async listen() {
     return {
       intentions: [{ name: 'isRequestedAppointment', boost: 20 }],
@@ -27,7 +27,7 @@ class OriginNode extends Ra9Node {
   }
 }
 
-class CheckAvailNode extends Ra9Node {
+class CheckAvailNode extends AgentNode {
   async before() {
     return true;
   }
@@ -39,7 +39,7 @@ class CheckAvailNode extends Ra9Node {
   }
 }
 
-class UnknownNode extends Ra9Node {
+class UnknownNode extends AgentNode {
   async listen() {
     return {
       intentions: [
@@ -55,7 +55,7 @@ class UnknownNode extends Ra9Node {
   }
 }
 
-class AcknowledgeNode extends Ra9Node {
+class AcknowledgeNode extends AgentNode {
   async listen() {
     return { intentions: [{ name: 'isRequestedRoofEstimate', boost: 20 }] };
   }

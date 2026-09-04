@@ -2,7 +2,7 @@ import type { SupervisedConversation } from '../conversation/supervised-conversa
 import { DEFAULT_INTENTION_PRIORITY } from '../conversation/conversation-history';
 import { CHANNEL_META } from '../channel/channel-tools';
 import { STANDARD_INTENTIONS } from '../intentions/standard-intentions';
-import { nodeContextFromRuntime } from '../node/ra9-node';
+import { nodeContextFromRuntime } from '../node/agent-node';
 import { BufferedConversationOutput } from '../output/conversation-output';
 import { snapshotUserMemory } from '../events/conversation-console';
 import type { SupervisorEngine } from './supervisor.types';

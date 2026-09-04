@@ -18,7 +18,7 @@ const DEFAULT_ACK_MS = 15_000;
 const DEFAULT_FILLOUT_MS = 10 * 60_000;
 
 function resolveAckMs(): number {
-  return envNumber('STUDIO_FORM_ACK_MS', 'RA9_FORM_ACK_MS', DEFAULT_ACK_MS);
+  return envNumber('STUDIO_FORM_ACK_MS', undefined, DEFAULT_ACK_MS);
 }
 
 interface PendingExpose {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { EventService } from '../events/event.service';
-import { RA9_EVENTS } from '../events/ra9-event';
+import { STUDIO_EVENTS } from '../events/studio-event';
 import {
   INTEGRATION_SIGNATURE_HEADER,
   canonicalRequestBody,
@@ -107,7 +107,7 @@ export class IntegrationClient {
 
     const started = Date.now();
     await this.events.emit({
-      type: RA9_EVENTS.INTEGRATION_REQUEST,
+      type: STUDIO_EVENTS.INTEGRATION_REQUEST,
       conversationId: input.meta?.conversationId,
       runtimeInstanceId: input.meta?.runtimeInstanceId,
       providerCallId: input.meta?.providerCallId,
@@ -142,7 +142,7 @@ export class IntegrationClient {
       };
 
       await this.events.emit({
-        type: RA9_EVENTS.INTEGRATION_RESPONSE,
+        type: STUDIO_EVENTS.INTEGRATION_RESPONSE,
         level: res.ok ? 'info' : 'warn',
         conversationId: input.meta?.conversationId,
         runtimeInstanceId: input.meta?.runtimeInstanceId,
@@ -164,7 +164,7 @@ export class IntegrationClient {
       const durationMs = Date.now() - started;
       const message = error instanceof Error ? error.message : String(error);
       await this.events.emit({
-        type: RA9_EVENTS.INTEGRATION_ERROR,
+        type: STUDIO_EVENTS.INTEGRATION_ERROR,
         level: 'error',
         conversationId: input.meta?.conversationId,
         runtimeInstanceId: input.meta?.runtimeInstanceId,

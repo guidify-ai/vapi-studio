@@ -7,12 +7,12 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { WorkflowHandoffService } from '../dist/workflow/workflow-handoff.service.js';
 import { WorkflowLoader } from '../dist/workflow/workflow-loader.js';
 
-class StepANode extends Ra9Node {
+class StepANode extends AgentNode {
   async run(ctx) {
     return ctx.output.continueTo({
       nodeId: 'stepB',
@@ -21,13 +21,13 @@ class StepANode extends Ra9Node {
   }
 }
 
-class StepBNode extends Ra9Node {
+class StepBNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Now on step B — what is your email?');
   }
 }
 
-class OpeningNode extends Ra9Node {
+class OpeningNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Opening greeting.');
   }

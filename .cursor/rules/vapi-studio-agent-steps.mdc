@@ -10,6 +10,7 @@ alwaysApply: false
 
 - **Actions**: `is{VerbInPast}…` — e.g. `isCollectedFirstName`, `isAcceptedAppointment`
 - **Polarity**: `studio.isPositive`, `studio.isNegative`
+- **Multi-choice**: soft affirmatives that do not name an option → `resolveIntention` re-ask which lane; never Brain/unknown
 
 ## Brain (ChatGPT adapter)
 

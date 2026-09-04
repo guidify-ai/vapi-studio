@@ -146,7 +146,7 @@ export class MockBrainAdapter implements BrainAdapter {
     const text = clarifiableInputToString(request.input).trim();
     if (
       !text ||
-      /^ra9\.clarify\.cannotAnswer$/i.test(text) ||
+      /^studio\.clarify\.cannotAnswer$/i.test(text) ||
       /\bcannot\s*answer\b/i.test(text)
     ) {
       throwClarifyCannotAnswer(

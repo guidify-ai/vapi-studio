@@ -9,9 +9,9 @@ import {
   type CheapOpenAiModelId,
 } from './openai-cheap-models';
 
-export const RA9_BRAIN_CONFIG = Symbol('RA9_BRAIN_CONFIG');
+export const STUDIO_BRAIN_CONFIG = Symbol('STUDIO_BRAIN_CONFIG');
 
-export interface Ra9BrainConfig {
+export interface StudioBrainConfig {
   /**
    * ChatGPT adapter model. Must be on the cheap whitelist.
    * Default: gpt-4.1-nano.
@@ -21,9 +21,9 @@ export interface Ra9BrainConfig {
   confidenceThreshold?: number;
 }
 
-export function resolveRa9BrainConfig(
-  input?: Ra9BrainConfig,
-): Required<Ra9BrainConfig> {
+export function resolveStudioBrainConfig(
+  input?: StudioBrainConfig,
+): Required<StudioBrainConfig> {
   return {
     model: input?.model ?? DEFAULT_CHEAP_OPENAI_MODEL,
     confidenceThreshold:

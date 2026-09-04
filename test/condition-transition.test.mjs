@@ -6,28 +6,28 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 
-class OpeningNode extends Ra9Node {
+class OpeningNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('opening');
   }
 }
 
-class IdentityNode extends Ra9Node {
+class IdentityNode extends AgentNode {
   async run() {
     throw new Error('identity must not run when phone force fires');
   }
 }
 
-class PhoneNode extends Ra9Node {
+class PhoneNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('need your phone');
   }
 }
 
-class DivertNode extends Ra9Node {
+class DivertNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('brain diversion');
   }

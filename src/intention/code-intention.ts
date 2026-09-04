@@ -11,7 +11,7 @@ import type {
   SchemaVariables,
 } from '../conversation/conversation-schema';
 import type { EventService } from '../events/event.service';
-import type { ConversationView } from '../node/ra9-node';
+import type { ConversationView } from '../node/agent-node';
 import {
   INTENTION_CASCADE_PHASE,
   INTENTION_RUN_KIND,
@@ -88,7 +88,7 @@ export interface IntentionContext<
  *   run()    → optional goto / score rewrite before Node walk
  *   after()  → teardown after selection
  */
-export abstract class Ra9Intention<
+export abstract class CodeIntention<
   TSchema extends ConversationSchema = DefaultConversationSchema,
 > {
   /** Stable id — same string flow.yaml / listen lists / Brain candidates use. */
@@ -145,9 +145,9 @@ export abstract class Ra9Intention<
   }
 }
 
-export const RA9_INTENTION_REGISTRY = Symbol('RA9_INTENTION_REGISTRY');
+export const STUDIO_INTENTION_REGISTRY = Symbol('STUDIO_INTENTION_REGISTRY');
 
-export type Ra9IntentionRegistry = Map<string, Ra9Intention<any>>;
+export type CodeIntentionRegistry = Map<string, CodeIntention<any>>;
 
 export function intentionContextFromRuntime(input: {
   runtime: SupervisedConversation;

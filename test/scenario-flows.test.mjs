@@ -7,14 +7,14 @@ import { describe, it, beforeEach, mock } from 'node:test';
 import { MockBrainService } from '../dist/brain/adapters/mock-brain.adapter.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import {
   VapiSseCompiler,
 } from '../dist/adapters/vapi/vapi-sse.compiler.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 
-class AcknowledgeNode extends Ra9Node {
+class AcknowledgeNode extends AgentNode {
   async run(ctx) {
     const companyName = ctx.conversation?.variables?.companyName ?? 'Roofr';
     return ctx.output.sayAndListen(
@@ -38,7 +38,7 @@ class AcknowledgeNode extends Ra9Node {
     );
   }
 }
-class AlwaysRejectNode extends Ra9Node {
+class AlwaysRejectNode extends AgentNode {
   async before() {
     return false;
   }
@@ -46,7 +46,7 @@ class AlwaysRejectNode extends Ra9Node {
     throw new Error('must not run');
   }
 }
-class MultiSayNode extends Ra9Node {
+class MultiSayNode extends AgentNode {
   async run(ctx) {
     const name = ctx.memory?.callerName?.trim?.() ?? ctx.memory?.callerName;
     await ctx.output.say(
@@ -58,7 +58,7 @@ class MultiSayNode extends Ra9Node {
     );
   }
 }
-class InterruptTestNode extends Ra9Node {
+class InterruptTestNode extends AgentNode {
   async run(ctx) {
     await ctx.output.say(
       'I am going to keep talking for a while so that you can interrupt me. Feel free to cut me off whenever you want.',
@@ -71,22 +71,22 @@ class InterruptTestNode extends Ra9Node {
     );
   }
 }
-class ContinueNode extends Ra9Node {
+class ContinueNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Okay, continuing.');
   }
 }
-class GoodbyeNode extends Ra9Node {
+class GoodbyeNode extends AgentNode {
   async run(ctx) {
     return ctx.output.endCall('Thanks. I saw the interruption. Goodbye.');
   }
 }
-class PauseNode extends Ra9Node {
+class PauseNode extends AgentNode {
   async run(ctx) {
     return ctx.output.sayAndListen('Sure, take your time. Okay?');
   }
 }
-class TransferToHumanNode extends Ra9Node {
+class TransferToHumanNode extends AgentNode {
   async run(ctx) {
     const portal = ctx.runtime.portalState.transferToHuman;
     if (portal.reengagementAttempts < 1) {

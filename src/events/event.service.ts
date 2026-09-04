@@ -2,16 +2,17 @@ import { randomUUID } from 'crypto';
 import { Inject, Injectable, Logger, Optional } from '@nestjs/common';
 import {
   printConversationConsole,
-  type Ra9LogLevel,
+  type StudioLogLevel,
 } from './conversation-console';
 import {
-  RA9_EVENT_LISTENERS,
-  type Ra9Event,
-  type Ra9EventInput,
-  type Ra9EventListener,
-} from './ra9-event';
+  STUDIO_EVENT_LISTENERS,
+  type StudioEvent,
+  type StudioEventInput,
+  type StudioEventListener,
+} from './studio-event';
+import { normalizeAnalyticsFunnels } from '../analytics/analytics-tags';
 
-export type { Ra9LogLevel } from './conversation-console';
+export type { StudioLogLevel } from './conversation-console';
 
 /**
  * Framework event shim: emit → console + every registered listener.
@@ -19,19 +20,19 @@ export type { Ra9LogLevel } from './conversation-console';
  */
 @Injectable()
 export class EventService {
-  private readonly logger: Logger = new Logger('RA9');
-  private readonly listeners: Ra9EventListener[];
+  private readonly logger: Logger = new Logger('Vapi Studio');
+  private readonly listeners: StudioEventListener[];
 
   public constructor(
     @Optional()
-    @Inject(RA9_EVENT_LISTENERS)
-    listeners?: Ra9EventListener[],
+    @Inject(STUDIO_EVENT_LISTENERS)
+    listeners?: StudioEventListener[],
   ) {
     this.listeners = listeners ?? [];
   }
 
   public log(
-    level: Ra9LogLevel,
+    level: StudioLogLevel,
     type: string,
     payload: Record<string, unknown> = {},
   ): void {
@@ -58,8 +59,8 @@ export class EventService {
     }
   }
 
-  public async emit(input: Ra9EventInput): Promise<Ra9Event> {
-    const event: Ra9Event = {
+  public async emit(input: StudioEventInput): Promise<StudioEvent> {
+    const event: StudioEvent = {
       id: input.id ?? randomUUID(),
       type: input.type,
       ts: input.ts ?? new Date().toISOString(),
@@ -112,8 +113,10 @@ export class EventService {
   }
 
   /**
-   * Funnel / dashboard tag. Stored as type `ANALYTICS_TAG` with payload.tag.
-   * Prefer stable snake_case tags; catalogs bind steps to tags and/or event types.
+   * Funnel / dashboard tag. Stored as type `ANALYTICS_TAG` with `payload.tag`.
+   * Funnel charts score via the app’s code catalog (`AnalyticsFunnelDefinition[]`);
+   * stamps only need a stable `tag`. Optional legacy `payload.funnels` is still
+   * normalized when present.
    */
   public async persistAnalyticsTag(
     conversationId: string,
@@ -122,9 +125,21 @@ export class EventService {
   ): Promise<void> {
     const clean = tag.trim();
     if (!clean) return;
+    const rawFunnels = payload.funnels;
+    const funnels = normalizeAnalyticsFunnels(
+      Array.isArray(rawFunnels)
+        ? (rawFunnels as string[])
+        : typeof payload.funnel === 'string'
+          ? [payload.funnel]
+          : undefined,
+    );
+    const { funnel: _legacy, funnels: _f, ...rest } = payload;
+    void _legacy;
+    void _f;
     await this.persist(conversationId, 'ANALYTICS_TAG', {
-      ...payload,
+      ...rest,
       tag: clean,
+      ...(funnels ? { funnels } : {}),
     });
   }
 }

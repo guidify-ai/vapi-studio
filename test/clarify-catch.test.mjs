@@ -7,7 +7,7 @@ import {
   filterClarifyAnswer,
   isClarifyCannotAnswerError,
   normalizeClarifyResult,
-  RA9_CLARIFY_CANNOT_ANSWER,
+  STUDIO_CLARIFY_CANNOT_ANSWER,
 } from '../dist/brain/brain-clarify.js';
 import { SupervisedConversation } from '../dist/conversation/supervised-conversation.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
@@ -16,7 +16,7 @@ import {
   forceIntention,
   restartNode,
 } from '../dist/node/catch-directive.js';
-import { Ra9Node } from '../dist/node/ra9-node.js';
+import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 
@@ -64,7 +64,7 @@ describe('Brain clarify', () => {
         }),
       (err) => {
         assert.ok(isClarifyCannotAnswerError(err));
-        assert.equal(err.code, RA9_CLARIFY_CANNOT_ANSWER);
+        assert.equal(err.code, STUDIO_CLARIFY_CANNOT_ANSWER);
         return true;
       },
     );
@@ -84,7 +84,7 @@ describe('Brain clarify', () => {
     assert.throws(
       () =>
         normalizeClarifyResult(
-          { outcome: RA9_CLARIFY_CANNOT_ANSWER, reason: 'ambiguous' },
+          { outcome: STUDIO_CLARIFY_CANNOT_ANSWER, reason: 'ambiguous' },
           { fields: [{ key: 'firstName', required: true }] },
         ),
       (err) => {
@@ -98,7 +98,7 @@ describe('Brain clarify', () => {
 
 describe('Node catch recovery', () => {
   it('forceIntention routes to another node after FlowUncertainError', async () => {
-    class UncertainNode extends Ra9Node {
+    class UncertainNode extends AgentNode {
       async run() {
         throw new FlowUncertainError('not sure');
       }
@@ -106,7 +106,7 @@ describe('Node catch recovery', () => {
         return forceIntention('isContinue');
       }
     }
-    class ContinueNode extends Ra9Node {
+    class ContinueNode extends AgentNode {
       async run(ctx) {
         return ctx.output.sayAndListen('Recovered via forceIntention.');
       }
@@ -160,7 +160,7 @@ describe('Node catch recovery', () => {
 
   it('restartNode re-runs the same node', async () => {
     let attempts = 0;
-    class FlakyNode extends Ra9Node {
+    class FlakyNode extends AgentNode {
       async run(ctx) {
         attempts += 1;
         if (attempts === 1) {

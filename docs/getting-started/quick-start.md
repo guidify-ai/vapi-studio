@@ -41,6 +41,7 @@ import { MyEntry } from './conversation/entry';
       entryPoint: MyEntry,
       brainAdapter: ChatGptBrainAdapter,
       brain: { model: 'gpt-4.1-mini', confidenceThreshold: 0.4 },
+      // limits always on (defaults 40 turns / 20m); override only within ceilings
       nodes: [{ className: 'GreetNode', useClass: GreetNode }],
     }),
   ],

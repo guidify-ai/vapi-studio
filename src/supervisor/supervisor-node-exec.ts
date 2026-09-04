@@ -7,8 +7,8 @@ import { resolveListenTimeoutSeconds } from '../conversation/listen-timeout';
 import { CHANNEL_META } from '../channel/channel-tools';
 import {
   type NodeContext,
-  type Ra9Node,
-} from '../node/ra9-node';
+  type AgentNode,
+} from '../node/agent-node';
 import type { CatchDirective } from '../node/catch-directive';
 import {
   BufferedConversationOutput,
@@ -28,7 +28,7 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
   runtime: SupervisedConversation;
   userText: string;
   output: BufferedConversationOutput;
-  node: Ra9Node;
+  node: AgentNode;
   candidate: FlowNodeDefinition;
   intentionName: string;
   ctx: NodeContext;
@@ -174,7 +174,7 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
  */
 export function stampListenTimeout(this: SupervisorEngine, 
   runtime: SupervisedConversation,
-  node: Ra9Node,
+  node: AgentNode,
   fromSayAndListen?: number,
 ): void {
   const timeoutSeconds = resolveListenTimeoutSeconds({

@@ -5,7 +5,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import { EventService } from '../events/event.service';
-import { RA9_EVENTS } from '../events/ra9-event';
+import { STUDIO_EVENTS } from '../events/studio-event';
 import { FormsService } from './forms.service';
 import type {
   FormDisposeAdapter,
@@ -89,7 +89,7 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
     // Produce → listeners (Postgres) → conversation_events.
     await this.events?.persist(
       payload.conversationId,
-      RA9_EVENTS.OUTBOUND_NOTIFICATION,
+      STUDIO_EVENTS.OUTBOUND_NOTIFICATION,
       {
         channel: 'sms',
         provider: 'twilio',
@@ -118,7 +118,7 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
     if (!this.events || !payload.conversationId) return;
     await this.events.persist(
       payload.conversationId,
-      RA9_EVENTS.OUTBOUND_NOTIFICATION_ERROR,
+      STUDIO_EVENTS.OUTBOUND_NOTIFICATION_ERROR,
       {
         channel: 'sms',
         provider: 'twilio',

@@ -51,6 +51,6 @@ Applications own `config/flow.yaml`, node classes, variables/memory types, chann
 | Forms | [Forms](./forms.md) |
 | Vapi | [Vapi adapter](./vapi-adapter.md) |
 | Squads | [Workflow & Squad](./workflow-squad.md) |
-| Full API | [Handbook](./handbook.md) → `vapi-studio/README.md` |
+| Full API | [Runtime API](../reference/runtime-api.md) |
 | Conversation design | [Best practices](../best-practices/README.md) |
 | Example app | [Example apps](../building-apps/example-apps.md) (external repos) |

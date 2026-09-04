@@ -1,6 +1,5 @@
 /**
- * Prefer Studio env names; accept legacy aliases for existing deploys.
- * Docs and new apps should use the Studio names only.
+ * Studio env helpers. Prefer `STUDIO_*` names in apps and docs.
  */
 export function envFlag(
   primary: string,

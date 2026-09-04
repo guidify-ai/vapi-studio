@@ -27,9 +27,7 @@ App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJ
 | `VAPI_DASHBOARD_CALL_URL` | `https://dashboard.vapi.ai/call/{callId}` | Debug UI link to Vapi call (`{callId}` = `provider_call_id`) |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` root |
 
-Legacy aliases for the same keys still work if already set in older deploys — prefer `STUDIO_*` in new apps.
-
 ## Related
 
-- [Handbook](../guide/handbook.md)
+- [Runtime API](./runtime-api.md)
 - [Security](./security.md)

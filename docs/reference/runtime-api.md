@@ -415,7 +415,7 @@ Package-owned **names** (behavior is always an application Node):
 
 Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engages **once** in memory, then emits `transferToHuman`. Still-there tracks `portalState.stillThere.attempts` (ask ×2, then `endCall`). Portal counters are in-memory on the active runtime, not the durable turn source of truth.
 
-**Mad is sticky:** once in the `mad` portal, Supervisor does not offer other portals (or unknown) until the caller continues / goodbyes. Other listens may still escalate *into* mad via `studio.isMad`.
+**Mad is sticky for one re-engage:** once in the `mad` portal, Supervisor does not offer other portals (or unknown) until the caller continues / goodbyes / transfers. Apps should **not** keep de-escalating forever — typical policy is one apology listen, then transfer on a second mad hit. Other listens may still escalate *into* mad via `studio.isMad`.
 
 **Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). That path stamps `resolvedVia = force_intention` so the walk accepts still-there; Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` **Continue-replays** the origin listen (same utterance) — do not steal a new “how can I help?” CTA.
 
@@ -480,14 +480,15 @@ JWT HS256 of the canonical body bytes in `x-signature` (Node `crypto`, no `jsonw
 
 ## Events, console, daily logs
 
-**Doctrine:** logs + persisted events must be enough to answer any question about a call. See [`docs/best-practices/debugging-and-observability.md`](./docs/best-practices/debugging-and-observability.md).
+**Doctrine:** logs + persisted events must be enough to answer any question about a call. See [`docs/best-practices/debugging-and-observability.md`](../best-practices/debugging-and-observability.md).
 
 `EventService.emit` / `.log` → pretty conversation console **and** (for `emit`/`persist`) registered listeners.
 
 - Default listener: `PostgresEventListener` → `conversation_events`
-- Extra listeners: `VapiStudioModule.forRoot({ eventListeners: [...] })`
-- `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag` for per-project funnel dashboards
-- Aggregation helpers on `ConversationRepository`: `countConversationsByProject`, `countConversationsByEventType`, `countConversationsByAnalyticsTag`, `countConversationsMatchingStep`
+- Extra listeners: `VapiStudioModule.forRoot({ eventListeners: [...] })` (`StudioEventListener[]`)
+- `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag`. Apps define funnel charts as a code catalog (`AnalyticsFunnelDefinition[]`); steps bind to `tags[]` and/or `eventTypes[]`, or outcome steps use `requireAllTags` / `excludeTags` (AND / NOT). Stamp milestones with a stable tag id — **do not** put funnel membership on the event.
+- Funnel scoring: `ConversationRepository.countConversationsMatchingStep({ … })` (omit `funnelId`). Catalog membership decides which chart a tag appears on.
+- Aggregation helpers on `ConversationRepository`: `countConversationsByProject`, `countConversationsByEventType`, `countConversationsByAnalyticsTag`, `countConversationsMatchingStep`, `countConversationsMatchingTagRules`, `countConversationsMatchingEventMatchers`, `callDurationPercentiles`
 - Console: `STUDIO_CONSOLE_DEBUG` (default on). Disable with `0` / `false` / `off`
 - File driver: still prints console; also appends ANSI-stripped lines to `{LOG_DIR}/dailyYYYYMMDD.log`
 - **The log directory is owned by the application** (each project keeps a `logs/` folder and sets `LOG_DIR`). The framework only writes there.
@@ -516,7 +517,7 @@ Caller Phone Number: {webhook customer number, or blank}
 | `FLOW_CONTINUE` | persist | Same-flow jump from/to/reason |
 | `NODE_REJECT` | log | Single `before()` refusal (also rolled into `ROUTE_DECISION.rejected`) |
 | `FORM_*` | log/persist | Expose / deliver / submit / timeouts (carry `branch` + `deliveryBranch`) |
-| `ANALYTICS_TAG` | **persist** | Funnel milestone (`payload.tag`) — scored by project analytics dashboards |
+| `ANALYTICS_TAG` | **persist** | Milestone (`payload.tag`). Funnel charts use the app code catalog — stamps do not need `funnels` |
 
 Memory console diffs include conversation-critical flags such as `introSpoken` (only bootstrap infra keys are stripped).
 
@@ -537,19 +538,22 @@ Active-call state (portal counters, listen registration, turn queue) stays **in 
 
 ## Public API (start here)
 
-Export surface is `src/index.ts`. Important groups:
+Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts`, `agent-node.ts`, `code-intention.ts`, `studio-event.ts`). Important groups:
 
 - **Lint** — `yarn lint` enforces explicit access modifiers and typed class properties on `src/`
 
-- `VapiStudioModule`, `AgentNode`, `NodeContext`, `Supervisor`
+- `VapiStudioModule` / `VapiStudioModuleOptions`, `AgentNode` / `AgentNodeRegistry` / `STUDIO_NODE_REGISTRY`, `NodeContext`, `Supervisor`
+- `CodeIntention` / `CodeIntentionRegistry` / `STUDIO_INTENTION_REGISTRY`, `INTENTION_CASCADE_PHASE` / `INTENTION_RUN_KIND` / `ROUTE_RESOLVED_VIA`
+- `StudioEvent` / `StudioEventListener` / `StudioEventType` / `STUDIO_EVENTS` / `STUDIO_EVENT_LISTENERS`
+- `STUDIO_CONVERSATION_LIMITS`, `STUDIO_BRAIN_CONFIG` / `StudioBrainConfig` / `resolveStudioBrainConfig`
 - `ConversationBootstrapService`, `SupervisedConversation`, registries, `CallTurnQueue`
 - `ConversationEntryPoint`, schema/history types
 - `ProjectEntity`, `ProjectRepository`
-- `BrainService` / adapters / `STANDARD_INTENTIONS` / `INTENTION_CASCADE_PHASE` / `INTENTION_RUN_KIND` / `ROUTE_RESOLVED_VIA` / `BrainConfig`
+- `BrainService` / adapters / `STANDARD_INTENTIONS` / `STUDIO_CLARIFY_CANNOT_ANSWER`
 - `FlowLoader`, `WorkflowLoader`, `WorkflowHandoffService`
 - `FormsService`, `FORM_DISPOSE_ADAPTER`, `TwilioSmsFormDisposeAdapter`, form types / timeout errors
 - `EventService` (incl. `persistAnalyticsTag`), daily-log helpers
-- `ANALYTICS_TAG_EVENT`, analytics funnel types (`AnalyticsFunnelDefinition`, …)
+- `ANALYTICS_TAG_EVENT`, `normalizeAnalyticsFunnels`, analytics funnel types (`AnalyticsFunnelDefinition`, `AnalyticsFunnelStep`, `AnalyticsTagPayload`)
 - `IntegrationClient`, JWT helpers
 - `VapiSseCompiler`, `extractVapiCallId`, `extractVapiCallerNumber`, `resolveHandoffToolName`, `buildVapiHandoffToolArgs`, `hasAdvertisedHandoffTool`
 - Listen timeout: `DEFAULT_LISTEN_TIMEOUT_SECONDS`, `AgentNode.listenTimeoutSeconds`, `AgentNode.interruptible`, `listenTimeoutToVapiStartSpeakingPlan`
@@ -572,7 +576,7 @@ Export surface is `src/index.ts`. Important groups:
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` search path |
 | `STUDIO_CONSOLE_DEBUG_ALL` | off | Verbose console (all events) |
 
-Apps add their own env (database URL, public base URL, transfer destination). Document in project README / `docs/projects/<app>/environment.md`.
+Apps add their own env (database URL, public base URL, transfer destination). Document in the app’s `.env.example` and `projects/<app>/README.md`.
 
 ## Best practices (for humans and agents)
 
@@ -580,8 +584,8 @@ Doctrine for conversation design — separate from this runtime handbook:
 
 | Path | Role |
 | --- | --- |
-| [`docs/best-practices/`](./docs/best-practices/) | Guides: one CTA, Nodes/listens, identity/PII, **debugging/observability**, doc layers |
-| [`agent/AGENTS.md`](./agent/AGENTS.md) | Canonical agent entry |
+| [`docs/best-practices/`](../best-practices/) | Guides: one CTA, Nodes/listens, identity/PII, **debugging/observability**, doc layers |
+| [`agent/AGENTS.md`](../../agent/AGENTS.md) | Canonical agent entry |
 | `agent/cursor/vapi-studio-best-practices.mdc` | Copied into each app’s `.cursor/rules/` on install |
 
 When doctrine changes, update the guides in the **same** change. When runtime contracts change, update **this document**.

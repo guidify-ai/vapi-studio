@@ -68,7 +68,7 @@ Naming rules: [Node conventions](../guides/node-conventions.md)
 
 ## `workflow.yaml` (optional)
 
-Multi-module Squad config — see [Workflow & Squad](../vapi-studio/workflow-squad.md).
+Multi-module Squad config — see [Workflow & Squad](../guide/workflow-squad.md).
 
 ## Historical contract
 
