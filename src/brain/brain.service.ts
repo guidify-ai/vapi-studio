@@ -1,6 +1,6 @@
 /**
  * Brain barrel — port + stock adapters.
- * Apps may supply their own adapter (e.g. Roofr HTTP API) via VapiStudioModule.forRoot({ brainAdapter }).
+ * Apps may supply their own adapter (e.g. custom HTTP API) via VapiStudioModule.forRoot({ brainAdapter }).
  */
 export {
   BRAIN_SERVICE,
@@ -24,3 +24,6 @@ export {
   MockBrainService,
 } from './adapters/mock-brain.adapter';
 export { ChatGptBrainAdapter } from './adapters/chatgpt-brain.adapter';
+export { ClaudeBrainAdapter } from './adapters/claude-brain.adapter';
+export { GeminiBrainAdapter } from './adapters/gemini-brain.adapter';
+export { GrokBrainAdapter } from './adapters/grok-brain.adapter';

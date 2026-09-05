@@ -15,6 +15,7 @@ import {
   projectChatCompletionsUrl,
   projectWebhookUrl,
 } from '../../project/project.config';
+import { extractPlannerIntakeMetadata } from '../extract-planner-intake-metadata';
 import type {
   VapiStrategy,
   VapiMessageType,
@@ -159,10 +160,12 @@ export class AssistantRequestStrategy implements VapiStrategy {
         : undefined;
     const brainProfileId =
       fromPayload || process.env.POC_BRAIN_PROFILE || 'planner';
+    const intake = extractPlannerIntakeMetadata(command.raw);
     const base = {
       messageType: command.type,
       brainProfileId,
       projectId: command.projectId,
+      ...intake,
     };
     const runtime = await this.bootstrap.bootstrap({
       projectId: command.projectId,

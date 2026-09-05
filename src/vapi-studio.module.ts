@@ -39,7 +39,6 @@ import {
   resolveConversationLimits,
   type ConversationLimitsConfig,
 } from './conversation/conversation-limits';
-import { resolveCheapOpenAiModel } from './brain/openai-cheap-models';
 import { ConversationEntity } from './persistence/conversation.entity';
 import { ConversationEventEntity } from './persistence/conversation-event.entity';
 import { ConversationRepository } from './persistence/conversation.repository';
@@ -69,13 +68,13 @@ export interface VapiStudioModuleOptions {
    */
   entryPoint?: Type<ConversationEntryPoint<object>>;
   /**
-   * Brain adapter (Mock, ChatGPT, or app-owned e.g. Roofr API).
+   * Brain adapter (Mock, ChatGPT, Claude, Gemini, Grok, or app-owned).
    * Defaults to MockBrainAdapter. Supervisor depends only on BRAIN_SERVICE.
    */
   brainAdapter?: Type<BrainAdapter>;
   /**
    * Extra event listeners (additive). PostgresEventListener is always registered.
-   * App code (e.g. roofr-poc) can append Datadog / webhook listeners here.
+   * App code (e.g. your Nest app) can append Datadog / webhook listeners here.
    */
   eventListeners?: Array<Type<StudioEventListener>>;
   /**
@@ -105,7 +104,6 @@ export class VapiStudioModule {
     const BrainAdapterClass = options.brainAdapter ?? MockBrainAdapter;
     const extraListeners = options.eventListeners ?? [];
     const brainConfig = resolveStudioBrainConfig(options.brain);
-    resolveCheapOpenAiModel(brainConfig.model);
     const conversationLimits = resolveConversationLimits(options.limits);
     const FormDisposeClass =
       options.formDisposeAdapter ?? NoopFormDisposeAdapter;

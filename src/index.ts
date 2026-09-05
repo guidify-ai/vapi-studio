@@ -146,6 +146,9 @@ export {
   MockBrainAdapter,
   MockBrainService,
   ChatGptBrainAdapter,
+  ClaudeBrainAdapter,
+  GeminiBrainAdapter,
+  GrokBrainAdapter,
 } from './brain/brain.service';
 export type {
   BrainService,
@@ -165,15 +168,56 @@ export {
   CHEAP_OPENAI_MODEL_IDS,
   resolveCheapOpenAiModel,
   isCheapOpenAiModel,
-  estimateUsdCost,
 } from './brain/openai-cheap-models';
 export type {
   CheapOpenAiModelId,
   CheapModelPricing,
 } from './brain/openai-cheap-models';
+export {
+  DEFAULT_CHEAP_CLAUDE_MODEL,
+  CHEAP_CLAUDE_MODELS,
+  CHEAP_CLAUDE_MODEL_IDS,
+  resolveCheapClaudeModel,
+  isCheapClaudeModel,
+} from './brain/claude-cheap-models';
+export type {
+  CheapClaudeModelId,
+  CheapClaudeModelPricing,
+} from './brain/claude-cheap-models';
+export {
+  DEFAULT_CHEAP_GEMINI_MODEL,
+  CHEAP_GEMINI_MODELS,
+  CHEAP_GEMINI_MODEL_IDS,
+  resolveCheapGeminiModel,
+  isCheapGeminiModel,
+} from './brain/gemini-cheap-models';
+export type {
+  CheapGeminiModelId,
+  CheapGeminiModelPricing,
+} from './brain/gemini-cheap-models';
+export {
+  DEFAULT_CHEAP_GROK_MODEL,
+  CHEAP_GROK_MODELS,
+  CHEAP_GROK_MODEL_IDS,
+  resolveCheapGrokModel,
+  isCheapGrokModel,
+} from './brain/grok-cheap-models';
+export type {
+  CheapGrokModelId,
+  CheapGrokModelPricing,
+} from './brain/grok-cheap-models';
+export {
+  estimateUsdCost,
+  estimateUsdFromPricing,
+  lookupModelPricing,
+} from './brain/llm-model-pricing';
+export type { LlmModelPricing, TokenUsage } from './brain/llm-model-pricing';
 export { STUDIO_BRAIN_CONFIG, resolveStudioBrainConfig } from './brain/brain-config';
-export type { StudioBrainConfig } from './brain/brain-config';
-export { detectUserSpeechSeries } from './brain/adapters/chatgpt-brain.adapter';
+export type {
+  StudioBrainConfig,
+  ResolvedStudioBrainConfig,
+} from './brain/brain-config';
+export { detectUserSpeechSeries } from './brain/adapters/json-llm-brain.base';
 export {
   clarifiableInputToString,
   filterClarifyAnswer,
@@ -229,6 +273,7 @@ export type {
 export {
   brainUntrustedInputRules,
   looksLikePromptInjection,
+  utteranceLooksLikePromptInjection,
   sanitizeExtractedFieldValue,
   wrapUntrustedUserText,
   MAX_EXTRACTED_STRING_LENGTH,

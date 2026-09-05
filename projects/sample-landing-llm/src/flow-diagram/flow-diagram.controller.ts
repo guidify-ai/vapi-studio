@@ -24,14 +24,10 @@ export class FlowDiagramController {
       join(this.diagrams.configDir(), 'flow-diagram.html'),
       'utf8',
     );
-    // Never show another project's brand in the operator UI.
-    html = html
-      .replace(/Roofr PoC/g, identity.name)
-      .replace(/Roofr/g, identity.name)
-      .replace(
-        /<title>[^<]*<\/title>/,
-        `<title>${identity.name} — Flow Studio</title>`,
-      );
+    html = html.replace(
+      /<title>[^<]*<\/title>/,
+      `<title>${identity.name} — Flow Studio</title>`,
+    );
     res.send(html);
   }
 

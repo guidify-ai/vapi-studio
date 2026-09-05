@@ -7,7 +7,7 @@ set -euo pipefail
 ROOT="$(CDPATH="" cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-PORT="${PORT:-9999}"
+PORT="${PORT:-9998}"
 NGROK_API="${NGROK_API:-http://127.0.0.1:4040}"
 IDENTITY_FILE="${ROOT}/config/project.identity.json"
 
@@ -73,12 +73,12 @@ echo ">> App boot upserts this UUID into the projects table (create or exist)"
 docker compose up -d --build postgres
 echo ">> Waiting for Postgres"
 for _ in $(seq 1 60); do
-  if docker compose exec -T postgres pg_isready -U studio -d studio >/dev/null 2>&1; then
+  if docker compose exec -T postgres pg_isready -U studio -d sample_landing_llm >/dev/null 2>&1; then
     break
   fi
   sleep 1
 done
-docker compose exec -T postgres pg_isready -U studio -d studio >/dev/null || {
+docker compose exec -T postgres pg_isready -U studio -d sample_landing_llm >/dev/null || {
   echo "Postgres failed to become ready" >&2
   exit 1
 }
@@ -173,12 +173,15 @@ else
   echo
   echo "Project:                ${PROJECT_NAME} (${PROJECT_SLUG})"
   echo "Project UUID:           ${PROJECT_UUID}"
-  echo "Webhook endpoint:       ${public_url}/${PROJECT_UUID}/vapi/webhook"
-  echo "Conversation endpoint:  ${public_url}/${PROJECT_UUID}/vapi/chat/completions"
-  echo "Forms inbox (local):  http://localhost:${PORT}/forms/inbox"
-  echo "Forms inbox (public): ${public_url}/forms/inbox"
-  echo "Flow Studio:          http://localhost:${PORT}/flow"
-  echo "ngrok inspector:      http://127.0.0.1:4040"
+  echo "Local app:              http://localhost:${PORT}"
+  echo "Webhook (Vapi):         ${public_url}/${PROJECT_UUID}/vapi/webhook"
+  echo "Custom LLM (Vapi):      ${public_url}/${PROJECT_UUID}/vapi/chat/completions"
+  echo "Flow Studio:            http://localhost:${PORT}/flow"
+  echo "Analytics:              http://localhost:${PORT}/analytics"
+  echo "ngrok inspector:        http://127.0.0.1:4040"
+  echo
+  echo "Paste Custom LLM + Server URL into your Vapi assistant, then give this chat"
+  echo "VAPI_API_KEY + POC_ASSISTANT_ID (+ VAPI_PHONE_NUMBER_ID) for outbound Call me."
   echo
 fi
 

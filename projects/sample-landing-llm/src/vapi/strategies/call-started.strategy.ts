@@ -8,6 +8,7 @@ import {
   phoneCaller,
   withCallerMetadata,
 } from '../../caller/caller-identity';
+import { extractPlannerIntakeMetadata } from '../extract-planner-intake-metadata';
 import type {
   VapiStrategy,
   VapiMessageType,
@@ -38,10 +39,12 @@ export class CallStartedStrategy implements VapiStrategy {
 
   async handle(command: VapiWebhookCommand): Promise<VapiWebhookResponse> {
     const brainProfileId = process.env.POC_BRAIN_PROFILE || 'planner';
+    const intake = extractPlannerIntakeMetadata(command.raw);
     const base = {
       messageType: command.type,
       brainProfileId,
       projectId: command.projectId,
+      ...intake,
     };
     const runtime = await this.bootstrap.bootstrap({
       projectId: command.projectId,

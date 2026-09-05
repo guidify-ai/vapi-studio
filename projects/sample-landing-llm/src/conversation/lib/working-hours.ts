@@ -8,7 +8,7 @@ import { portalBoosts } from './portal-boosts';
 
 /** Spoken when a transfer is requested outside working hours. */
 export const AFTER_HOURS_TRANSFER_MESSAGE =
-  "I'm sorry — we're currently outside of working hours, so I can't connect you with a person right now. Please try again during business hours, or tell me if there's something else I can help with.";
+  "We're outside working hours, so I can't transfer you to a person right now. We can keep planning here, or you can try again during business hours — what would you like to do?";
 
 export const TRANSFER_EVENTS = {
   BLOCKED_AFTER_HOURS: 'TRANSFER_BLOCKED_AFTER_HOURS',

@@ -16,7 +16,7 @@ import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
 
 class AcknowledgeNode extends AgentNode {
   async run(ctx) {
-    const companyName = ctx.conversation?.variables?.companyName ?? 'Roofr';
+    const companyName = ctx.conversation?.variables?.companyName ?? 'Acme';
     return ctx.output.sayAndListen(
       `Hi, thanks for calling ${companyName}. What's your first name?`,
       {
@@ -155,7 +155,7 @@ function buildSupervisor(brain) {
   const flow = new FlowLoader();
   flow.loadFromObject({
     version: 1,
-    flow: { id: 'roofr-poc', start: 'acknowledge' },
+    flow: { id: 'demo-app', start: 'acknowledge' },
     nodes: {
       acknowledge: {
         class: 'AcknowledgeNode',
@@ -233,18 +233,18 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
     const runtime = new SupervisedConversation({
       conversationId: 'mock-conv-s1',
       providerCallId: 'mock-call-s1',
-      flowId: 'roofr-poc',
+      flowId: 'demo-app',
       brainProfileId: 'state-machine',
       startNodeId: 'acknowledge',
       runtimeInstanceId: 'runtime-s1',
-      variables: { companyName: 'Roofr' },
+      variables: { companyName: 'Acme' },
     });
 
     // Opening: Vapi assistant-speaks-first — run flow.start, no Brain.
     const t0 = await streamTurn(supervisor, runtime, '');
     assert.equal(runtime.openingCompleted, true);
     assert.deepEqual(contents(t0.events), [
-      "Hi, thanks for calling Roofr. What's your first name?",
+      "Hi, thanks for calling Acme. What's your first name?",
     ]);
 
     const t1 = await streamTurn(supervisor, runtime, 'My name is Mark');
@@ -289,7 +289,7 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
     const runtime = new SupervisedConversation({
       conversationId: 'mock-conv-pause',
       providerCallId: 'mock-call-pause',
-      flowId: 'roofr-poc',
+      flowId: 'demo-app',
       brainProfileId: 'pause-resume',
       startNodeId: 'acknowledge',
       runtimeInstanceId: 'runtime-pause',
@@ -323,7 +323,7 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
     const runtime = new SupervisedConversation({
       conversationId: 'mock-conv-s2',
       providerCallId: 'mock-call-s2',
-      flowId: 'roofr-poc',
+      flowId: 'demo-app',
       brainProfileId: 'transfer-human',
       startNodeId: 'acknowledge',
       runtimeInstanceId: 'runtime-s2',

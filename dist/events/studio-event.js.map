@@ -1,0 +1,1 @@
+{"version":3,"file":"studio-event.js","sourceRoot":"","sources":["../../src/events/studio-event.ts"],"names":[],"mappings":";AAAA;;;GAGG;;;AAIU,QAAA,sBAAsB,GAAG,MAAM,CAAC,wBAAwB,CAAC,CAAC;AAE1D,QAAA,aAAa,GAAG;IAC3B,mBAAmB,EAAE,qBAAqB;IAC1C,oBAAoB,EAAE,sBAAsB;IAC5C,iBAAiB,EAAE,mBAAmB;IACtC,uEAAuE;IACvE,qBAAqB,EAAE,uBAAuB;IAC9C,2BAA2B,EAAE,6BAA6B;CAClD,CAAC"}

@@ -4,11 +4,11 @@ import type { Variables } from './conversation-entry';
  * Full Conversation type schema — apps define this once; Nodes inherit it via generics.
  *
  * @example
- * interface RoofrConversationSchema {
+ * interface AppConversationSchema {
  *   variables: { companyName: string };
  *   memory: { conversationReady?: boolean; setupAt?: string };
  * }
- * class AcknowledgeNode extends AgentNode<RoofrConversationSchema> { ... }
+ * class AcknowledgeNode extends AgentNode<AppConversationSchema> { ... }
  */
 export interface ConversationSchema {
   variables: object;

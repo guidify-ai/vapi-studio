@@ -29,19 +29,24 @@ Caller speech (ASR)
 | **Routing** | Supervisor walks **declared** intentions from `listen()` / `flow.yaml` — not free-form LLM chat |
 | **Brain output** | `response_format: json_object`; intentions **filtered to candidate allowlist**; extract keys **filtered to listen schema** |
 | **Brain prompts** | `brainUntrustedInputRules()` — caller text is data, not instructions; off-topic → `studio.isUnknownTransition` / `cannotAnswer` |
-| **Extract sanitize** | `sanitizeExtractedFieldValue()` drops injection-shaped strings and caps length |
+| **Fail-closed gate** | Stock JSON-LLM adapters (`ChatGpt` / `Claude` / `Gemini` / `Grok`) **skip the provider** when `utteranceLooksLikePromptInjection()` matches — scan → unknown; clarify → `cannotAnswer` |
+| **Extract sanitize** | `sanitizeExtractedFieldValue()` drops injection-shaped strings and caps length (also applied to clarify answer strings) |
 | **Spoken copy** | **Agent steps own every word** the caller hears — Brain `reason` and raw `userText` must never be spoken |
 
 There is **no path** where Brain scan JSON is streamed to the caller as assistant prose. A pancake recipe only becomes spoken if an agent step explicitly says one — which deterministic apps should not do.
 
-## Framework defaults (`ChatGptBrainAdapter`)
+## Framework defaults (stock JSON-LLM Brain adapters)
+
+Applies to `ChatGptBrainAdapter`, `ClaudeBrainAdapter`, `GeminiBrainAdapter`, and `GrokBrainAdapter` (shared `JsonLlmBrainAdapter`):
 
 - System prompts include `brainUntrustedInputRules('scan' | 'clarify' | 'judge')`
 - User payloads use `untrustedCallerText` + an explicit untrusted note (not bare `userText` as instructions)
-- Extracted strings pass through `sanitizeExtractedFieldValue()`
+- **Pre-LLM gate:** injection-shaped ASR → scan returns `studio.isUnknownTransition` (`prompt_injection_blocked`); clarify throws `cannotAnswer` — no provider round-trip
+- Extracted / clarify string fields pass through `sanitizeExtractedFieldValue()`
+- Intention names filtered to the candidate allowlist; extract keys filtered to the listen schema
 - Cheap model whitelist + temperature `0` + 3s timeout — limits creative drift
 
-Exports: `@guidify-ai/vapi-studio` → `brainUntrustedInputRules`, `looksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
+Exports: `@guidify-ai/vapi-studio` → `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 
 ## App author rules (hard)
 

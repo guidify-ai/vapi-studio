@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS projects (
 );
 
 INSERT INTO projects (id, slug, name)
-SELECT '${PROJECT_UUID}', 'roofr-poc', 'Roofr PoC'
+SELECT '${PROJECT_UUID}', 'sample-landing-llm', 'Sample Landing LLM'
 WHERE NOT EXISTS (SELECT 1 FROM projects WHERE id = '${PROJECT_UUID}');
 
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS project_id uuid;

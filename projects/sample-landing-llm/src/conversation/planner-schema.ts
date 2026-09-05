@@ -35,6 +35,10 @@ export type PlannerMemory = {
   quoteRequested?: boolean;
   correctionCount?: number;
   madStrikes?: number;
+  /** Idempotent Resend flags (HOT_LEAD_TO). */
+  leadMailSuccessSent?: boolean;
+  leadMailQuoteSent?: boolean;
+  leadMailTransferSent?: boolean;
 };
 
 export type PlannerVariables = {
@@ -45,6 +49,8 @@ export type PlannerVariables = {
   contactName?: string;
   contactEmail?: string;
   guestCompanyName?: string;
+  /** Resolved Studio feature flags for this conversation. */
+  featureFlags?: Record<string, boolean>;
 };
 
 export type PlannerSchema = {
@@ -67,6 +73,7 @@ export const PLANNER_INTENTIONS = {
   sampleOk: 'sample_ok',
   sampleTweak: 'sample_tweak',
   helpBuild: 'help_build',
+  productFaq: 'product_faq',
   nothingElse: 'nothing_else',
   isContinue: 'isContinue',
 } as const;

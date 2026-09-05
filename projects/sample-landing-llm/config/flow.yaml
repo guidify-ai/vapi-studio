@@ -19,6 +19,7 @@ nodes:
       - use_case_dispatch
       - use_case_other
       - use_case_clarify
+      - use_case_vague
       - studio.isGoodbye
   discovery:
     class: DiscoveryNode
@@ -42,6 +43,7 @@ nodes:
       - sample_tweak
       - sample_ok
       - nothing_else
+      - product_faq
       - studio.isGoodbye
   corrections:
     class: CorrectionsNode
@@ -53,11 +55,17 @@ nodes:
   offerHelp:
     class: OfferHelpNode
     intentions:
+      - product_faq
       - help_build
       - sample_ok
       - nothing_else
       - sample_tweak
       - studio.isGoodbye
+
+  continue:
+    class: ContinueNode
+    intentions:
+      - isContinue
 
   pause:
     class: PauseNode
@@ -72,18 +80,21 @@ nodes:
     priority: 95
     intentions:
       - studio.isMad
+      - isContinue
   unknownTransition:
     class: UnknownTransitionNode
     portal: true
     priority: 80
     intentions:
       - studio.isUnknownTransition
+      - isContinue
   transferToHuman:
     class: TransferToHumanNode
     portal: true
     priority: 98
     intentions:
       - studio.isTransferToHuman
+      - isContinue
   stillThere:
     class: StillThereNode
     portal: true
@@ -92,6 +103,7 @@ nodes:
       - studio.isStillThere
       - studio.isPositive
       - studio.isGoodbye
+      - isContinue
   goodbye:
     class: GoodbyeNode
     portal: true

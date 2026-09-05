@@ -22,7 +22,7 @@ export interface IntegrationRequestMeta {
 }
 
 export interface IntegrationRequest {
-  /** Stable name for events / debug (e.g. "roofr.availability"). */
+  /** Stable name for events / debug (e.g. "booking.availability"). */
   name: string;
   url: string;
   method?: IntegrationHttpMethod;
@@ -30,7 +30,7 @@ export interface IntegrationRequest {
   headers?: Record<string, string>;
   /**
    * Name of the .env key that holds this integration's HMAC secret.
-   * Example: "ROOFR_API_JWT_SECRET"
+   * Example: "INTEGRATION_API_JWT_SECRET"
    */
   secretEnvKey: string;
   timeoutMs?: number;

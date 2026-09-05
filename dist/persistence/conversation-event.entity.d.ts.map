@@ -1,0 +1,1 @@
+{"version":3,"file":"conversation-event.entity.d.ts","sourceRoot":"","sources":["../../src/persistence/conversation-event.entity.ts"],"names":[],"mappings":"AAQA,qBACa,uBAAuB;IAE3B,EAAE,EAAG,MAAM,CAAC;IAIZ,cAAc,EAAG,MAAM,CAAC;IAGxB,IAAI,EAAG,MAAM,CAAC;IAGd,OAAO,EAAG,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,CAAC;IAGlC,SAAS,EAAG,IAAI,CAAC;CACzB"}

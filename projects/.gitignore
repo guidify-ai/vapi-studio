@@ -3,3 +3,7 @@
 !README.md
 !sample-landing-llm/
 !sample-landing-llm/**
+
+# Private experiments — never track (even if someone un-ignores projects/*)
+roofr-poc/
+roofr-poc/**

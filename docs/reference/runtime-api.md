@@ -38,9 +38,9 @@ Wire Nest:
 VapiStudioModule.forRoot({
   nodes: [{ className: 'GoodbyeNode', useClass: GoodbyeNode }],
   entryPoint: MyConversationEntry,
-  brainAdapter: MockBrainAdapter,        // or ChatGptBrainAdapter / app class
+  brainAdapter: MockBrainAdapter,        // or ChatGpt / Claude / Gemini / Grok / app class
   brain: {
-    model: 'gpt-4.1-nano',               // cheap whitelist; not .env
+    model: 'gpt-4.1-nano',               // adapter cheap whitelist; not .env
     confidenceThreshold: 0.4,
   },
   limits: {
@@ -387,15 +387,20 @@ Judge result: `{ passed, confidence, reasoning, belowThreshold }`. `confidence` 
 Stock adapters:
 
 - `MockBrainAdapter` — deterministic sequences / profiles (PoC default)
-- `ChatGptBrainAdapter` — cheap OpenAI whitelist only (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Scan HTTP timeout **3s**; failure → unknown. Live path: no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code**.
+- `ChatGptBrainAdapter` — cheap OpenAI whitelist (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Env: `OPENAI_API_KEY`.
+- `ClaudeBrainAdapter` — cheap Anthropic Haiku whitelist (`claude-haiku-4-5-20251001`, `claude-3-5-haiku-latest`, …). Env: `ANTHROPIC_API_KEY`.
+- `GeminiBrainAdapter` — cheap Gemini Flash whitelist (`gemini-2.0-flash`, `gemini-2.0-flash-lite`, …). Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
+- `GrokBrainAdapter` — cheap xAI Grok whitelist (`grok-3-mini`, `grok-4-fast-non-reasoning`, …) via OpenAI-compatible API. Env: `XAI_API_KEY`.
 
-**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on extract. Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
+All JSON-LLM stock adapters share the same scan/clarify/judge contracts: HTTP timeout **3s**; scan failure → unknown; live path with no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code** via `brainAdapter`.
 
-Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
+**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on extract (clarify answer strings too). Stock JSON-LLM adapters **fail closed** before the provider when `utteranceLooksLikePromptInjection()` matches (scan → unknown / `prompt_injection_blocked`; clarify → `cannotAnswer`). Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
+
+Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 
 Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
-Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })`. Only `OPENAI_API_KEY` belongs in `.env`. End of call may log `BRAIN_COST_SUMMARY` when the ChatGPT adapter recorded usage.
+Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — model must be on the **selected adapter’s** cheap whitelist (default when omitted). Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
 
 ## Standard intentions and portals
 
@@ -563,7 +568,10 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | — | ChatGPT adapter secret only |
+| `OPENAI_API_KEY` | — | ChatGPT Brain adapter secret |
+| `ANTHROPIC_API_KEY` | — | Claude Brain adapter secret |
+| `GOOGLE_API_KEY` | — | Gemini Brain adapter (or `GEMINI_API_KEY`) |
+| `XAI_API_KEY` | — | Grok Brain adapter secret |
 | `STUDIO_CONSOLE_DEBUG` | on | Pretty stdout |
 | `STUDIO_FILE_LOG` | on | Daily files |
 | `LOG_DIR` | `logs` | Directory the **app** owns (project `logs/`); framework writes `dailyYYYYMMDD.log` here |

@@ -9,6 +9,9 @@ App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJ
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `OPENAI_API_KEY` | — | ChatGPT Brain adapter |
+| `ANTHROPIC_API_KEY` | — | Claude Brain adapter |
+| `GOOGLE_API_KEY` | — | Gemini Brain adapter (alias: `GEMINI_API_KEY`) |
+| `XAI_API_KEY` | — | Grok Brain adapter |
 | `STUDIO_CONSOLE_DEBUG` | on | Pretty console forensics |
 | `STUDIO_CONSOLE_DEBUG_ALL` | off | Verbose console |
 | `STUDIO_FILE_LOG` | on | Daily log files |

@@ -10,12 +10,54 @@ import type { PlannerSchema } from '../planner-schema';
 import { stampAnalyticsTag } from '../../analytics/stamp-analytics-tag';
 import { PLANNER_ANALYTICS_TAGS } from '../../analytics/planner-funnels';
 import { portalBoosts } from '../lib/portal-boosts';
-import { transferToHumanIfOpen } from '../lib/working-hours';
+import {
+  isAfterHoursMode,
+  transferToHumanIfOpen,
+} from '../lib/working-hours';
+import { looksLikeSoftContinue } from '../lib/looks-like-mad';
+import { PlannerLeadMailService } from '../../mail/planner-lead-mail.service';
+
+/**
+ * Escape hatch after a portal. Supervisor intercepts `isContinue` and silently
+ * replays the origin listen — this Node must not speak filler.
+ */
+@Injectable()
+export class ContinueNode extends AgentNode<PlannerSchema> {
+  async run(ctx: NodeContext<PlannerSchema>): Promise<NodeResult> {
+    const origin =
+      ctx.runtime.portalState.originNodeId ??
+      ctx.runtime.normalFlowNodeId ??
+      ctx.previousNodeId;
+    if (origin && origin !== 'continue') {
+      return ctx.output.continueTo({
+        nodeId: origin,
+        reason: 'continue_escape_hatch',
+      });
+    }
+    return ctx.output.sayAndListen(
+      'What would you like to do next?',
+      {
+        intentions: [
+          { name: STANDARD_INTENTIONS.isGoodbye, boost: 8 },
+          ...portalBoosts(),
+        ],
+      },
+    );
+  }
+}
 
 @Injectable()
 export class GoodbyeNode extends AgentNode<PlannerSchema> {
+  constructor(private readonly leadMail: PlannerLeadMailService) {
+    super();
+  }
+
   async run(ctx: NodeContext<PlannerSchema>): Promise<NodeResult> {
     await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.sessionEnded);
+    // Belt: if sample was shown but early mail never landed, send now.
+    if (ctx.memory.sampleShown && !ctx.memory.leadMailSuccessSent) {
+      await this.leadMail.notifySampleReady(ctx);
+    }
     const name = ctx.memory.contactName?.trim()?.split(/\s+/)[0];
     const thanks = name
       ? `Thanks for planning with us, ${name}. Goodbye.`
@@ -92,8 +134,9 @@ export class MadNode extends AgentNode<PlannerSchema> {
 
 @Injectable()
 export class UnknownTransitionNode extends AgentNode<PlannerSchema> {
-  async before(ctx: NodeContext<PlannerSchema>): Promise<boolean> {
-    return ctx.intention === STANDARD_INTENTIONS.isUnknownTransition;
+  async before(_ctx: NodeContext<PlannerSchema>): Promise<boolean> {
+    // Allow Force/goto entry (studio.goto.unknownTransition) as well as listen hits.
+    return true;
   }
 
   async run(ctx: NodeContext<PlannerSchema>): Promise<NodeResult> {
@@ -102,10 +145,15 @@ export class UnknownTransitionNode extends AgentNode<PlannerSchema> {
       "Sorry — I missed that. Could you say it another way?",
       {
         intentions: [
+          { name: 'isContinue', boost: 16 },
           { name: STANDARD_INTENTIONS.isUnknownTransition, boost: 5 },
           { name: STANDARD_INTENTIONS.isGoodbye, boost: 8 },
           ...portalBoosts(),
         ],
+        resolveIntention: ({ userText }) => {
+          if (looksLikeSoftContinue(userText)) return 'isContinue';
+          return null;
+        },
       },
     );
   }
@@ -113,6 +161,10 @@ export class UnknownTransitionNode extends AgentNode<PlannerSchema> {
 
 @Injectable()
 export class TransferToHumanNode extends AgentNode<PlannerSchema> {
+  constructor(private readonly leadMail: PlannerLeadMailService) {
+    super();
+  }
+
   async listen(
     ctx: NodeContext<PlannerSchema>,
   ): Promise<ListenExpectation | null> {
@@ -146,12 +198,20 @@ export class TransferToHumanNode extends AgentNode<PlannerSchema> {
     await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.transferHuman, {
       phase: 'transfer',
     });
-    // Web planner: no live phone transfer — wrap with Guidify email follow-up.
+    // After-hours Studio preset — block human path (web or phone).
+    if (isAfterHoursMode(ctx.conversation.variables)) {
+      return transferToHumanIfOpen(ctx, {
+        reason: 'portal_transfer_after_hours',
+      });
+    }
+    // Web planner (business hours): no live phone transfer — Guidify email follow-up.
     if (ctx.conversation.variables.callerChannel === 'web') {
+      await this.leadMail.notifyTransferHuman(ctx);
       return ctx.output.endCall(
         "I'll have the Vapi Studio team (Guidify) email you to continue. Thanks for planning with us. Goodbye.",
       );
     }
+    await this.leadMail.notifyTransferHuman(ctx);
     return transferToHumanIfOpen(ctx, {
       reason: 'portal_transfer_to_human',
       beforeTransferSay: 'Connecting you to a human now.',

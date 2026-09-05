@@ -1,6 +1,6 @@
 /**
  * Framework events — produce here; listeners decide what to do.
- * Default listener writes to PostgreSQL. Apps (e.g. roofr-poc) may add more.
+ * Default listener writes to PostgreSQL. Apps (e.g. your Nest app) may add more.
  */
 
 import type { StudioLogLevel } from './conversation-console';

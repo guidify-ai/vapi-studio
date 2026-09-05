@@ -4,10 +4,10 @@ import type { SupervisedConversation } from './supervised-conversation';
  * App-defined conversation variables, typed at the application boundary.
  *
  * @example
- * export interface RoofrPoCVariables {
+ * export interface AppVariables {
  *   companyName: string;
  * }
- * type Vars = Variables<RoofrPoCVariables>;
+ * type Vars = Variables<AppVariables>;
  */
 export type Variables<T extends object = object> = T;
 

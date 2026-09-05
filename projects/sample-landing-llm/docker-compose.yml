@@ -42,6 +42,14 @@ services:
       VAPI_END_CALL_TOOL_NAME: ${VAPI_END_CALL_TOOL_NAME:-end_call_tool}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CONFIG_DIR: /workspace/guidify-ai/projects/sample-landing-llm/config
+      VAPI_API_KEY: ${VAPI_API_KEY:-}
+      VAPI_PHONE_NUMBER_ID: ${VAPI_PHONE_NUMBER_ID:-}
+      POC_ASSISTANT_ID: ${POC_ASSISTANT_ID:-}
+      VAPI_ASSISTANT_ID: ${VAPI_ASSISTANT_ID:-}
+      RESEND_ENABLED: ${RESEND_ENABLED:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM: ${RESEND_FROM:-}
+      HOT_LEAD_TO: ${HOT_LEAD_TO:-}
     volumes:
       - ./logs:/workspace/guidify-ai/projects/sample-landing-llm/logs
       - ./config:/workspace/guidify-ai/projects/sample-landing-llm/config
@@ -62,7 +70,6 @@ services:
       POC_BRAIN_PROFILE: planner
       POC_COMPANY_NAME: Sample Studio
       VAPI_END_CALL_TOOL_NAME: end_call_tool
-      # MOCK_ROOFR_FAST: "1"
     volumes:
       - ../..:/workspace/packages/vapi-studio
       - ./:/workspace/projects/sample-landing-llm

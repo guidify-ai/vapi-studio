@@ -139,16 +139,16 @@ describe('VapiSseCompiler OpenAI-compatible SSE', () => {
         {
           type: 'handoff',
           destinations: [
-            { type: 'assistant', assistantName: 'RoofrIdentity' },
+            { type: 'assistant', assistantName: 'StudioIdentity' },
           ],
           function: {
-            name: 'handoff_to_RoofrIdentity',
+            name: 'handoff_to_StudioIdentity',
             parameters: {
               type: 'object',
               properties: {
                 destination: {
                   type: 'string',
-                  enum: ['RoofrIdentity'],
+                  enum: ['StudioIdentity'],
                 },
               },
               required: ['destination'],
@@ -166,11 +166,11 @@ describe('VapiSseCompiler OpenAI-compatible SSE', () => {
       {
         kind: 'handoff',
         handoffTo: 'identity',
-        assistantName: 'RoofrIdentity',
+        assistantName: 'StudioIdentity',
         handoffReason: 'collect_identity',
       },
     ]);
-    assert.deepEqual(emittedTools, ['handoff_to_RoofrIdentity']);
+    assert.deepEqual(emittedTools, ['handoff_to_StudioIdentity']);
     const events = parseSse(chunks.join(''));
     const withArgs = events.find((e) => {
       const args = e.choices?.[0]?.delta?.tool_calls?.[0]?.function?.arguments;
@@ -181,7 +181,7 @@ describe('VapiSseCompiler OpenAI-compatible SSE', () => {
       withArgs.choices[0].delta.tool_calls[0].function.arguments,
     );
     assert.equal(typeof parsed.destination, 'string');
-    assert.equal(parsed.destination, 'RoofrIdentity');
+    assert.equal(parsed.destination, 'StudioIdentity');
     assert.equal(parsed.reason, 'collect_identity');
     assert.equal(parsed.destination?.type, undefined);
   });
@@ -245,10 +245,10 @@ describe('VapiSseCompiler OpenAI-compatible SSE', () => {
   it('buildVapiHandoffToolArgs keeps destination a string', () => {
     assert.deepEqual(
       buildVapiHandoffToolArgs({
-        assistantName: 'RoofrRouter',
+        assistantName: 'StudioRouter',
         payload: { firstName: 'Ada' },
       }),
-      { destination: 'RoofrRouter', firstName: 'Ada' },
+      { destination: 'StudioRouter', firstName: 'Ada' },
     );
   });
 });

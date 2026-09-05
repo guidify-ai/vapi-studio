@@ -1,3 +1,8 @@
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+
 # Application projects (content gitignored; README + .gitignore tracked)
 projects/*
 !projects/README.md
@@ -5,5 +10,7 @@ projects/*
 # Tracked in-repo Vapi Studio sample (port 9998 — same surface as PoCs)
 !projects/sample-landing-llm/
 !projects/sample-landing-llm/**
-# Marketing landing (:4173) + private PoCs (e.g. roofr-poc :9999) stay gitignored
-# Marketing landing site + other PoCs (e.g. roofr-poc on :9999) stay gitignored
+# Private experiments — never track (belt + suspenders vs projects/*)
+projects/roofr-poc/
+projects/roofr-poc/**
+# Marketing landing (:4173) and other private apps stay gitignored

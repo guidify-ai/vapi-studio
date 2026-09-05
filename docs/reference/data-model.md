@@ -9,7 +9,7 @@ Postgres persistence + in-memory runtime for Vapi Studio.
 | Column | Purpose |
 | --- | --- |
 | `id` | Public ingress UUID — path segment in `/{projectUuid}/vapi/...` |
-| `slug` | Stable short name (unique), e.g. `roofr-poc` |
+| `slug` | Stable short name (unique), e.g. `sample-landing-llm` |
 | `name` | Display name |
 | `created_at` | Audit |
 

@@ -19,7 +19,7 @@ vapi-studio/
 └── package.json
 ```
 
-Project **content** under `projects/` is gitignored by default; only `projects/README.md` is tracked.
+Project **content** under `projects/` is gitignored by default; `projects/README.md`, `projects/.gitignore`, and the tracked Vapi Studio sample **`projects/sample-landing-llm/`** (`:9998` — `/analytics`, `/flow`, `/studio`, Vapi routes) are included. Marketing landing (`:4173`) and other private apps stay gitignored.
 
 New tools will appear here as they are built. Documentation for how to use them lives under [`docs/`](./docs/README.md).
 

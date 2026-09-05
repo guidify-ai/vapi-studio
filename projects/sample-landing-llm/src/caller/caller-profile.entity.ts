@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 /**
- * Cross-call caller CRM for the Roofr PoC — keyed by channel + callerId
+ * Cross-call caller CRM — keyed by channel + callerId
  * (web cookie UUID or phone ANI). Not a framework table.
  */
 @Entity({ name: 'caller_profiles' })

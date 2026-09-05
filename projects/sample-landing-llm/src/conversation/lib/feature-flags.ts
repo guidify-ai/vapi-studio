@@ -1,8 +1,10 @@
 /**
- * Roofr PoC feature flags — defaults off unless catalog / override / env says on.
+ * Planner Studio feature flags — defaults off unless catalog / override / env says on.
+ * Toggle from /studio presets (optional demos — not required for the happy path).
  */
 
-export const FF_RECOGNIZE_RETURNING_CALLER = 'recognizeReturningCaller';
+/** After the first sample reveal, append a soft Guidify-scope hint (not a quote). */
+export const FF_SAMPLE_SCOPE_HINT = 'sampleScopeHint';
 
 export interface FeatureFlagDefinition {
   id: string;
@@ -14,10 +16,10 @@ export interface FeatureFlagDefinition {
 /** Source of truth for registered flags (Studio catalog + runtime defaults). */
 export const FEATURE_FLAG_CATALOG: FeatureFlagDefinition[] = [
   {
-    id: FF_RECOGNIZE_RETURNING_CALLER,
-    label: 'Recognize returning caller',
+    id: FF_SAMPLE_SCOPE_HINT,
+    label: 'Sample scope hint',
     description:
-      'Off by default (dev). When on, preload named profiles and ask “I see {firstName} is calling back…”. When off, treat every call as new for recognition UX (profile still saves).',
+      'When on, the first sample reveal adds one short line that first modules like this are usually a focused Guidify scope — still no prices in chat.',
     defaultEnabled: false,
   },
 ];
@@ -41,8 +43,8 @@ export function resolveFeatureFlags(
   for (const f of FEATURE_FLAG_CATALOG) {
     out[f.id] = f.defaultEnabled === true;
   }
-  if (process.env.POC_FF_RECOGNIZE_RETURNING_CALLER === 'true') {
-    out[FF_RECOGNIZE_RETURNING_CALLER] = true;
+  if (process.env.POC_FF_SAMPLE_SCOPE_HINT === 'true') {
+    out[FF_SAMPLE_SCOPE_HINT] = true;
   }
   if (overrides) {
     for (const [k, v] of Object.entries(overrides)) {
@@ -51,3 +53,6 @@ export function resolveFeatureFlags(
   }
   return out;
 }
+
+export const SAMPLE_SCOPE_HINT_LINE =
+  'First modules like this usually land in a focused Guidify scope — say Help me build it if you want a real quote.';

@@ -4,7 +4,7 @@
 
 ### I. Framework-First Separation
 Vapi Studio (`@guidify-ai/vapi-studio`) MUST remain free of customer/use-case behavior.
-Use-case applications (starting with `projects/roofr-poc`) MUST consume the framework only through
+Use-case applications (starting with `projects/sample-landing-llm`) MUST consume the framework only through
 its public package API. Provider wire protocols (Vapi HTTP, SSE, tool-calls,
 call IDs) MUST stay inside adapters. Application Nodes MUST express business
 conversation behavior without knowing those protocols.
@@ -82,7 +82,7 @@ interpreter of garbage.
 ## Workspace & Runtime Constraints
 
 - Layout: repo root is the `@guidify-ai/vapi-studio` framework package.
-  `projects/roofr-poc` is the application skeleton
+  `projects/sample-landing-llm` is the application skeleton
   (prepared NestJS + Studio wiring), not a generic NestJS sample.
 - Package manager: Yarn.
 - Persistence ORM: TypeORM.

@@ -4,7 +4,7 @@
 
 This repo should contain **no secrets**:
 
-- No `OPENAI_API_KEY` or Vapi tokens in source or committed config
+- No LLM API keys (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `XAI_API_KEY`) or Vapi tokens in source or committed config
 - No real caller PII in fixtures or tests
 - Use obvious placeholders in docs (e.g. fictional phone numbers in best-practice examples)
 
@@ -24,7 +24,7 @@ Vapi Studio’s deterministic model:
 
 - **Brain** returns JSON only (intention scores + allowlisted extract fields) — never caller-facing prose
 - **Supervisor + agent steps** own routing and **all spoken copy**
-- Framework Brain adapters apply [`brainUntrustedInputRules`](../best-practices/brain-and-prompt-injection.md), candidate allowlists, and extract sanitization
+- Framework Brain adapters apply [`brainUntrustedInputRules`](../best-practices/brain-and-prompt-injection.md), candidate allowlists, extract sanitization, and a **pre-LLM fail-closed gate** on injection-shaped ASR (all stock JSON-LLM providers share this path)
 
 App authors must not echo raw `userText` or Brain `reason` to the caller, and must not add unconstrained sidecar LLM chat on the same call.
 

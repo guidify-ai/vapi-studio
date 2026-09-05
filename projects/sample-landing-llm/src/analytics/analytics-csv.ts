@@ -29,7 +29,7 @@ export function analyticsCsvFilename(
   sinceDays: number,
 ): string {
   const day = new Date().toISOString().slice(0, 10);
-  return `roofr-analytics-${kind}-${sinceDays}d-${day}.csv`;
+  return `planner-analytics-${kind}-${sinceDays}d-${day}.csv`;
 }
 
 /** Build a CSV string for one analytics slice from the server snapshot. */

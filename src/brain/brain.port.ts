@@ -42,7 +42,7 @@ export interface BrainScanResult {
 
 /**
  * Brain port — Supervisor depends only on this.
- * Concrete providers live under `brain/adapters/*` (Mock, studio-chatgpt, Roofr API, …).
+ * Concrete providers live under `brain/adapters/*` (Mock, studio-chatgpt, custom API, …).
  */
 export interface BrainService {
   scan(input: BrainScanInput): Promise<BrainScanResult>;

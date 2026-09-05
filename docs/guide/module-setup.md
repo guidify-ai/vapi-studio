@@ -28,7 +28,7 @@ cd projects/my-app && yarn install
 | --- | --- | --- |
 | `nodes` | Yes | `{ className, useClass }[]` — every node in `flow.yaml` |
 | `entryPoint` | Yes | `ConversationEntryPoint` — seed variables, `beforeEach` / `afterEach` |
-| `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, or custom |
+| `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, `ClaudeBrainAdapter`, `GeminiBrainAdapter`, `GrokBrainAdapter`, or custom |
 | `brain` | No | `{ model, confidenceThreshold }` for ChatGPT adapter |
 | `intentions` | No | `CodeIntention[]` providers (`INTENTION_CASCADE_PHASE`) |
 | `limits` | No | Always on: `{ maxTurns?, maxDurationMs?, endMessage? }` (defaults 40 / 20m; ceilings 150 / 60m) |

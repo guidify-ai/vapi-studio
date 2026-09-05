@@ -41,7 +41,7 @@ function write(filePath, contents) {
 }
 
 function copyEnsureDocker(destDir) {
-  const src = path.join(PROJECTS, 'roofr-poc', 'scripts', 'ensure-docker.sh');
+  const src = path.join(PROJECTS, 'sample-landing-llm', 'scripts', 'ensure-docker.sh');
   const dest = path.join(destDir, 'scripts', 'ensure-docker.sh');
   if (fs.existsSync(src)) {
     fs.mkdirSync(path.dirname(dest), { recursive: true });

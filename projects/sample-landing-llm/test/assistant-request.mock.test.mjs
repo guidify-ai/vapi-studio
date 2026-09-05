@@ -57,7 +57,7 @@ describe('AssistantRequest → Conversation create (mocked)', () => {
       return {
         body: {
           assistant: {
-            name: 'Vapi Studio Roofr PoC',
+            name: 'Vapi Studio Sample Landing LLM',
             model: {
               provider: 'custom-llm',
               url: `${publicBase}/vapi/chat/completions`,

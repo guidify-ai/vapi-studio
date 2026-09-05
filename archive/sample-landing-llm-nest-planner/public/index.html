@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vapi Studio — Tools that make Vapi extremely controllable</title>
+    <meta
+      name="description"
+      content="Tools that make Vapi extremely controllable. Open source · free to self-host · BYOK. Try the live chat sample — a deterministic Studio agent (graph-owned turns, not a free-form LLM loop)."
+    />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://vapi-studio.guidify.ca/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://vapi-studio.guidify.ca/" />
+    <meta
+      property="og:title"
+      content="Vapi Studio — Tools that make Vapi extremely controllable"
+    />
+    <meta
+      property="og:description"
+      content="Open source · free to self-host · BYOK. Cheaper to run Vapi — 500×–800× on some tools. Deterministic agents are the killer feature."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Vapi Studio — Tools that make Vapi extremely controllable"
+    />
+    <meta
+      name="twitter:description"
+      content="Open source · free to self-host · BYOK. Cheaper to run Vapi — 500×–800× on some tools."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css?v=22" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Vapi Studio",
+        "url": "https://vapi-studio.guidify.ca/",
+        "applicationCategory": "DeveloperApplication",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "description": "Tools that make Vapi extremely controllable. Open source, free to self-host, BYOK. Cheaper to run Vapi — 500x-800x on some tools.",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Guidify",
+          "email": "mpyskunov@guidify.ca",
+          "sameAs": ["https://github.com/guidify-ai/vapi-studio"]
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <div class="site">
+      <header class="topbar">
+        <div class="brand">Vapi Studio<span aria-hidden="true">.</span></div>
+        <a
+          class="btn btn-github"
+          href="https://github.com/guidify-ai/vapi-studio"
+          rel="noopener noreferrer"
+          aria-label="GitHub"
+        >
+          <span class="gh-mark" aria-hidden="true">★</span>
+          GitHub
+          <span class="gh-stars" id="gh-stars" data-stars="5">5</span>
+        </a>
+      </header>
+
+      <main id="main">
+        <section class="hero" aria-labelledby="hero-heading">
+          <div class="hero-copy">
+            <h1 id="hero-heading">Tools that make Vapi extremely controllable</h1>
+            <p>
+              Open source · free to self-host · BYOK. A philosophy of control — and
+              cheaper to run Vapi: our measurements show
+              <strong class="hero-stat">500×–800×</strong> on some tools.
+            </p>
+            <p class="hero-invite">
+              Try the live sample below — a deterministic Vapi Studio agent in chat
+            </p>
+          </div>
+
+          <aside class="studio-sample-banner" aria-label="About this chat sample">
+            <p>
+              <strong>This chat is a sample</strong> of how a
+              <strong>Vapi Studio deterministic agent</strong> works: the graph owns each turn;
+              the model only helps at listen boundaries — not a free-form LLM chatbot. Same
+              control philosophy as voice agents on Vapi.
+            </p>
+          </aside>
+
+          <div class="studio" id="studio-planner" aria-label="Deterministic agent sample — design planner">
+            <div class="studio-pane">
+              <div class="pane-head">
+                <span>Planner</span>
+                <span class="pane-hint">sample agent</span>
+              </div>
+              <div
+                class="chat-log"
+                id="chat-log"
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+              ></div>
+              <div class="typing" id="typing" hidden>Designing…</div>
+              <form class="intake-form" id="intake-form">
+                <p class="intake-lead">
+                  Hi — I’m a sample Vapi Studio deterministic agent (the planner). A few details
+                  to start (required):
+                </p>
+                <div class="field">
+                  <label for="intake-company">Company name</label>
+                  <input
+                    id="intake-company"
+                    name="companyName"
+                    required
+                    autocomplete="organization"
+                    maxlength="200"
+                  />
+                </div>
+                <div class="field">
+                  <label for="intake-email">Email</label>
+                  <input
+                    id="intake-email"
+                    name="contactEmail"
+                    type="email"
+                    required
+                    autocomplete="email"
+                    maxlength="320"
+                  />
+                </div>
+                <div class="field">
+                  <label for="intake-name">Your name</label>
+                  <input
+                    id="intake-name"
+                    name="contactName"
+                    required
+                    autocomplete="name"
+                    maxlength="200"
+                  />
+                </div>
+                <p class="form-error" id="intake-error" hidden></p>
+                <button type="submit" class="btn btn-primary" id="intake-submit">
+                  Continue
+                </button>
+              </form>
+              <form class="chat-form" id="chat-form" hidden>
+                <label class="sr-only" for="chat-input">Message the planner</label>
+                <textarea
+                  id="chat-input"
+                  rows="1"
+                  autocomplete="off"
+                  placeholder="Reply to the planner… (Shift+Enter for a new line)"
+                ></textarea>
+                <button type="submit" class="btn btn-primary" id="chat-send" disabled>
+                  Send
+                </button>
+              </form>
+              <noscript>
+                <p class="noscript-note">
+                  <a href="mailto:mpyskunov@guidify.ca">Email Guidify</a>
+                  or
+                  <a href="https://github.com/guidify-ai/vapi-studio">GitHub</a>.
+                </p>
+              </noscript>
+            </div>
+            <div class="studio-pane">
+              <div class="pane-head">
+                <span>Preview</span>
+                <span id="draft-product">draft</span>
+              </div>
+              <div class="preview">
+                <div class="preview-block">
+                  <h2 class="preview-label">Flow</h2>
+                  <div class="flow-row" id="flow-preview" role="list">
+                    <span class="flow-node" data-kind="speak" role="listitem">Greeting</span>
+                    <span class="flow-arrow" aria-hidden="true">→</span>
+                    <span class="flow-node" data-kind="listen" role="listitem">Listen</span>
+                    <span class="flow-arrow" aria-hidden="true">→</span>
+                    <span class="flow-node" data-kind="end" role="listitem">End</span>
+                  </div>
+                </div>
+                <div class="preview-block">
+                  <h2 class="preview-label">Funnels &amp; events</h2>
+                  <div id="funnel-preview">
+                    <div class="desired empty">Shaped by the chat.</div>
+                  </div>
+                </div>
+                <div class="preview-block">
+                  <h2 class="preview-label">Sample call</h2>
+                  <div class="desired empty" id="sample-preview">—</div>
+                </div>
+                <div class="preview-block">
+                  <h2 class="preview-label">Result</h2>
+                  <div class="desired empty" id="desired-preview">—</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="tools" aria-labelledby="tools-heading">
+          <h2 id="tools-heading">Deterministic agents — the killer feature for Vapi</h2>
+          <p class="tools-lead">
+            Graph owns the call. Brain only at listen boundaries. The planner chat above is a
+            working sample of that idea — try it, then ship the same control on voice with Vapi.
+          </p>
+          <div class="tool-tiles" role="list">
+            <article class="tool-tile is-live" role="listitem">
+              <span class="tool-status">Shipped</span>
+              <h3>Deterministic agents</h3>
+              <p>
+                Typed steps + <code>flow.yaml</code>. Supervisor routes every turn — the call
+                path is code you can read, not a free-form LLM loop.
+              </p>
+            </article>
+            <article class="tool-tile is-soon" role="listitem" aria-label="Coming soon">
+              <span class="tool-status">Coming soon</span>
+              <h3>More Studio tools</h3>
+              <p>
+                New controllable surfaces for Vapi — same philosophy, same self-hosted stack.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <ul class="facts" aria-label="Product facts">
+          <li>
+            <strong>Cheaper with Studio</strong> — our measurements show
+            <strong class="hero-stat">500×–800×</strong> lower cost on some tools versus running
+            Vapi without this control layer.
+          </li>
+          <li>
+            <strong>BYOK</strong> — ChatGPT, Claude, Gemini, Grok, Twilio, Vapi. Any custom CRM on
+            demand.
+          </li>
+          <li>
+            <strong>Official team</strong> — Guidify only. We don’t limit your choice: build it
+            yourself, or hire us. Full-cycle development — Management, Development, Analytics.
+            Let’s talk.
+          </li>
+        </ul>
+      </main>
+
+      <footer class="footer">
+        <strong class="footer-brand">Vapi Studio</strong>
+        <div>
+          <a href="https://github.com/guidify-ai/vapi-studio" rel="noopener noreferrer">GitHub</a>
+          ·
+          <a href="mailto:mpyskunov@guidify.ca">mpyskunov@guidify.ca</a>
+        </div>
+      </footer>
+    </div>
+
+    <div class="build-dock" role="region" aria-label="Get help building">
+      <button type="button" class="btn btn-primary build-dock-btn" data-open-quote>
+        Help me build it
+      </button>
+    </div>
+
+    <dialog class="quote-dialog" id="quote-dialog" aria-labelledby="quote-title">
+      <form method="dialog" class="modal" id="quote-form">
+        <div class="modal-head">
+          <h2 id="quote-title">Help me build it</h2>
+          <button type="button" class="modal-x" id="quote-x" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-lead">
+            Guidify — only official team. Draft attached. Unexpectedly low rate.
+          </p>
+          <div id="quote-success" class="success-note" hidden></div>
+          <div id="quote-fields">
+            <div class="field">
+              <label for="q-name">Name</label>
+              <input id="q-name" name="name" required autocomplete="name" />
+            </div>
+            <div class="field">
+              <label for="q-email">Email</label>
+              <input id="q-email" name="email" type="email" required autocomplete="email" />
+            </div>
+            <div class="field">
+              <label for="q-company">Company</label>
+              <input id="q-company" name="company" autocomplete="organization" />
+            </div>
+            <div class="field">
+              <label for="q-notes">Notes</label>
+              <textarea id="q-notes" name="notes" rows="2"></textarea>
+            </div>
+            <p class="form-error" id="quote-error" hidden></p>
+          </div>
+        </div>
+        <div class="modal-footer" id="quote-footer">
+          <button type="button" class="btn" id="quote-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="quote-submit">Send</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/studio.js?v=22" defer></script>
+  </body>
+</html>

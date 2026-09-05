@@ -11,6 +11,8 @@ export const MAX_EXTRACTED_STRING_LENGTH = 256;
 /** Patterns that strongly suggest instruction injection, not conversational speech. */
 export const PROMPT_INJECTION_PATTERNS: RegExp[] = [
   /ignore\s+(all\s+)?(previous|prior|above)\s+instructions/i,
+  /disregard\s+(all\s+)?(previous|prior|above|your)\s+(instructions|rules|prompt)/i,
+  /forget\s+(all\s+)?(your|the|previous)\s+(instructions|rules|prompt)/i,
   /\b(system|developer)\s+prompt\b/i,
   /\byou\s+are\s+now\b/i,
   /\bact\s+as\b/i,
@@ -20,6 +22,7 @@ export const PROMPT_INJECTION_PATTERNS: RegExp[] = [
   /\breveal\s+(your|the)\s+(prompt|instructions|system)\b/i,
   /\bjailbreak\b/i,
   /\bDAN\s+mode\b/i,
+  /\bnew\s+instructions?\s*:/i,
   /<\s*\/?\s*system\s*>/i,
   /```/,
 ];
@@ -64,6 +67,19 @@ export function looksLikePromptInjection(text: string): boolean {
   const t = text.trim();
   if (!t) return false;
   return PROMPT_INJECTION_PATTERNS.some((re) => re.test(t));
+}
+
+/**
+ * True when the utterance (or any coalesced series part) looks like injection.
+ * Used for fail-closed Brain paths before any provider round-trip.
+ */
+export function utteranceLooksLikePromptInjection(
+  userText: string,
+  seriesParts?: string[],
+): boolean {
+  if (looksLikePromptInjection(userText)) return true;
+  if (!seriesParts?.length) return false;
+  return seriesParts.some((part) => looksLikePromptInjection(part));
 }
 
 /**

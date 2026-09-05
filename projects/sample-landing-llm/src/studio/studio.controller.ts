@@ -2,12 +2,16 @@ import { Body, Controller, Get, Headers, Param, Post, Req } from '@nestjs/common
 import type { Request } from 'express';
 import { randomUUID } from 'crypto';
 import { StudioSessionService } from './studio-session.service';
+import { OutboundCallService } from './outbound-call.service';
 import { readWebCallerIdFromRequest } from '../caller/caller-identity';
 import { STUDIO_PRESETS_CATALOG, type StudioCallPresets } from './studio-presets';
 
 @Controller('studio')
 export class StudioController {
-  constructor(private readonly sessions: StudioSessionService) {}
+  constructor(
+    private readonly sessions: StudioSessionService,
+    private readonly outbound: OutboundCallService,
+  ) {}
 
   /** Preset catalog for the Studio toggles panel. */
   @Get('presets')
@@ -39,6 +43,32 @@ export class StudioController {
       contactName: body?.contactName,
       contactEmail: body?.contactEmail,
       guestCompanyName: body?.guestCompanyName || body?.companyName,
+    });
+  }
+
+  /**
+   * Landing “Call me” — Vapi outbound triage call.
+   * Requires company / email / name + phone + consent (TCPA).
+   */
+  @Post('outbound-call')
+  outboundCall(
+    @Body()
+    body: {
+      companyName?: string;
+      contactName?: string;
+      contactEmail?: string;
+      phone?: string;
+      consent?: boolean;
+      notes?: string;
+    },
+  ) {
+    return this.outbound.requestCall({
+      companyName: String(body?.companyName || ''),
+      contactName: String(body?.contactName || ''),
+      contactEmail: String(body?.contactEmail || ''),
+      phone: String(body?.phone || ''),
+      consent: body?.consent === true,
+      notes: body?.notes ? String(body.notes) : undefined,
     });
   }
 

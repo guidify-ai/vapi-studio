@@ -5,6 +5,8 @@
  * Reserved failure: throws ClarifyCannotAnswerError (`studio.clarify.cannotAnswer`).
  */
 
+import { sanitizeExtractedFieldValue } from './prompt-injection-guard';
+
 /** Anything the runtime can stringify for Brain context. */
 export type ClarifiableInput =
   | string
@@ -201,7 +203,7 @@ export function emptyAnswerFromInterface(
   return out;
 }
 
-/** Keep only keys declared on the answer interface. */
+/** Keep only keys declared on the answer interface; sanitize string values fail-closed. */
 export function filterClarifyAnswer(
   raw: Record<string, unknown> | null | undefined,
   answer: BrainAnswerInterface,
@@ -213,6 +215,12 @@ export function filterClarifyAnswer(
   }
   for (const [key, value] of Object.entries(raw)) {
     if (!allowed.has(key)) continue;
+    if (typeof value === 'string') {
+      const sanitized = sanitizeExtractedFieldValue(value);
+      if (sanitized === undefined) continue;
+      out[key] = sanitized;
+      continue;
+    }
     out[key] = value;
   }
   return out;

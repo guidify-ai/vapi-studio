@@ -54,6 +54,7 @@ import {
 } from './conversation/nodes/planner/planner.nodes';
 import {
   GoodbyeNode,
+  ContinueNode,
   MadNode,
   PauseNode,
   StillThereNode,
@@ -61,15 +62,21 @@ import {
   UnknownTransitionNode,
 } from './conversation/nodes/portals.nodes';
 import {
+  MadDetectIntention,
+  GibberishDetectIntention,
+  SoftContinueIntention,
   CompanyDoesCollectedIntention,
   DiscoveryAnswerIntention,
+  DiscoveryFaqIntention,
   DiscoveryProceedIntention,
   HelpBuildIntention,
   IntegrationsCrmIntention,
   IntegrationsNoneIntention,
   IntegrationsToolsIntention,
   NothingElseIntention,
+  ProductFaqIntention,
   SampleOkIntention,
+  SampleSoftNoneIntention,
   SampleTweakIntention,
   UseCaseBookIntention,
   UseCaseDispatchIntention,
@@ -77,8 +84,11 @@ import {
   UseCaseOtherIntention,
   UseCaseQualifyIntention,
   UseCaseClarifyIntention,
+  UseCaseVagueIntention,
 } from './conversation/intentions/planner.intentions';
 import { brainConfig } from './brain/brain.config';
+import { PlannerMailModule } from './mail/planner-mail.module';
+import { OutboundCallService } from './studio/outbound-call.service';
 
 function resolveBrainAdapter() {
   switch (brainConfig.adapter) {
@@ -92,6 +102,7 @@ function resolveBrainAdapter() {
 
 @Module({
   imports: [
+    PlannerMailModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       url:
@@ -116,6 +127,9 @@ function resolveBrainAdapter() {
         confidenceThreshold: brainConfig.confidenceThreshold,
       },
       intentions: [
+        MadDetectIntention,
+        GibberishDetectIntention,
+        SoftContinueIntention,
         CompanyDoesCollectedIntention,
         UseCaseQualifyIntention,
         UseCaseBookIntention,
@@ -123,11 +137,15 @@ function resolveBrainAdapter() {
         UseCaseDispatchIntention,
         UseCaseOtherIntention,
         UseCaseClarifyIntention,
+        UseCaseVagueIntention,
+        DiscoveryFaqIntention,
         DiscoveryAnswerIntention,
         DiscoveryProceedIntention,
         IntegrationsNoneIntention,
         IntegrationsCrmIntention,
         IntegrationsToolsIntention,
+        SampleSoftNoneIntention,
+        ProductFaqIntention,
         HelpBuildIntention,
         SampleTweakIntention,
         SampleOkIntention,
@@ -144,6 +162,7 @@ function resolveBrainAdapter() {
         { className: 'CorrectionsNode', useClass: CorrectionsNode },
         { className: 'OfferHelpNode', useClass: OfferHelpNode },
         { className: 'GoodbyeNode', useClass: GoodbyeNode },
+        { className: 'ContinueNode', useClass: ContinueNode },
         { className: 'PauseNode', useClass: PauseNode },
         { className: 'MadNode', useClass: MadNode },
         { className: 'UnknownTransitionNode', useClass: UnknownTransitionNode },
@@ -167,6 +186,7 @@ function resolveBrainAdapter() {
     StudioEventBuffer,
     StudioLiveSpeechBuffer,
     StudioSessionService,
+    OutboundCallService,
     FormResumeService,
     ProjectSeedService,
     ProjectUuidGuard,

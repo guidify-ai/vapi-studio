@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { estimateUsdCost } from './openai-cheap-models';
+import { estimateUsdCost } from './llm-model-pricing';
 
 export type BrainCallKind = 'scan' | 'clarify' | 'judge';
 
@@ -41,7 +41,7 @@ interface UsageBucket {
 }
 
 /**
- * Per-call OpenAI usage ledger for studio-chatgpt.
+ * Per-call LLM usage ledger for stock Brain adapters (ChatGPT / Claude / Gemini / Grok).
  * Printed as $$$ at end of call (finalize).
  */
 @Injectable()

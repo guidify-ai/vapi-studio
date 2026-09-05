@@ -79,6 +79,7 @@ export function resolveCheapOpenAiModel(
   return CHEAP_OPENAI_MODELS[raw];
 }
 
+/** @deprecated Prefer `estimateUsdCost` from `llm-model-pricing` (multi-provider). */
 export function estimateUsdCost(input: {
   model: string;
   promptTokens: number;
