@@ -1,0 +1,4 @@
+# Scenario 2 (spec §20.3 / §20.4): transfer portal re-engage then transferCall.
+sequence:
+  - studio.isTransferToHuman
+  - studio.isTransferToHuman

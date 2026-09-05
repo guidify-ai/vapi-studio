@@ -1,0 +1,6 @@
+# Scenario 1 (spec §20.2 / §20.4): deterministic mock intentions.
+# Opening turn runs flow.start (Acknowledge) without Brain — sequence starts after intro.
+sequence:
+  - isMultiSayTest
+  - isInterruptTest
+  - studio.isGoodbye

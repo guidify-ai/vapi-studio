@@ -1,16 +1,9 @@
-node_modules
-dist
-.idea
-.env
-logs/
-
-# Local tooling (not part of vapi-studio)
-.uv-bin/
-.uv-tools/
-.specify/.cache/
-archive/
-
 # Application projects (content gitignored; README + .gitignore tracked)
 projects/*
 !projects/README.md
 !projects/.gitignore
+# Tracked in-repo Vapi Studio sample (port 9998 — same surface as PoCs)
+!projects/sample-landing-llm/
+!projects/sample-landing-llm/**
+# Marketing landing (:4173) + private PoCs (e.g. roofr-poc :9999) stay gitignored
+# Marketing landing site + other PoCs (e.g. roofr-poc on :9999) stay gitignored

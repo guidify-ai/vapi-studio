@@ -1,3 +1,5 @@
 *
 !.gitignore
 !README.md
+!sample-landing-llm/
+!sample-landing-llm/**

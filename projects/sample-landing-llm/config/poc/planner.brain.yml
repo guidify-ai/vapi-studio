@@ -1,0 +1,10 @@
+# MockBrain — happy-path planner demo (company → use case → discovery → sample).
+sequence:
+  - company_does_collected
+  - use_case_qualify
+  - discovery_answer
+  - discovery_answer
+  - discovery_proceed
+  - integrations_none
+  - help_build
+  - nothing_else

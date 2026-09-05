@@ -1,0 +1,7 @@
+# Optional portal demo: pause intercept → continue resumes normal flow.
+# Opening turn runs flow.start (Acknowledge) without Brain.
+sequence:
+  - isMultiSayTest
+  - studio.isPause
+  - isContinue
+  - studio.isGoodbye

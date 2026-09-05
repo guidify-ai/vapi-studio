@@ -1,0 +1,91 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: studio
+      POSTGRES_DB: sample_landing_llm
+    ports:
+      - "15435:5432"
+    volumes:
+      - sample_llm_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio -d sample_landing_llm"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Baked default: Nest app + Postgres. Prefer OrbStack as the Docker engine.
+  # One command: yarn start (+ ngrok)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      additional_contexts:
+        vapi-studio: ../..
+    ports:
+      - "9998:9998"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgres://studio:studio@postgres:5432/sample_landing_llm
+      PORT: 9998
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:9998}
+      PROJECT_UUID: ${PROJECT_UUID:-4a13e554-972b-4713-b208-15b71bff0493}
+      POC_BRAIN_PROFILE: ${POC_BRAIN_PROFILE:-planner}
+      STUDIO_CONSOLE_DEBUG: ${STUDIO_CONSOLE_DEBUG:-1}
+      LOG_DAYS: ${LOG_DAYS:-14}
+      LOG_DIR: ${LOG_DIR:-/workspace/guidify-ai/projects/sample-landing-llm/logs}
+      FORCE_COLOR: "1"
+      POC_COMPANY_NAME: ${POC_COMPANY_NAME:-Sample Studio}
+      VAPI_TRANSFER_DESTINATION: ${VAPI_TRANSFER_DESTINATION:-+15551234567}
+      VAPI_END_CALL_TOOL_NAME: ${VAPI_END_CALL_TOOL_NAME:-end_call_tool}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      CONFIG_DIR: /workspace/guidify-ai/projects/sample-landing-llm/config
+    volumes:
+      - ./logs:/workspace/guidify-ai/projects/sample-landing-llm/logs
+      - ./config:/workspace/guidify-ai/projects/sample-landing-llm/config
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Fully mocked unit/integration tests — no app, no postgres, no real secrets
+  test:
+    profiles: ["test"]
+    image: node:24-bookworm-slim
+    working_dir: /workspace
+    environment:
+      OPENAI_API_KEY: sk-mock-not-real
+      VAPI_TRANSFER_DESTINATION: "+15550001111"
+      VAPI_WEBHOOK_SECRET: mock-secret
+      PUBLIC_BASE_URL: https://mock.example.test
+      POC_BRAIN_PROFILE: planner
+      POC_COMPANY_NAME: Sample Studio
+      VAPI_END_CALL_TOOL_NAME: end_call_tool
+      # MOCK_ROOFR_FAST: "1"
+    volumes:
+      - ../..:/workspace/packages/vapi-studio
+      - ./:/workspace/projects/sample-landing-llm
+    command:
+      - bash
+      - -lc
+      - |
+        set -euo pipefail
+        corepack enable && corepack prepare yarn@1.22.22 --activate
+        cd /workspace/packages/vapi-studio
+        yarn install
+        yarn build
+        echo ">> Vapi Studio mocked unit tests"
+        node --test test/*.test.mjs
+        echo ">> sample-landing-llm compile + mocked tests"
+        cd /workspace/projects/sample-landing-llm
+        yarn install
+        # Refresh file: link so Nest app + tests see freshly built @guidify-ai/vapi-studio
+        rm -rf node_modules/@guidify-ai/vapi-studio
+        yarn install --check-files
+        yarn build
+        node --test test/*.test.mjs
+        echo ">> ALL MOCKED TESTS PASSED"
+
+volumes:
+  sample_llm_pgdata:

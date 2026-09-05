@@ -1,0 +1,102 @@
+version: 1
+flow:
+  id: sample-landing-planner
+  start: acknowledge
+nodes:
+  acknowledge:
+    class: AcknowledgeNode
+  companyDoes:
+    class: CompanyDoesNode
+    intentions:
+      - company_does_collected
+      - studio.isGoodbye
+  useCase:
+    class: UseCaseNode
+    intentions:
+      - use_case_qualify
+      - use_case_book
+      - use_case_faq
+      - use_case_dispatch
+      - use_case_other
+      - use_case_clarify
+      - studio.isGoodbye
+  discovery:
+    class: DiscoveryNode
+    intentions:
+      - discovery_answer
+      - discovery_proceed
+      - studio.isGoodbye
+  integrations:
+    class: IntegrationsNode
+    intentions:
+      - integrations_none
+      - integrations_crm
+      - integrations_tools
+      - studio.isGoodbye
+  designPackage:
+    class: DesignPackageNode
+  showSample:
+    class: ShowSampleNode
+    intentions:
+      - help_build
+      - sample_tweak
+      - sample_ok
+      - nothing_else
+      - studio.isGoodbye
+  corrections:
+    class: CorrectionsNode
+    intentions:
+      - sample_tweak
+      - help_build
+      - sample_ok
+      - nothing_else
+  offerHelp:
+    class: OfferHelpNode
+    intentions:
+      - help_build
+      - sample_ok
+      - nothing_else
+      - sample_tweak
+      - studio.isGoodbye
+
+  pause:
+    class: PauseNode
+    portal: true
+    priority: 90
+    intentions:
+      - studio.isPause
+      - isContinue
+  mad:
+    class: MadNode
+    portal: true
+    priority: 95
+    intentions:
+      - studio.isMad
+  unknownTransition:
+    class: UnknownTransitionNode
+    portal: true
+    priority: 80
+    intentions:
+      - studio.isUnknownTransition
+  transferToHuman:
+    class: TransferToHumanNode
+    portal: true
+    priority: 98
+    intentions:
+      - studio.isTransferToHuman
+  stillThere:
+    class: StillThereNode
+    portal: true
+    priority: 92
+    intentions:
+      - studio.isStillThere
+      - studio.isPositive
+      - studio.isGoodbye
+  goodbye:
+    class: GoodbyeNode
+    portal: true
+    priority: 100
+    terminal: true
+    intentions:
+      - studio.isGoodbye
+      - nothing_else

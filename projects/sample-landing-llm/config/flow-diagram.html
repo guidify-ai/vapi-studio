@@ -1,0 +1,2582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Planner LLM — Flow Studio</title>
+  <link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.10.2/dist/style.css" />
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a222c;
+      --ink: #e7ecf1;
+      --muted: #8b9aab;
+      --start: #2d6a4f;
+      --normal: #1d3557;
+      --portal: #7b2d3b;
+      --terminal: #4a3f6b;
+      --hub: #5c4033;
+      --accent: #e9c46a;
+      --border: #2a3542;
+      --current: #f4a261;
+      --user: #3d5a80;
+      --bot: #2a9d8f;
+      --danger: #c1121f;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    }
+    #app {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      height: 100%;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .meta { color: var(--muted); font-size: 0.8rem; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button, .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #243040;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    button:hover { background: #2c3a4d; }
+    button:disabled { opacity: 0.45; cursor: not-allowed; }
+    button.primary { background: #2d6a4f; border-color: #52b788; }
+    button.call { background: #1d3557; border-color: #457b9d; }
+    button.danger { background: #4a1c24; border-color: var(--danger); }
+    button.active { outline: 1px solid var(--accent); }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .swatch {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      border-radius: 2px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .swatch.start { background: var(--start); }
+    .swatch.normal { background: var(--normal); }
+    .swatch.portal { background: var(--portal); }
+    .swatch.portal-start { background: #9a3412; }
+    .swatch.portal-exit { background: #57534e; }
+    .swatch.terminal { background: var(--terminal); }
+    .swatch.current { background: var(--current); }
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(220px, 280px) 1fr minmax(280px, 360px);
+      min-height: 0;
+      position: relative;
+    }
+    @media (max-width: 1100px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 200px 1fr 240px;
+      }
+    }
+    /* Idle: presets + full graph — no chat column / composer */
+    #app.studio-idle .workspace {
+      grid-template-columns: minmax(220px, 280px) 1fr;
+    }
+    @media (max-width: 1100px) {
+      #app.studio-idle .workspace {
+        grid-template-columns: 1fr;
+        grid-template-rows: 160px 1fr;
+      }
+    }
+    #app.studio-idle .chat-pane,
+    #app.studio-idle .composer {
+      display: none;
+    }
+    #app.studio-live .preset-apply {
+      display: none;
+    }
+    /* Call lives with presets — graph is the main surface */
+    .preset-apply {
+      flex: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px 12px 12px;
+      border-bottom: 1px solid var(--border);
+      background: #121820;
+    }
+    .preset-apply-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .preset-apply-row .call {
+      flex: none;
+      padding: 6px 14px;
+    }
+    .call-dock-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      flex: 1;
+      min-width: 0;
+    }
+    .call-chip {
+      font-size: 0.65rem;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      background: #1a2330;
+      color: var(--muted);
+    }
+    .call-chip.on {
+      border-color: #457b9d;
+      color: var(--ink);
+      background: #243040;
+    }
+    .call-chip.warn {
+      border-color: #c1121f;
+      color: #f4a261;
+    }
+    .preset-apply-hint {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.7rem;
+      line-height: 1.3;
+    }
+    .preset-panel {
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px 12px;
+      background: #151c24;
+      flex: none;
+      overflow: auto;
+      max-height: min(52vh, 480px);
+    }
+    .preset-panel h3 {
+      margin: 12px 0 6px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .preset-panel h3:first-child { margin-top: 0; }
+    .preset-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 0 0 8px;
+      font-size: 0.82rem;
+      line-height: 1.35;
+    }
+    .preset-row label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      cursor: pointer;
+      flex: 1;
+    }
+    .preset-row input[type="checkbox"] {
+      margin-top: 2px;
+      accent-color: var(--bot);
+    }
+    .preset-row .preset-copy strong {
+      display: block;
+      font-weight: 600;
+      color: var(--ink);
+    }
+    .preset-row .preset-copy span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      margin-top: 2px;
+    }
+    .preset-ab {
+      margin: 0 0 10px;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #121820;
+    }
+    .preset-ab .ab-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .preset-ab .ab-desc {
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .preset-ab .ab-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 10px;
+    }
+    .preset-ab .ab-choices label {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.78rem;
+      cursor: pointer;
+    }
+    .ff-empty {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin: 0 0 8px;
+    }
+    .ff-manual {
+      display: grid;
+      gap: 6px;
+    }
+    .ff-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 6px;
+      align-items: center;
+    }
+    .ff-row input[type="text"] {
+      width: 100%;
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #121820;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 5px 8px;
+      font: inherit;
+      font-size: 0.78rem;
+    }
+    .ff-row button {
+      padding: 4px 8px;
+      font-size: 0.72rem;
+    }
+    .ff-add {
+      margin-top: 4px;
+    }
+    .center {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .drawer, .chat-pane {
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .drawer {
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+    }
+    .drawer .pane-body {
+      flex: 1;
+      min-height: 0;
+    }
+    .chat-pane {
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+    }
+    .pane-title {
+      padding: 10px 12px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      flex: none;
+    }
+    .pane-body {
+      flex: 1;
+      overflow: auto;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+    }
+    .section { margin-bottom: 14px; }
+    .section h3 {
+      margin: 0 0 6px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    pre.json {
+      margin: 0;
+      padding: 8px;
+      background: #121820;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-size: 0.72rem;
+      line-height: 1.35;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+    }
+    .event {
+      border-left: 2px solid var(--accent);
+      padding: 6px 8px;
+      margin-bottom: 8px;
+      background: #121820;
+      border-radius: 0 6px 6px 0;
+    }
+    .event .t { color: var(--accent); font-size: 0.72rem; }
+    .event .ts { color: var(--muted); font-size: 0.68rem; }
+    #graphRoot {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      position: relative;
+    }
+    .react-flow {
+      background:
+        radial-gradient(circle at 20% 10%, #1a2838 0%, transparent 45%),
+        var(--bg);
+    }
+    .react-flow__attribution { display: none; }
+    /* Neutralize xyflow light-theme defaults — our .rf-node owns look. */
+    .react-flow__node {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      width: auto !important;
+      font-size: inherit !important;
+      color: var(--ink) !important;
+      box-shadow: none !important;
+    }
+    .react-flow__node-default,
+    .react-flow__node-input,
+    .react-flow__node-output,
+    .react-flow__node-group,
+    .react-flow__node-studio,
+    .react-flow__node-ra9 {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+      width: auto !important;
+      color: inherit !important;
+      box-shadow: none !important;
+    }
+    .react-flow__controls-button {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      fill: var(--ink);
+    }
+    .rf-node {
+      min-width: 200px;
+      max-width: 260px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #3d5a80;
+      background: var(--normal);
+      color: var(--ink);
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.25;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+      transition: opacity 0.15s ease, box-shadow 0.15s ease;
+    }
+    .rf-node .asst {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: rgba(231, 236, 241, 0.55);
+      margin-bottom: 4px;
+    }
+    .rf-node.assistant-dim {
+      opacity: 0.38;
+      filter: saturate(0.5);
+    }
+    .rf-node.assistant-active {
+      opacity: 1;
+      box-shadow: 0 0 0 2px rgba(233, 196, 106, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+    }
+    .rf-node.start { background: var(--start); border-color: #52b788; }
+    .rf-node.assistant-start {
+      background: #0f766e;
+      border-color: #2dd4bf;
+      font-weight: 700;
+    }
+    .rf-node.conversation-start {
+      min-width: 220px;
+      max-width: 280px;
+      padding: 18px 20px;
+      background: radial-gradient(circle at 30% 25%, #14b8a6 0%, #0f766e 55%, #115e59 100%);
+      border: 2px solid #5eead4;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 0 0 6px rgba(45, 212, 191, 0.12), 0 10px 28px rgba(0, 0, 0, 0.35);
+    }
+    .rf-node.conversation-start .sub {
+      color: rgba(204, 251, 241, 0.9);
+    }
+    .rf-node.assistant-end {
+      background: #44403c;
+      border-color: #a8a29e;
+      border-style: dashed;
+      font-size: 13px;
+    }
+    .rf-node.handoff-exit { background: #713f12; border-color: #e9c46a; }
+    .rf-node.portal { background: var(--portal); border-color: #c1121f; }
+    .rf-node.portal-start { background: #9a3412; border-color: #fb923c; border-style: dashed; }
+    .rf-node.portal-exit { background: #44403c; border-color: #a8a29e; border-style: dashed; }
+    .rf-node.terminal { background: var(--terminal); border-color: #9b8ec4; }
+    .rf-node.current {
+      outline: 3px solid var(--current);
+      outline-offset: 2px;
+      box-shadow: 0 0 0 4px rgba(244, 162, 97, 0.35), 0 4px 18px rgba(244, 162, 97, 0.25);
+      opacity: 1 !important;
+      filter: none !important;
+      z-index: 2;
+    }
+    .rf-node .sub {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 400;
+      color: rgba(231, 236, 241, 0.75);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .view-lock-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 6;
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #243040;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+    }
+    .view-lock-btn:hover { background: #2c3a4d; }
+    .view-lock-btn.locked { border-color: var(--accent); color: var(--accent); }
+    .graph-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .chat-log {
+      flex: 1;
+      overflow: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .chat-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      max-width: 100%;
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+      animation: bubbleIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    .chat-row.no-anim {
+      opacity: 1;
+      transform: none;
+      animation: none;
+    }
+    .chat-row.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+      transform-origin: bottom right;
+    }
+    .chat-row.assistant {
+      align-self: flex-start;
+      transform-origin: bottom left;
+    }
+    .chat-row.system {
+      align-self: center;
+      justify-content: center;
+      transform-origin: center;
+      max-width: 94%;
+    }
+    .chat-avatar {
+      flex: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+    }
+    .chat-avatar svg {
+      width: 15px;
+      height: 15px;
+      display: block;
+    }
+    .chat-row.assistant .chat-avatar {
+      background: #134e4a;
+      border-color: #2a9d8f88;
+      color: #5eead4;
+    }
+    .chat-row.user .chat-avatar {
+      background: #243b55;
+      border-color: #457b9d88;
+      color: #a8c4e0;
+    }
+    .chat-row.system .chat-avatar {
+      background: #1f2937;
+      border-color: #6b728088;
+      color: #d1d5db;
+    }
+    .bubble {
+      max-width: calc(92% - 36px);
+      padding: 8px 11px;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    @keyframes bubbleIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.96);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+    .chat-row.user .bubble {
+      background: var(--user);
+      border-bottom-right-radius: 4px;
+    }
+    .chat-row.assistant .bubble {
+      background: #1e3a36;
+      border: 1px solid #2a9d8f55;
+      border-bottom-left-radius: 4px;
+    }
+    .bubble.typing {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-width: 52px;
+      padding: 12px 14px;
+      white-space: nowrap;
+    }
+    .bubble.typing .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #5eead4;
+      opacity: 0.35;
+      animation: typingDot 1.2s ease-in-out infinite;
+    }
+    .bubble.typing .dot:nth-child(2) { animation-delay: 0.18s; }
+    .bubble.typing .dot:nth-child(3) { animation-delay: 0.36s; }
+    @keyframes typingDot {
+      0%, 60%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+      }
+      30% {
+        opacity: 1;
+        transform: translateY(-3px);
+      }
+    }
+    .chat-row.system .bubble {
+      max-width: calc(94% - 36px);
+      background: #161b24;
+      border: 1px dashed #6b7280;
+      border-radius: 8px;
+      color: #d6c6a8;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      line-height: 1.35;
+      padding: 7px 12px;
+    }
+    .composer {
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      padding: 10px 14px 12px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 10px;
+      align-items: end;
+    }
+    .end-box {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 150px;
+    }
+    .end-box button { width: 100%; }
+    .composer-main {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      width: 100%;
+    }
+    .composer-main textarea {
+      flex: 1;
+      min-height: 44px;
+      max-height: 120px;
+      resize: vertical;
+      background: #121820;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--ink);
+      padding: 12px 14px;
+      font: inherit;
+      font-size: 0.95rem;
+      line-height: 1.35;
+      width: 100%;
+    }
+    .composer-main textarea:focus {
+      outline: 1px solid var(--accent);
+      border-color: var(--accent);
+    }
+    .status-line {
+      grid-column: 1 / -1;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .status-line.error { color: #f4a261; }
+
+    .chat-row.form-cta .bubble {
+      background: #1a2330;
+      border: 1px solid var(--accent);
+      color: var(--ink);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .chat-row.form-cta .bubble:hover {
+      background: #243040;
+    }
+    .form-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(8, 12, 18, 0.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .form-modal-backdrop.open { display: flex; }
+    .form-modal {
+      width: min(440px, 100%);
+      max-height: min(90vh, 720px);
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+      padding: 18px 18px 14px;
+    }
+    .form-modal h2 {
+      margin: 0 0 4px;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    .form-modal .form-sub {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+    .form-modal label {
+      display: block;
+      margin: 0 0 4px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .form-modal .field { margin-bottom: 12px; }
+    .form-modal input,
+    .form-modal textarea {
+      width: 100%;
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #121820;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 8px 10px;
+      font: inherit;
+      font-size: 0.9rem;
+    }
+    .form-modal textarea { min-height: 72px; resize: vertical; }
+    .form-modal input:focus,
+    .form-modal textarea:focus {
+      outline: 1px solid var(--accent);
+      border-color: var(--accent);
+    }
+    .form-modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="studio-idle">
+    <header>
+      <div>
+        <h1>Flow Studio</h1>
+        <div class="meta" id="flowMeta">Loading…</div>
+      </div>
+      <div class="legend">
+        <span><i class="swatch start"></i>assistant start</span>
+        <span><i class="swatch" style="background:#0d9488;border:2px solid #5eead4"></i>conversation start</span>
+        <span><i class="swatch normal"></i>node</span>
+        <span><i class="swatch" style="background:#713f12"></i>handoff exit</span>
+        <span><i class="swatch" style="background:#44403c;border-style:dashed"></i>assistant end</span>
+        <span><i class="swatch portal"></i>portal</span>
+        <span><i class="swatch current"></i>current node</span>
+      </div>
+      <div class="toolbar">
+        <button type="button" id="btnSaveEdges" class="primary">Save edges</button>
+        <button type="button" id="btnReloadGraph">Reload graph</button>
+        <a href="/analytics" class="btn" style="text-decoration:none">Analytics</a>
+        <a href="/conversations" class="btn" style="text-decoration:none">Conversations</a>
+      </div>
+    </header>
+    <div class="workspace">
+      <aside class="drawer">
+        <div class="pane-title">Preconditions · presets</div>
+        <div class="preset-panel" id="presetPanel">
+          <p class="meta">Loading presets…</p>
+        </div>
+        <div class="preset-apply" id="callGate" aria-label="Start call with presets">
+          <div class="preset-apply-row">
+            <div class="call-dock-chips" id="callDockChips"></div>
+            <button type="button" id="btnCallHero" class="call">Call</button>
+          </div>
+          <p class="preset-apply-hint" id="callGateHint">Applies on Call · graph stays free to explore</p>
+        </div>
+        <div class="pane-title">Session · memory · events</div>
+        <div class="pane-body" id="leftDrawer">
+          <p class="meta">Inspect the flow freely. Set presets above, then Call when ready.</p>
+          <div class="section"><h3>Caller (web cookie)</h3><pre class="json" id="callerPreview"></pre></div>
+        </div>
+      </aside>
+      <section class="center" id="centerPane">
+        <div id="graphRoot"></div>
+      </section>
+      <aside class="chat-pane">
+        <div class="pane-title">Chat (text only)</div>
+        <div class="chat-log" id="chatLog"></div>
+      </aside>
+    </div>
+    <footer class="composer">
+      <div class="end-box">
+        <button type="button" id="btnCall" class="call">Call again</button>
+        <button type="button" id="btnEnd" class="danger" disabled>Customer hung up</button>
+      </div>
+      <div class="composer-main">
+        <textarea id="chatInput" rows="1" placeholder="Message…"></textarea>
+        <button type="button" id="btnSend" class="primary">Send</button>
+      </div>
+      <div class="status-line" id="statusLine"></div>
+    </footer>
+  </div>
+
+  <div class="form-modal-backdrop" id="formModal" aria-hidden="true">
+    <div class="form-modal" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+      <h2 id="formModalTitle">Intake form</h2>
+      <p class="form-sub" id="formModalSub">Fill out and submit — the bot is waiting.</p>
+      <form id="formModalFields"></form>
+      <div class="form-modal-actions">
+        <button type="button" id="formModalClose">Close</button>
+        <button type="button" id="formModalSubmit" class="primary">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@19.1.0",
+      "react-dom": "https://esm.sh/react-dom@19.1.0",
+      "react-dom/client": "https://esm.sh/react-dom@19.1.0/client",
+      "react/jsx-runtime": "https://esm.sh/react@19.1.0/jsx-runtime",
+      "@xyflow/react": "https://esm.sh/@xyflow/react@12.10.2?external=react,react-dom",
+      "@dagrejs/dagre": "https://esm.sh/@dagrejs/dagre@1.1.4"
+    }
+  }
+  </script>
+  <script type="module">
+    import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import {
+      ReactFlow,
+      ReactFlowProvider,
+      Background,
+      Controls,
+      MiniMap,
+      Handle,
+      Position,
+      MarkerType,
+      useNodesState,
+      useEdgesState,
+      useReactFlow,
+      addEdge,
+      reconnectEdge,
+    } from '@xyflow/react';
+    import Dagre from '@dagrejs/dagre';
+
+    const NODE_W = 240;
+    const NODE_H = 76;
+    const FIT_OPTS = { padding: 0.06, duration: 180, minZoom: 0.35, maxZoom: 1.35 };
+    /** Zoom used when centering the flow start node (View locked). */
+    const START_CENTER_ZOOM = 0.95;
+    /** Smooth pan/zoom when the active node changes (View locked). */
+    const FOCUS_TRANSITION_MS = 520;
+    /** Resize / lock-toggle recenter — keep snappy. */
+    const FOCUS_SNAP_MS = 180;
+    const state = {
+      conversationId: null,
+      currentNodeId: null,
+      activeModuleId: null,
+      graphApi: null,
+      edgesDirty: false,
+      pendingForm: null,
+      formAckedIds: new Set(),
+      formCtaIds: new Set(),
+      stopFormPoll: null,
+      /**
+       * Assistant bubble dedupe: hash(normalized text) → last shown at (ms).
+       * Same line is suppressed unless ≥ CHAT_DEDUPE_MS since the prior show
+       * (poll + turn response race; intentional re-asks after a pause still land).
+       */
+      saidAtByHash: new Map(),
+      /** Studio silence clock (ms) — mirrors Vapi 15s still-there. */
+      idleTimerId: null,
+      idleInFlight: false,
+    };
+
+    const STUDIO_IDLE_MS = 30000;
+    /** Suppress identical assistant bubbles closer than this. */
+    const CHAT_DEDUPE_MS = 250;
+
+    function normalizeChatText(text) {
+      return String(text || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    /** Stable non-crypto hash for chat dedupe keys. */
+    function hashChatText(text) {
+      const s = normalizeChatText(text);
+      let h = 2166136261;
+      for (let i = 0; i < s.length; i++) {
+        h ^= s.charCodeAt(i);
+        h = Math.imul(h, 16777619);
+      }
+      return (h >>> 0).toString(16);
+    }
+
+    /**
+     * Claim an assistant line for the UI. Returns false if the same hash was
+     * shown less than CHAT_DEDUPE_MS ago.
+     */
+    function claimAssistantLine(text) {
+      const normalized = normalizeChatText(text);
+      if (!normalized) return false;
+      const key = hashChatText(normalized);
+      const now = Date.now();
+      const prev = state.saidAtByHash.get(key);
+      if (prev != null && now - prev < CHAT_DEDUPE_MS) {
+        return false;
+      }
+      state.saidAtByHash.set(key, now);
+      return true;
+    }
+
+    function clearAssistantDedupe() {
+      state.saidAtByHash = new Map();
+    }
+
+    function clearStudioIdleTimer() {
+      if (state.idleTimerId != null) {
+        clearTimeout(state.idleTimerId);
+        state.idleTimerId = null;
+      }
+    }
+
+    function armStudioIdleTimer() {
+      clearStudioIdleTimer();
+      if (!state.conversationId) return;
+      if (document.getElementById('chatInput').disabled) return;
+      state.idleTimerId = setTimeout(() => {
+        fireStudioIdle().catch((err) => {
+          setStatus(String(err.message || err), true);
+        });
+      }, STUDIO_IDLE_MS);
+    }
+
+    async function fireStudioIdle() {
+      if (!state.conversationId || state.idleInFlight) return;
+      if (document.getElementById('chatInput').disabled) return;
+      state.idleInFlight = true;
+      clearStudioIdleTimer();
+      showTyping();
+      setStatus('Still-there check…');
+      try {
+        const res = await fetch(
+          '/studio/conversations/' + state.conversationId + '/idle',
+          { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+        );
+        const view = await res.json();
+        if (!res.ok) throw new Error(view.message || res.statusText);
+        await applyTurn(view);
+        setStatus(
+          view.ended
+            ? 'Ended — silence'
+            : 'At ' + (view.currentNodeId || view.selectedNodeId || '—'),
+        );
+      } finally {
+        state.idleInFlight = false;
+        hideTyping();
+      }
+    }
+
+    const CALLER_COOKIE = 'studio_caller_id';
+
+    function getOrCreateCallerId() {
+      const m = document.cookie.match(/(?:^|; )studio_caller_id=([^;]*)/);
+      if (m && m[1]) {
+        try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+      }
+      const id = (crypto.randomUUID && crypto.randomUUID()) ||
+        ('web-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10));
+      document.cookie =
+        CALLER_COOKIE + '=' + encodeURIComponent(id) +
+        '; path=/; max-age=31536000; SameSite=Lax';
+      return id;
+    }
+
+    const callerId = getOrCreateCallerId();
+
+    function setStatus(msg, isError) {
+      const el = document.getElementById('statusLine');
+      el.textContent = msg || '';
+      el.className = 'status-line' + (isError ? ' error' : '');
+      const hint = document.getElementById('callGateHint');
+      if (hint && document.getElementById('app').classList.contains('studio-idle')) {
+        if (isError && msg) {
+          hint.textContent = msg;
+          hint.style.color = '#f4a261';
+        } else {
+          updateCallDockSummary();
+        }
+      }
+    }
+
+    /** idle = presets + explore graph; live = chat + composer */
+    function setStudioMode(mode) {
+      const app = document.getElementById('app');
+      const idle = mode === 'idle';
+      app.classList.toggle('studio-idle', idle);
+      app.classList.toggle('studio-live', !idle);
+      if (currentGraph) {
+        renderGraph(currentGraph, state.currentNodeId, state.activeModuleId);
+      }
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
+    }
+
+    function setCallButtonsDisabled(disabled) {
+      document.getElementById('btnCall').disabled = disabled;
+      document.getElementById('btnCallHero').disabled = disabled;
+    }
+
+    const presetsState = {
+      catalog: null,
+      afterHours: false,
+      ab: {}, // testId → 'auto' | 'A' | 'B'
+      featureFlags: {}, // registered flag defaults / overrides
+      manualFlags: [], // [{ key, enabled }]
+    };
+
+    function collectCallPresets() {
+      const abOverrides = {};
+      for (const [id, v] of Object.entries(presetsState.ab)) {
+        if (v === 'A' || v === 'B') abOverrides[id] = v;
+      }
+      const featureFlagOverrides = { ...presetsState.featureFlags };
+      for (const row of presetsState.manualFlags) {
+        const key = String(row.key || '').trim();
+        if (!key) continue;
+        featureFlagOverrides[key] = !!row.enabled;
+      }
+      return {
+        afterHours: !!presetsState.afterHours,
+        abOverrides,
+        featureFlagOverrides,
+      };
+    }
+
+    function updateCallDockSummary() {
+      const chipsEl = document.getElementById('callDockChips');
+      const hint = document.getElementById('callGateHint');
+      if (!chipsEl && !hint) return;
+      const p = collectCallPresets();
+      const chips = [];
+      chips.push({
+        text: p.afterHours ? 'After hours' : 'Business hours',
+        on: true,
+        warn: !!p.afterHours,
+      });
+      const abEntries = Object.entries(p.abOverrides || {});
+      if (abEntries.length) {
+        for (const [id, v] of abEntries) {
+          chips.push({ text: id + '=' + v, on: true });
+        }
+      } else {
+        chips.push({ text: 'A/B Auto', on: false });
+      }
+      const ffKeys = Object.keys(p.featureFlagOverrides || {});
+      if (ffKeys.length) {
+        chips.push({
+          text: ffKeys.length + ' FF override' + (ffKeys.length === 1 ? '' : 's'),
+          on: true,
+        });
+      } else {
+        chips.push({ text: 'No FF overrides', on: false });
+      }
+      if (chipsEl) {
+        chipsEl.innerHTML = chips
+          .map((c) => {
+            let cls = 'call-chip';
+            if (c.warn) cls += ' warn';
+            else if (c.on) cls += ' on';
+            return '<span class="' + cls + '">' + escapeHtml(c.text) + '</span>';
+          })
+          .join('');
+      }
+      if (hint) {
+        const statusEl = document.getElementById('statusLine');
+        const err = statusEl && statusEl.classList.contains('error');
+        if (!err) {
+          hint.textContent = 'Applies on Call · graph stays free to explore';
+          hint.style.color = '';
+        }
+      }
+    }
+
+    function renderPresetPanel() {
+      const host = document.getElementById('presetPanel');
+      if (!host || !presetsState.catalog) return;
+      const c = presetsState.catalog;
+      let html = '';
+
+      html += '<h3>Call mode</h3>';
+      html +=
+        '<div class="preset-row"><label>' +
+        '<input type="checkbox" id="presetAfterHours"' +
+        (presetsState.afterHours ? ' checked' : '') +
+        ' />' +
+        '<div class="preset-copy"><strong>' +
+        escapeHtml(c.afterHours.label) +
+        '</strong><span>' +
+        escapeHtml(c.afterHours.description) +
+        '</span></div></label></div>';
+
+      html += '<h3>A/B tests</h3>';
+      for (const t of c.abTests || []) {
+        if (presetsState.ab[t.id] === undefined) presetsState.ab[t.id] = 'auto';
+        const cur = presetsState.ab[t.id];
+        html += '<div class="preset-ab" data-ab="' + escapeHtml(t.id) + '">';
+        html +=
+          '<div class="ab-title">' +
+          escapeHtml(t.label) +
+          ' <span class="meta">(' +
+          escapeHtml(t.id) +
+          ')</span></div>';
+        html +=
+          '<div class="ab-desc">' + escapeHtml(t.description) + '</div>';
+        html += '<div class="ab-choices">';
+        for (const opt of ['auto', ...(t.variants || [])]) {
+          const label = opt === 'auto' ? 'Auto' : opt;
+          html +=
+            '<label><input type="radio" name="ab-' +
+            escapeHtml(t.id) +
+            '" value="' +
+            escapeHtml(opt) +
+            '"' +
+            (cur === opt ? ' checked' : '') +
+            ' /> ' +
+            escapeHtml(label) +
+            '</label>';
+        }
+        html += '</div></div>';
+      }
+
+      html += '<h3>Feature flags (override)</h3>';
+      const flags = c.featureFlags || [];
+      if (!flags.length) {
+        html +=
+          '<p class="ff-empty">No flags registered yet. Add manual overrides below — they apply on Call.</p>';
+      }
+      for (const f of flags) {
+        if (presetsState.featureFlags[f.id] === undefined) {
+          presetsState.featureFlags[f.id] = !!f.defaultEnabled;
+        }
+        html +=
+          '<div class="preset-row"><label>' +
+          '<input type="checkbox" data-ff="' +
+          escapeHtml(f.id) +
+          '"' +
+          (presetsState.featureFlags[f.id] ? ' checked' : '') +
+          ' />' +
+          '<div class="preset-copy"><strong>' +
+          escapeHtml(f.label) +
+          '</strong><span>' +
+          escapeHtml(f.description) +
+          '</span></div></label></div>';
+      }
+
+      html += '<div class="ff-manual" id="ffManualList">';
+      presetsState.manualFlags.forEach((row, idx) => {
+        html +=
+          '<div class="ff-row" data-ff-manual="' +
+          idx +
+          '">' +
+          '<input type="text" placeholder="flag_key" value="' +
+          escapeHtml(row.key || '') +
+          '" data-ff-key="' +
+          idx +
+          '" />' +
+          '<label style="font-size:0.72rem;white-space:nowrap"><input type="checkbox" data-ff-on="' +
+          idx +
+          '"' +
+          (row.enabled ? ' checked' : '') +
+          ' /> on</label>' +
+          '<button type="button" data-ff-del="' +
+          idx +
+          '">Remove</button>' +
+          '</div>';
+      });
+      html += '</div>';
+      html +=
+        '<button type="button" class="ff-add" id="ffAddManual">+ Add override</button>';
+
+      host.innerHTML = html;
+
+      const after = document.getElementById('presetAfterHours');
+      if (after) {
+        after.addEventListener('change', () => {
+          presetsState.afterHours = after.checked;
+          updateCallDockSummary();
+        });
+      }
+      host.querySelectorAll('.preset-ab').forEach((box) => {
+        const id = box.getAttribute('data-ab');
+        box.querySelectorAll('input[type=radio]').forEach((r) => {
+          r.addEventListener('change', () => {
+            if (r.checked) {
+              presetsState.ab[id] = r.value;
+              updateCallDockSummary();
+            }
+          });
+        });
+      });
+      host.querySelectorAll('input[data-ff]').forEach((el) => {
+        el.addEventListener('change', () => {
+          presetsState.featureFlags[el.getAttribute('data-ff')] = el.checked;
+          updateCallDockSummary();
+        });
+      });
+      host.querySelectorAll('input[data-ff-key]').forEach((el) => {
+        el.addEventListener('input', () => {
+          const i = Number(el.getAttribute('data-ff-key'));
+          if (presetsState.manualFlags[i]) {
+            presetsState.manualFlags[i].key = el.value;
+            updateCallDockSummary();
+          }
+        });
+      });
+      host.querySelectorAll('input[data-ff-on]').forEach((el) => {
+        el.addEventListener('change', () => {
+          const i = Number(el.getAttribute('data-ff-on'));
+          if (presetsState.manualFlags[i]) {
+            presetsState.manualFlags[i].enabled = el.checked;
+            updateCallDockSummary();
+          }
+        });
+      });
+      host.querySelectorAll('button[data-ff-del]').forEach((el) => {
+        el.addEventListener('click', () => {
+          const i = Number(el.getAttribute('data-ff-del'));
+          presetsState.manualFlags.splice(i, 1);
+          renderPresetPanel();
+        });
+      });
+      const addBtn = document.getElementById('ffAddManual');
+      if (addBtn) {
+        addBtn.addEventListener('click', () => {
+          presetsState.manualFlags.push({ key: '', enabled: true });
+          renderPresetPanel();
+        });
+      }
+      updateCallDockSummary();
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    async function loadPresets() {
+      const res = await fetch('/studio/presets');
+      if (!res.ok) throw new Error('Failed to load presets');
+      presetsState.catalog = await res.json();
+      renderPresetPanel();
+    }
+
+    /**
+     * Detroit-style placement (matches README / conversation-design doctrine):
+     * - Arrow corridors ≥ 2.0 × node width (intention labels stay readable)
+     * - Vertical gap between nodes ≥ 1.5 × node height
+     */
+    const EDGE_GAP_X = Math.round(NODE_W * 2.0); // ranksep along L→R path
+    const NODE_GAP_Y = Math.round(NODE_H * 1.5); // nodesep within a rank
+    const LANE_GAP_Y = Math.round(NODE_H * 1.5); // between assistant lane rows
+    const PORTAL_GAP_Y = Math.round(NODE_H * 1.5); // main path → portal row
+    const CONV_GAP_X = Math.round(NODE_W * 1.5); // conversation start → main
+
+    function layoutWithDagre(nodes, edges) {
+      const g = new Dagre.graphlib.Graph().setDefaultEdgeLabel(() => ({}));
+      // Left → right main path (Detroit: Become Human flowchart convention).
+      g.setGraph({
+        rankdir: 'LR',
+        nodesep: NODE_GAP_Y,
+        ranksep: EDGE_GAP_X,
+        marginx: 40,
+        marginy: 40,
+      });
+      for (const n of nodes) g.setNode(n.id, { width: NODE_W, height: NODE_H });
+      for (const e of edges) g.setEdge(e.source, e.target);
+      Dagre.layout(g);
+      return nodes.map((n) => {
+        const pos = g.node(n.id);
+        return {
+          ...n,
+          position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 },
+          sourcePosition: Position.Right,
+          targetPosition: Position.Left,
+        };
+      });
+    }
+
+    function normalizeLane(sub, x0, y0) {
+      let minX = Infinity;
+      let maxX = -Infinity;
+      let minY = Infinity;
+      let maxY = -Infinity;
+      for (const n of sub) {
+        minX = Math.min(minX, n.position.x);
+        maxX = Math.max(maxX, n.position.x + NODE_W);
+        minY = Math.min(minY, n.position.y);
+        maxY = Math.max(maxY, n.position.y + NODE_H);
+      }
+      if (!Number.isFinite(minX)) {
+        minX = 0;
+        maxX = NODE_W;
+        minY = 0;
+        maxY = NODE_H;
+      }
+      return {
+        nodes: sub.map((n) => ({
+          ...n,
+          position: {
+            x: n.position.x - minX + x0,
+            y: n.position.y - minY + y0,
+          },
+        })),
+        width: maxX - minX,
+        height: maxY - minY,
+      };
+    }
+
+    /**
+     * Detroit  / Vapi Studio chart layout:
+     * - Main path (and each assistant lane) left → right
+     * - Lane branches get vertical space between rows
+     * - Portal nodes on a row below the main path
+     * - Conversation start docks left of the entry lane
+     */
+    function layoutParallelLanes(graph) {
+      const laneOrder =
+        (graph.lanes && graph.lanes.map((l) => l.id)) ||
+        [...new Set(graph.nodes.map((n) => n.data?.lane || 'main'))];
+      const mainLaneIds = laneOrder.filter((id) => id !== 'portals' && id !== 'conversation');
+      const laid = [];
+      let yOffset = 0;
+      let maxMainX = 0;
+      let maxMainY = 0;
+
+      for (const laneId of mainLaneIds) {
+        const laneNodes = graph.nodes.filter((n) => (n.data?.lane || 'main') === laneId);
+        if (!laneNodes.length) continue;
+        const ids = new Set(laneNodes.map((n) => n.id));
+        const laneEdges = graph.edges.filter(
+          (e) => (e.lane || 'main') === laneId || (ids.has(e.source) && ids.has(e.target)),
+        );
+        const sub = layoutWithDagre(laneNodes, laneEdges);
+        const packed = normalizeLane(sub, CONV_GAP_X + NODE_W, yOffset);
+        for (const n of packed.nodes) laid.push(n);
+        maxMainX = Math.max(maxMainX, CONV_GAP_X + NODE_W + packed.width);
+        maxMainY = Math.max(maxMainY, yOffset + packed.height);
+        yOffset += packed.height + LANE_GAP_Y;
+      }
+
+      // Conversation start: left of the main path, vertically centered on entry content.
+      const convNodes = graph.nodes.filter((n) => n.data?.lane === 'conversation');
+      if (convNodes.length) {
+        const ids = new Set(convNodes.map((n) => n.id));
+        const convEdges = graph.edges.filter(
+          (e) => ids.has(e.source) && ids.has(e.target),
+        );
+        const sub = layoutWithDagre(convNodes, convEdges);
+        const packed = normalizeLane(sub, 0, 0);
+        const mainNodes = laid.filter((n) => n.data?.lane !== 'portals');
+        let midY = NODE_H / 2;
+        if (mainNodes.length) {
+          let minY = Infinity;
+          let maxY = -Infinity;
+          for (const n of mainNodes) {
+            minY = Math.min(minY, n.position.y);
+            maxY = Math.max(maxY, n.position.y + NODE_H);
+          }
+          midY = (minY + maxY) / 2;
+        }
+        for (const n of packed.nodes) {
+          laid.push({
+            ...n,
+            position: {
+              x: 0,
+              y: midY - NODE_H / 2,
+            },
+          });
+        }
+      }
+
+      // Portal row below the main path (dashed interrupts rise in the graph data).
+      const portalNodes = graph.nodes.filter((n) => n.data?.lane === 'portals');
+      if (portalNodes.length) {
+        const ids = new Set(portalNodes.map((n) => n.id));
+        const portalEdges = graph.edges.filter(
+          (e) =>
+            (e.lane || '') === 'portals' ||
+            (ids.has(e.source) && ids.has(e.target)),
+        );
+        const sub = layoutWithDagre(portalNodes, portalEdges);
+        const portalY = (laid.length ? maxMainY : 0) + PORTAL_GAP_Y;
+        // Center portals under the main span when the main path is wider.
+        let minX = Infinity;
+        let maxX = -Infinity;
+        for (const n of sub) {
+          minX = Math.min(minX, n.position.x);
+          maxX = Math.max(maxX, n.position.x + NODE_W);
+        }
+        const portalWidth = Number.isFinite(minX) ? maxX - minX : NODE_W;
+        const x0 =
+          maxMainX > portalWidth
+            ? CONV_GAP_X + NODE_W + (maxMainX - CONV_GAP_X - NODE_W - portalWidth) / 2
+            : CONV_GAP_X + NODE_W;
+        const packed = normalizeLane(sub, x0, portalY);
+        for (const n of packed.nodes) laid.push(n);
+      }
+
+      return laid;
+    }
+
+    function AgentNode({ data }) {
+      const cls =
+        'rf-node ' +
+        (data.kind || 'normal') +
+        (data.isCurrent ? ' current' : '') +
+        (data.isAssistantActive ? ' assistant-active' : '') +
+        (data.isAssistantDim ? ' assistant-dim' : '');
+      const kids = [
+        React.createElement(Handle, { type: 'target', position: Position.Left, key: 't' }),
+      ];
+      if (data.assistantName) {
+        kids.push(
+          React.createElement('div', { className: 'asst', key: 'a' }, data.assistantName),
+        );
+      }
+      kids.push(React.createElement('div', { key: 'l' }, data.label));
+      kids.push(
+        React.createElement('div', { className: 'sub', key: 's' }, data.className),
+      );
+      kids.push(
+        React.createElement(Handle, { type: 'source', position: Position.Right, key: 'b' }),
+      );
+      return React.createElement('div', { className: cls }, kids);
+    }
+    const nodeTypes = { studio: AgentNode, ra9: AgentNode, default: AgentNode };
+
+    function styleEdges(edges) {
+      return edges.map((e) => ({
+        ...e,
+        reconnectable: true,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 16,
+          height: 16,
+          color: e.style?.stroke || '#5c6b7a',
+        },
+        style: {
+          stroke: '#5c6b7a',
+          strokeWidth: 1.5,
+          ...(e.style || {}),
+        },
+        labelStyle: { fill: '#8b9aab', fontSize: 12 },
+        labelBgStyle: { fill: '#0f1419', fillOpacity: 0.85 },
+        labelBgPadding: [5, 3],
+      }));
+    }
+
+    const CONVERSATION_START_ID = '__conversation_start';
+
+    function findFocusNode(nodes, opts) {
+      const { currentNodeId, activeModuleId, entryModuleId, preCall } = opts;
+      if (preCall) {
+        return (
+          nodes.find((n) => n.id === CONVERSATION_START_ID) ||
+          nodes.find((n) => n.data?.kind === 'conversation-start') ||
+          null
+        );
+      }
+      if (currentNodeId && activeModuleId) {
+        const namespaced = nodes.find(
+          (n) =>
+            n.id === activeModuleId + '::' + currentNodeId ||
+            (n.data?.moduleId === activeModuleId &&
+              (n.data?.realNodeId === currentNodeId || n.id === currentNodeId)),
+        );
+        if (namespaced) return namespaced;
+        if (currentNodeId === '__end') {
+          const endNode = nodes.find(
+            (n) =>
+              n.data?.moduleId === activeModuleId &&
+              (n.data?.kind === 'assistant-end' ||
+                String(n.id).endsWith('::__end')),
+          );
+          if (endNode) return endNode;
+        }
+      }
+      if (currentNodeId) {
+        const byReal = nodes.find(
+          (n) =>
+            n.data?.realNodeId === currentNodeId ||
+            n.id === currentNodeId ||
+            n.data?.label === currentNodeId,
+        );
+        if (byReal) return byReal;
+      }
+      if (activeModuleId) {
+        const asstStart = nodes.find(
+          (n) =>
+            n.data?.moduleId === activeModuleId &&
+            n.data?.kind === 'assistant-start',
+        );
+        if (asstStart) return asstStart;
+      }
+      const entry = entryModuleId || 'router';
+      return (
+        nodes.find(
+          (n) =>
+            n.data?.moduleId === entry && n.data?.kind === 'assistant-start',
+        ) ||
+        nodes.find((n) => n.data?.kind === 'assistant-start') ||
+        nodes.find((n) => n.data?.kind === 'start') ||
+        null
+      );
+    }
+
+    /** View locked: always center on current node (else Conversation start / assistant start). */
+    function centerOnFocusNode(rf, nodes, opts, animOpts) {
+      const duration =
+        animOpts && typeof animOpts.duration === 'number'
+          ? animOpts.duration
+          : FOCUS_TRANSITION_MS;
+      const focus = findFocusNode(nodes, opts);
+      if (!focus || typeof rf.setCenter !== 'function') {
+        rf.fitView?.({ ...FIT_OPTS, duration });
+        return focus ? focus.id : null;
+      }
+      const x = focus.position.x + (focus.measured?.width ?? NODE_W) / 2;
+      const y = focus.position.y + (focus.measured?.height ?? NODE_H) / 2;
+      rf.setCenter(x, y, {
+        zoom: START_CENTER_ZOOM,
+        duration,
+      });
+      return focus.id;
+    }
+
+    function focusKeyFromOpts(opts) {
+      if (!opts) return '';
+      if (opts.preCall) return 'preCall';
+      return [
+        opts.activeModuleId || '',
+        opts.currentNodeId || '',
+      ].join('::');
+    }
+
+    function decorateNodes(laidOut, currentNodeId, activeModuleId, preCall) {
+      const hasActive = Boolean(activeModuleId) && !preCall;
+      return laidOut.map((n) => {
+        const mod = n.data?.moduleId;
+        const namespacedId = activeModuleId
+          ? activeModuleId + '::' + currentNodeId
+          : '';
+        const sameModule = !hasActive || !mod || mod === activeModuleId;
+        let isCurrent = false;
+        if (preCall) {
+          isCurrent =
+            n.id === CONVERSATION_START_ID ||
+            n.data?.kind === 'conversation-start';
+        } else if (currentNodeId && sameModule) {
+          isCurrent =
+            n.id === currentNodeId ||
+            n.id === namespacedId ||
+            n.data?.realNodeId === currentNodeId ||
+            (n.data?.label === currentNodeId &&
+              n.data?.kind !== 'assistant-start') ||
+            // endCall bookend: Studio passes `__end` after bot/customer hangup
+            (currentNodeId === '__end' &&
+              (n.data?.kind === 'assistant-end' ||
+                String(n.id).endsWith('::__end')));
+        }
+        const isAssistantActive = hasActive && mod === activeModuleId;
+        const isAssistantDim =
+          hasActive && mod && mod !== activeModuleId && n.data?.lane !== 'portals';
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            isCurrent,
+            isAssistantActive,
+            isAssistantDim,
+          },
+        };
+      });
+    }
+
+    function ViewFitController({ locked, nodes, focusOpts }) {
+      const rf = useReactFlow();
+      const lastFocusKey = useRef('');
+      const wasLocked = useRef(locked);
+
+      const recenter = useCallback(
+        (force, duration) => {
+          if (!locked) return;
+          const key = focusKeyFromOpts(focusOpts);
+          const targetChanged = key !== lastFocusKey.current;
+          if (!force && !targetChanged) return;
+          lastFocusKey.current = key;
+          centerOnFocusNode(rf, nodes, focusOpts, {
+            duration:
+              duration ??
+              (targetChanged ? FOCUS_TRANSITION_MS : FOCUS_SNAP_MS),
+          });
+        },
+        [locked, rf, nodes, focusOpts],
+      );
+
+      useEffect(() => {
+        const justLocked = locked && !wasLocked.current;
+        wasLocked.current = locked;
+        const t = requestAnimationFrame(() =>
+          recenter(justLocked, justLocked ? FOCUS_TRANSITION_MS : undefined),
+        );
+        return () => cancelAnimationFrame(t);
+      }, [recenter, locked]);
+
+      useEffect(() => {
+        if (!locked) return undefined;
+        const onResize = () => recenter(true, FOCUS_SNAP_MS);
+        window.addEventListener('resize', onResize);
+        const ro =
+          typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(() => recenter(true, FOCUS_SNAP_MS))
+            : null;
+        const host = document.getElementById('graphRoot');
+        if (ro && host) ro.observe(host);
+        return () => {
+          window.removeEventListener('resize', onResize);
+          if (ro && host) ro.disconnect();
+        };
+      }, [locked, recenter]);
+
+      return null;
+    }
+
+    function FlowCanvas({
+      graph,
+      currentNodeId,
+      activeModuleId,
+      preCall,
+      locked,
+      onToggleLock,
+    }) {
+      const edgeReconnectSuccessful = useRef(true);
+      const edgesRef = useRef([]);
+      const laidOut = useMemo(
+        () => layoutParallelLanes(graph),
+        [graph],
+      );
+      const initialEdges = useMemo(() => styleEdges(graph.edges), [graph]);
+      const [nodes, setNodes, onNodesChange] = useNodesState(
+        decorateNodes(laidOut, currentNodeId, activeModuleId, preCall),
+      );
+      const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+      const rf = useReactFlow();
+      const focusOpts = useMemo(
+        () => ({
+          currentNodeId,
+          activeModuleId,
+          entryModuleId: graph.entryModuleId || graph.start,
+          preCall,
+        }),
+        [currentNodeId, activeModuleId, graph.entryModuleId, graph.start, preCall],
+      );
+
+      useEffect(() => {
+        edgesRef.current = edges;
+      }, [edges]);
+
+      useEffect(() => {
+        setNodes(decorateNodes(laidOut, currentNodeId, activeModuleId, preCall));
+      }, [laidOut, currentNodeId, activeModuleId, preCall, setNodes]);
+
+      useEffect(() => {
+        setEdges(initialEdges);
+      }, [initialEdges, setEdges]);
+
+      useEffect(() => {
+        state.graphApi = {
+          getEdges: () => edgesRef.current,
+          setCurrent: (id) => {
+            setNodes((nds) =>
+              decorateNodes(nds, id, activeModuleId, preCall),
+            );
+          },
+        };
+      }, [setNodes, activeModuleId, preCall]);
+
+      const onConnect = useCallback(
+        (params) => {
+          state.edgesDirty = true;
+          const label =
+            window.prompt('Intention / edge label', '(intention)') ||
+            '(intention)';
+          setEdges((eds) =>
+            styleEdges(
+              addEdge(
+                {
+                  ...params,
+                  id: 'e-' + Date.now(),
+                  label,
+                  type: 'smoothstep',
+                },
+                eds,
+              ),
+            ),
+          );
+        },
+        [setEdges],
+      );
+
+      const onReconnectStart = useCallback(() => {
+        edgeReconnectSuccessful.current = false;
+      }, []);
+
+      const onReconnect = useCallback(
+        (oldEdge, newConnection) => {
+          edgeReconnectSuccessful.current = true;
+          state.edgesDirty = true;
+          setEdges((eds) =>
+            styleEdges(reconnectEdge(oldEdge, newConnection, eds)),
+          );
+        },
+        [setEdges],
+      );
+
+      const onReconnectEnd = useCallback(
+        (_event, edge) => {
+          if (!edgeReconnectSuccessful.current) {
+            state.edgesDirty = true;
+            setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+          }
+          edgeReconnectSuccessful.current = true;
+        },
+        [setEdges],
+      );
+
+      const onEdgeDoubleClick = useCallback(
+        (_evt, edge) => {
+          const next = window.prompt('Edge label', edge.label || '');
+          if (next === null) return;
+          state.edgesDirty = true;
+          setEdges((eds) =>
+            eds.map((e) =>
+              e.id === edge.id ? { ...e, label: next.trim() || '(intention)' } : e,
+            ),
+          );
+        },
+        [setEdges],
+      );
+
+      const onEdgesChangeWrapped = useCallback(
+        (changes) => {
+          if (changes.some((c) => c.type === 'remove')) state.edgesDirty = true;
+          onEdgesChange(changes);
+        },
+        [onEdgesChange],
+      );
+
+      return React.createElement(
+        'div',
+        { className: 'graph-wrap' },
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            className: 'view-lock-btn' + (locked ? ' locked' : ''),
+            onClick: onToggleLock,
+            title: locked
+              ? 'View locked: current assistant/node stays centered. Click to free pan/zoom.'
+              : 'Free ride: pan & zoom freely. Click to lock & center on current.',
+          },
+          locked ? 'View locked' : 'Free ride',
+        ),
+        React.createElement(
+          ReactFlow,
+          {
+            nodes,
+            edges,
+            nodeTypes,
+            onNodesChange,
+            onEdgesChange: onEdgesChangeWrapped,
+            onConnect,
+            onReconnect,
+            onReconnectStart,
+            onReconnectEnd,
+            onEdgeDoubleClick,
+            fitView: false,
+            minZoom: 0.25,
+            maxZoom: 2.2,
+            panOnDrag: !locked,
+            panOnScroll: !locked,
+            zoomOnScroll: !locked,
+            zoomOnPinch: !locked,
+            zoomOnDoubleClick: !locked,
+            nodesDraggable: !locked,
+            preventScrolling: locked,
+            edgesReconnectable: true,
+            colorMode: 'dark',
+            proOptions: { hideAttribution: true },
+            onInit: () => {
+              requestAnimationFrame(() =>
+                centerOnFocusNode(rf, nodes, focusOpts, {
+                  duration: FOCUS_SNAP_MS,
+                }),
+              );
+            },
+          },
+          React.createElement(ViewFitController, {
+            locked,
+            nodes,
+            focusOpts,
+          }),
+          React.createElement(Background, { color: '#2a3542', gap: 18 }),
+          React.createElement(Controls, {
+            showInteractive: false,
+            showZoom: !locked,
+            showFitView: true,
+          }),
+          React.createElement(MiniMap, {
+            nodeColor: (n) => {
+              if (n.data?.isCurrent) return '#f4a261';
+              if (n.data?.kind === 'conversation-start') return '#14b8a6';
+              if (n.data?.kind === 'assistant-start') return '#0f766e';
+              if (n.data?.kind === 'assistant-end') return '#78716c';
+              if (n.data?.kind === 'handoff-exit') return '#e9c46a';
+              if (n.data?.kind === 'start') return '#2d6a4f';
+              if (n.data?.kind === 'portal') return '#7b2d3b';
+              if (n.data?.kind === 'portal-start') return '#9a3412';
+              if (n.data?.kind === 'portal-exit') return '#57534e';
+              if (n.data?.kind === 'terminal') return '#4a3f6b';
+              if (n.data?.isAssistantActive) return '#1d4e89';
+              return '#1d3557';
+            },
+            maskColor: 'rgba(15,20,25,0.7)',
+          }),
+        ),
+      );
+    }
+
+    function FlowApp({ graph, currentNodeId, activeModuleId, preCall }) {
+      /** Idle: Free ride so operators can explore the graph before Call. */
+      const [locked, setLocked] = useState(!preCall);
+      useEffect(() => {
+        setLocked(!preCall);
+      }, [preCall]);
+      return React.createElement(
+        ReactFlowProvider,
+        null,
+        React.createElement(FlowCanvas, {
+          graph,
+          currentNodeId,
+          activeModuleId,
+          preCall,
+          locked,
+          onToggleLock: () => setLocked((v) => !v),
+        }),
+      );
+    }
+
+    let graphRoot = null;
+    let currentGraph = null;
+    let currentNodeId = null;
+    let activeModuleId = null;
+
+    function isPreCall() {
+      return !state.conversationId;
+    }
+
+    function renderGraph(graph, nodeId, moduleId) {
+      currentGraph = graph;
+      currentNodeId = nodeId || null;
+      activeModuleId = moduleId || null;
+      if (!graphRoot) {
+        graphRoot = createRoot(document.getElementById('graphRoot'));
+      }
+      graphRoot.render(
+        React.createElement(FlowApp, {
+          graph,
+          currentNodeId: currentNodeId,
+          activeModuleId: activeModuleId,
+          preCall: isPreCall(),
+        }),
+      );
+    }
+
+    async function loadGraph() {
+      const res = await fetch('/flow/graph');
+      if (!res.ok) throw new Error('Failed to load /flow/graph');
+      const graph = await res.json();
+      const asst =
+        (graph.assistants || []).map((a) => a.assistantName).join(' · ') ||
+        'single flow';
+      document.getElementById('flowMeta').textContent =
+        (graph.workflowId || graph.flowId) +
+        ' · ' +
+        asst +
+        (state.activeModuleId ? ' · now: ' + state.activeModuleId : '') +
+        (state.conversationId ? ' · session ' + state.conversationId.slice(0, 8) : '');
+      renderGraph(graph, state.currentNodeId, state.activeModuleId);
+      return graph;
+    }
+
+    function scrollChatToEnd() {
+      const log = document.getElementById('chatLog');
+      requestAnimationFrame(() => {
+        log.scrollTop = log.scrollHeight;
+      });
+    }
+
+    const ICON_ROBOT =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 8V5"/><circle cx="12" cy="4" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="13" r="1.1" fill="currentColor" stroke="none"/><circle cx="15" cy="13" r="1.1" fill="currentColor" stroke="none"/><path d="M9 17h6"/><path d="M3 12h2M19 12h2"/></svg>';
+    const ICON_HUMAN =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 19.2c1.4-3.2 3.7-4.7 6.5-4.7s5.1 1.5 6.5 4.7"/></svg>';
+    const ICON_SYSTEM =
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v2.2M12 18.8V21M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M3 12h2.2M18.8 12H21M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"/></svg>';
+
+    function makeAvatar(role) {
+      const el = document.createElement('div');
+      el.className = 'chat-avatar';
+      const label =
+        role === 'user' ? 'Customer' : role === 'system' ? 'System' : 'Assistant';
+      el.setAttribute('aria-label', label);
+      el.innerHTML =
+        role === 'user'
+          ? ICON_HUMAN
+          : role === 'system'
+            ? ICON_SYSTEM
+            : ICON_ROBOT;
+      return el;
+    }
+
+    function appendChat(role, text, opts) {
+      const animate = !opts || opts.animate !== false;
+      const log = document.getElementById('chatLog');
+      const row = document.createElement('div');
+      row.className = 'chat-row ' + role + (animate ? '' : ' no-anim');
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = text;
+      if (role === 'system') {
+        row.appendChild(makeAvatar('system'));
+        row.appendChild(bubble);
+      } else {
+        row.appendChild(makeAvatar(role));
+        row.appendChild(bubble);
+      }
+      log.appendChild(row);
+      scrollChatToEnd();
+      return row;
+    }
+
+    function showTyping() {
+      hideTyping();
+      const log = document.getElementById('chatLog');
+      const row = document.createElement('div');
+      row.className = 'chat-row assistant';
+      row.id = 'typingIndicator';
+      row.setAttribute('aria-label', 'Assistant is typing');
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble typing';
+      for (let i = 0; i < 3; i++) {
+        const dot = document.createElement('span');
+        dot.className = 'dot';
+        bubble.appendChild(dot);
+      }
+      row.appendChild(makeAvatar('assistant'));
+      row.appendChild(bubble);
+      log.appendChild(row);
+      scrollChatToEnd();
+    }
+
+    function hideTyping() {
+      const el = document.getElementById('typingIndicator');
+      if (el) el.remove();
+    }
+
+    function sleep(ms) {
+      return new Promise((r) => setTimeout(r, ms));
+    }
+
+    async function appendAssistantLines(lines) {
+      const say = (lines || []).map(normalizeChatText).filter(Boolean);
+      for (let i = 0; i < say.length; i++) {
+        if (i > 0) await sleep(90);
+        if (!claimAssistantLine(say[i])) continue;
+        appendChat('assistant', say[i]);
+      }
+    }
+
+    async function appendLiveSays(lines) {
+      const incoming = (lines || [])
+        .map(normalizeChatText)
+        .filter((line) => line && claimAssistantLine(line));
+      if (!incoming.length) return;
+      hideTyping();
+      for (const line of incoming) {
+        appendChat('assistant', line);
+      }
+    }
+
+    function renderDrawer(view) {
+      const el = document.getElementById('leftDrawer');
+      if (!view) {
+        el.innerHTML =
+          '<p class="meta">Send a first message to start a text conversation.</p>';
+        return;
+      }
+      const pretty = (v) =>
+        '<pre class="json">' +
+        escapeHtml(JSON.stringify(v ?? {}, null, 2)) +
+        '</pre>';
+      const events = (view.events || [])
+        .slice()
+        .reverse()
+        .map(
+          (e) =>
+            '<div class="event"><div class="t">' +
+            escapeHtml(e.type) +
+            '</div><div class="ts">' +
+            escapeHtml(e.ts || '') +
+            '</div>' +
+            pretty(e.payload) +
+            '</div>',
+        )
+        .join('');
+      el.innerHTML =
+        '<div class="section"><h3>Caller</h3>' +
+        pretty(
+          view.caller || {
+            channel: 'web',
+            id: callerId,
+            note: 'browser cookie studio_caller_id',
+          },
+        ) +
+        '</div>' +
+        '<div class="section"><h3>Where</h3>' +
+        pretty({
+          conversationId: view.conversationId,
+          status: view.status,
+          workflowId: view.workflowId || null,
+          activeAssistant: view.activeModuleId || null,
+          activeModuleId: view.activeModuleId || null,
+          currentNodeId: view.currentNodeId,
+          diagramHighlightNodeId: view.diagramHighlightNodeId || null,
+          normalFlowNodeId: view.normalFlowNodeId,
+          selectedNodeId: view.selectedNodeId,
+          selectedClass: view.selectedClass,
+          intentionNames: view.intentionNames,
+        }) +
+        '</div>' +
+        '<div class="section"><h3>Form</h3>' +
+        (state.pendingForm || view.formExpose
+          ? pretty(state.pendingForm || view.formExpose) +
+            '<p class="meta"><button type="button" id="btnOpenForm">Open form modal</button></p>'
+          : '<p class="meta">No pending form</p>') +
+        '</div>' +
+        '<div class="section"><h3>Actions (this turn)</h3>' +
+        pretty(view.actions || []) +
+        '</div>' +
+        '<div class="section"><h3>Memory</h3>' +
+        pretty(view.memory) +
+        '</div>' +
+        '<div class="section"><h3>Variables</h3>' +
+        pretty(view.variables) +
+        '</div>' +
+        '<div class="section"><h3>Portal / listen</h3>' +
+        pretty({
+          portalState: view.portalState,
+          listenExpectation: view.listenExpectation,
+        }) +
+        '</div>' +
+        '<div class="section"><h3>Analytics events</h3>' +
+        (events || '<p class="meta">None yet</p>') +
+        '</div>';
+      const openBtn = document.getElementById('btnOpenForm');
+      if (openBtn) {
+        openBtn.addEventListener('click', () =>
+          openFormModal(state.pendingForm || view.formExpose),
+        );
+      }
+    }
+
+    function stopFormPoll() {
+      if (typeof state.stopFormPoll === 'function') {
+        state.stopFormPoll();
+        state.stopFormPoll = null;
+      }
+    }
+
+    function startFormPoll(conversationId) {
+      stopFormPoll();
+      if (!conversationId) return;
+      let alive = true;
+      const tick = async () => {
+        if (!alive) return;
+        try {
+          const res = await fetch(
+            '/studio/conversations/' + conversationId + '/forms/pending',
+          );
+          if (!res.ok) return;
+          const body = await res.json();
+          if (body.liveSays && body.liveSays.length) {
+            await appendLiveSays(body.liveSays);
+          }
+          if (body.formExpose) {
+            await handlePendingForm(body.formExpose);
+          } else if (!body.awaitingFormResume && !body.formExpose) {
+            hideTyping();
+          }
+        } catch (_) {}
+      };
+      const timer = setInterval(tick, 400);
+      tick();
+      state.stopFormPoll = () => {
+        alive = false;
+        clearInterval(timer);
+      };
+    }
+
+    async function handlePendingForm(form) {
+      if (!form?.exposeId) return;
+      state.pendingForm = form;
+      if (!state.formCtaIds.has(form.exposeId)) {
+        state.formCtaIds.add(form.exposeId);
+        appendFormCta(form);
+      }
+      if (!state.formAckedIds.has(form.exposeId)) {
+        state.formAckedIds.add(form.exposeId);
+        try {
+          await fetch(
+            '/studio/conversations/' +
+              form.conversationId +
+              '/forms/' +
+              form.exposeId +
+              '/ack',
+            { method: 'POST', headers: { 'Content-Type': 'application/json' } },
+          );
+          appendChat(
+            'system',
+            'Form received — open it to fill out. The bot is waiting.',
+          );
+          setStatus('Form exposed — fill the modal');
+        } catch (_) {
+          state.formAckedIds.delete(form.exposeId);
+        }
+      }
+    }
+
+    function appendFormCta(form) {
+      const log = document.getElementById('chatLog');
+      const row = document.createElement('div');
+      row.className = 'chat-row form-cta assistant';
+      row.dataset.exposeId = form.exposeId;
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = 'Vapi Studio exposed a form — click here to see';
+      bubble.addEventListener('click', () => openFormModal(form));
+      row.appendChild(makeAvatar('assistant'));
+      row.appendChild(bubble);
+      log.appendChild(row);
+      scrollChatToEnd();
+    }
+
+    function openFormModal(form) {
+      const f = form || state.pendingForm;
+      if (!f) return;
+      state.pendingForm = f;
+      const fieldsEl = document.getElementById('formModalFields');
+      fieldsEl.innerHTML = '';
+      document.getElementById('formModalTitle').textContent =
+        'Form #' + f.formId;
+      document.getElementById('formModalSub').textContent =
+        'Conversation ' + String(f.conversationId).slice(0, 8) + '…';
+      for (const field of f.fields || []) {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        const lab = document.createElement('label');
+        lab.textContent = field.label + (field.required ? ' *' : '');
+        lab.setAttribute('for', 'ff-' + field.name);
+        let input;
+        if (field.type === 'textarea') {
+          input = document.createElement('textarea');
+        } else {
+          input = document.createElement('input');
+          input.type =
+            field.type === 'email'
+              ? 'email'
+              : field.type === 'tel'
+                ? 'tel'
+                : 'text';
+        }
+        input.id = 'ff-' + field.name;
+        input.name = field.name;
+        input.required = !!field.required;
+        if (field.placeholder) input.placeholder = field.placeholder;
+        wrap.appendChild(lab);
+        wrap.appendChild(input);
+        fieldsEl.appendChild(wrap);
+      }
+      const modal = document.getElementById('formModal');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFormModal() {
+      const modal = document.getElementById('formModal');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+    }
+
+    async function submitFormModal() {
+      const form = state.pendingForm;
+      if (!form) return;
+      const values = {};
+      for (const field of form.fields || []) {
+        const el = document.getElementById('ff-' + field.name);
+        values[field.name] = el ? String(el.value || '').trim() : '';
+        if (field.required && !values[field.name]) {
+          setStatus('Missing required: ' + field.label, true);
+          el?.focus();
+          return;
+        }
+      }
+      document.getElementById('formModalSubmit').disabled = true;
+      try {
+        const res = await fetch(
+          '/studio/conversations/' +
+            form.conversationId +
+            '/forms/' +
+            form.exposeId +
+            '/submit',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ values }),
+          },
+        );
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || res.statusText);
+        closeFormModal();
+        state.pendingForm = null;
+        appendChat('system', 'Form submitted.');
+        if (body.say && body.say.length) {
+          await appendAssistantLines(body.say);
+          hideTyping();
+          setStatus('Form processed — at ' + (state.currentNodeId || '—'));
+          startFormPoll(form.conversationId);
+        } else {
+          setStatus('Form submitted — waiting for bot…');
+          showTyping();
+          startFormPoll(form.conversationId);
+        }
+        try {
+          const stateRes = await fetch(
+            '/studio/conversations/' + form.conversationId,
+          );
+          if (stateRes.ok) {
+            const view = await stateRes.json();
+            state.conversationId = view.conversationId;
+            state.currentNodeId =
+              view.currentNodeId || view.selectedNodeId || state.currentNodeId;
+            state.activeModuleId = view.activeModuleId || state.activeModuleId;
+            renderDrawer(view);
+            if (currentGraph) {
+              renderGraph(
+                currentGraph,
+                state.currentNodeId,
+                state.activeModuleId,
+              );
+            }
+          }
+        } catch (_) {}
+      } catch (err) {
+        setStatus(String(err.message || err), true);
+      } finally {
+        document.getElementById('formModalSubmit').disabled = false;
+      }
+    }
+
+    async function applyTurn(view, opts) {
+      const options = opts || {};
+      hideTyping();
+      if (options.userText) appendChat('user', options.userText);
+      // Assistant lines: if caller already showed optimistic UI, say still animates in.
+      if (options.skipSay !== true) {
+        await appendAssistantLines(view.say);
+      }
+      for (const a of view.actions || []) {
+        if (a.kind === 'toolCall' && a.toolCall?.name) {
+          appendChat(
+            'system',
+            'toolCall → ' +
+              a.toolCall.name +
+              '(' +
+              JSON.stringify(a.toolCall.arguments || {}) +
+              ')',
+          );
+        }
+      }
+      state.conversationId = view.conversationId;
+      // Prefer diagram bookend (`__end`) after endCall — runtime stays on farewell.
+      state.currentNodeId =
+        view.diagramHighlightNodeId ||
+        view.currentNodeId ||
+        view.selectedNodeId ||
+        null;
+      state.activeModuleId = view.activeModuleId || null;
+      if (
+        view.ended &&
+        !view.diagramHighlightNodeId &&
+        (view.endReason ||
+          (view.actions || []).some(
+            (a) => a.kind === 'endCall' || a.kind === 'transferToHuman',
+          ))
+      ) {
+        state.currentNodeId = '__end';
+      }
+      if (view.formExpose) {
+        await handlePendingForm(view.formExpose);
+      } else if (!view.ended) {
+        state.pendingForm = null;
+      }
+      const active = !view.ended;
+      document.getElementById('btnEnd').disabled = !active;
+      setCallButtonsDisabled(active);
+      document.getElementById('chatInput').disabled = !!view.ended;
+      document.getElementById('btnSend').disabled = !!view.ended;
+      setStudioMode('live');
+      if (view.ended) {
+        clearStudioIdleTimer();
+        stopFormPoll();
+        appendChat(
+          'system',
+          'Conversation ended' +
+            (view.endReason ? ' — ' + view.endReason : ''),
+        );
+      } else {
+        armStudioIdleTimer();
+        startFormPoll(view.conversationId);
+      }
+      renderDrawer(view);
+      if (currentGraph) {
+        renderGraph(currentGraph, state.currentNodeId, state.activeModuleId);
+      } else {
+        loadGraph().catch(() => {});
+      }
+      const asstName =
+        (currentGraph?.assistants || []).find(
+          (a) => a.moduleId === state.activeModuleId,
+        )?.assistantName || state.activeModuleId;
+      const nodeMeta =
+        state.currentNodeId === '__end'
+          ? 'exit · endCall'
+          : state.currentNodeId || '—';
+      document.getElementById('flowMeta').textContent =
+        (currentGraph?.workflowId || currentGraph?.flowId || 'flow') +
+        (asstName ? ' · ' + asstName : '') +
+        ' · node: ' +
+        nodeMeta +
+        ' · ' +
+        (view.status || '');
+    }
+
+    async function startCall() {
+      if (state.conversationId && !document.getElementById('btnCall').disabled) {
+        // ended session — clear for a new call
+        state.conversationId = null;
+      }
+      if (state.conversationId) {
+        setStatus('Already on a call — hang up first', true);
+        return;
+      }
+      const presets = collectCallPresets();
+      document.getElementById('chatLog').innerHTML = '';
+      clearAssistantDedupe();
+      state.formAckedIds = new Set();
+      state.formCtaIds = new Set();
+      state.pendingForm = null;
+      clearStudioIdleTimer();
+      setCallButtonsDisabled(true);
+      document.getElementById('btnSend').disabled = true;
+      // Reveal chat shell while connecting so typing / entry phrase can land.
+      setStudioMode('live');
+      setStatus(presets.afterHours ? 'Calling (after hours)…' : 'Calling…');
+      showTyping();
+      try {
+        const res = await fetch('/studio/conversations/call', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            callerId,
+            afterHours: presets.afterHours,
+            abOverrides: presets.abOverrides,
+            featureFlagOverrides: presets.featureFlagOverrides,
+          }),
+        });
+        const view = await res.json();
+        if (!res.ok) throw new Error(view.message || res.statusText);
+        await applyTurn(view);
+        const hoursLabel =
+          view.variables && view.variables.afterHours ? ' · after hours' : '';
+        setStatus(
+          'On call' +
+            hoursLabel +
+            ' — at ' +
+            (view.currentNodeId || view.selectedNodeId || '—'),
+        );
+      } catch (err) {
+        hideTyping();
+        setCallButtonsDisabled(false);
+        document.getElementById('btnSend').disabled = false;
+        setStudioMode('idle');
+        setStatus(String(err.message || err), true);
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('chatInput');
+      const text = input.value.trim();
+      if (!text) return;
+      if (document.getElementById('btnSend').disabled) return;
+      if (!state.conversationId) {
+        setStatus('Call first to start a session', true);
+        return;
+      }
+      clearStudioIdleTimer();
+      input.value = '';
+      // Optimistic: user bubble appears immediately
+      appendChat('user', text);
+      showTyping();
+      setStatus('Running turn…');
+      document.getElementById('btnSend').disabled = true;
+      if (state.conversationId) startFormPoll(state.conversationId);
+      try {
+        const res = await fetch(
+          '/studio/conversations/' + state.conversationId + '/turns',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text }),
+          },
+        );
+        const view = await res.json();
+        if (!res.ok) throw new Error(view.message || res.statusText);
+        await applyTurn(view);
+        setStatus(
+          view.ended
+            ? 'Ended' +
+                (view.endReason ? ' — ' + view.endReason : '') +
+                ' · exit · endCall'
+            : 'At ' + (view.currentNodeId || view.selectedNodeId || '—'),
+        );
+      } catch (err) {
+        stopFormPoll();
+        hideTyping();
+        setStatus(String(err.message || err), true);
+        appendChat('system', 'Error: ' + (err.message || err));
+      } finally {
+        if (!document.getElementById('chatInput').disabled) {
+          document.getElementById('btnSend').disabled = false;
+          input.focus();
+        }
+      }
+    }
+
+    async function endConversation() {
+      if (!state.conversationId) return;
+      clearStudioIdleTimer();
+      const reason = 'customer_ended';
+      setStatus('Ending…');
+      try {
+        const res = await fetch(
+          '/studio/conversations/' + state.conversationId + '/end',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason }),
+          },
+        );
+        const view = await res.json();
+        if (!res.ok) throw new Error(view.message || res.statusText);
+        await applyTurn(view);
+        setStatus('Ended — customer ended');
+      } catch (err) {
+        setStatus(String(err.message || err), true);
+      }
+    }
+
+    async function saveEdges() {
+      const edges = (state.graphApi?.getEdges?.() || []).map((e) => ({
+        source: e.source,
+        target: e.target,
+        label: typeof e.label === 'string' ? e.label : String(e.label ?? ''),
+      }));
+      const res = await fetch('/flow/edges', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ edges }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setStatus(body.message || 'Save edges failed', true);
+        return;
+      }
+      state.edgesDirty = false;
+      setStatus('Saved ' + body.count + ' edges → flow-diagram.edges.yaml');
+      await loadGraph();
+    }
+
+
+    document.getElementById('btnSend').addEventListener('click', sendMessage);
+    document.getElementById('chatInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+    document.getElementById('btnCall').addEventListener('click', () => startCall());
+    document.getElementById('btnCallHero').addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      startCall();
+    });
+    document.getElementById('btnEnd').addEventListener('click', endConversation);
+    document.getElementById('formModalClose').addEventListener('click', closeFormModal);
+    document.getElementById('formModalSubmit').addEventListener('click', () => {
+      submitFormModal().catch((e) => setStatus(e.message, true));
+    });
+    document.getElementById('formModal').addEventListener('click', (e) => {
+      if (e.target.id === 'formModal') closeFormModal();
+    });
+    document.getElementById('btnSaveEdges').addEventListener('click', () => {
+      saveEdges().catch((e) => setStatus(e.message, true));
+    });
+    document.getElementById('btnReloadGraph').addEventListener('click', () => {
+      loadGraph()
+        .then(() => setStatus('Graph reloaded'))
+        .catch((e) => setStatus(e.message, true));
+    });
+
+    try {
+      await loadPresets();
+      await loadGraph();
+      const preview = document.getElementById('callerPreview');
+      if (preview) {
+        preview.textContent = JSON.stringify(
+          { channel: 'web', id: callerId, cookie: 'studio_caller_id' },
+          null,
+          2,
+        );
+      }
+      setStudioMode('idle');
+      setStatus('Ready — set presets, explore the flow, then Call');
+      updateCallDockSummary();
+    } catch (err) {
+      document.getElementById('flowMeta').textContent =
+        'Failed to load graph: ' + err.message;
+      setStatus(err.message, true);
+    }
+  </script>
+</body>
+</html>

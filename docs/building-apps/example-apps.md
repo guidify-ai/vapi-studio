@@ -1,27 +1,19 @@
 # Example applications
 
-Examples are **NestJS projects under `projects/`** — same clone as the framework. They are not shipped in `src/`; copy or clone them into your `projects/` folder.
+Examples are **NestJS projects under `projects/`** that implement **`@guidify-ai/vapi-studio`**.
 
-| Example | How to get it |
-| --- | --- |
-| **roofr-poc** | Integration PoC — Vapi inbound, Flow Studio, forms, multi-lane intake. Clone or copy into `projects/roofr-poc/` (see [guidify-ai/roofr-poc](https://github.com/guidify-ai/roofr-poc) if hosted separately). |
+| Example | Role | Port | Git |
+| --- | --- | --- | --- |
+| **`sample-landing-llm`** | **Tracked** Studio **Planner LLM** sample — LP designs the customer agent | **9998** | tracked |
+| **`roofr-poc`** | Larger private voice PoC (same Studio surface) | **9999** | gitignored |
+| **`vapi-studio-landing`** | Marketing HTML only; talks to sample via `/studio` | **4173** | gitignored |
+
+Both Studio apps expose the same operator surface: `/analytics`, `/flow`, `/studio/conversations/*`, `/{PROJECT_UUID}/vapi/...`.
 
 ```json
-// projects/<example>/package.json
 {
   "dependencies": {
     "@guidify-ai/vapi-studio": "file:../.."
   }
 }
 ```
-
-## What to copy
-
-- `VapiStudioModule.forRoot` wiring
-- Vapi webhook + Custom LLM controller shape
-- `flow.yaml` structure and portal nodes
-- Docker + **ngrok** local dev loop — `yarn start` tunnels localhost to HTTPS and prints Webhook + Conversation URLs for Vapi
-
-## What stays in the framework
-
-Supervisor, adapters, forms service, persistence entities, standard intentions — consumed from the repo root package, not copied.
