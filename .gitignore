@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# IDE — never commit
+.idea/
+
 # Application projects (content gitignored; README + .gitignore tracked)
 projects/*
 !projects/README.md
