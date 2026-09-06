@@ -19,6 +19,14 @@ export class StudioController {
     return STUDIO_PRESETS_CATALOG;
   }
 
+  /** Public outbound call display config (caller ID label for the LP form). */
+  @Get('outbound-config')
+  outboundConfig() {
+    const fromNumberReadable =
+      process.env.VAPI_PHONE_NUMBER_READABLE?.trim() || null;
+    return { fromNumberReadable };
+  }
+
   /** Call button — opening entry phrase only (no user text). */
   @Post('conversations/call')
   call(

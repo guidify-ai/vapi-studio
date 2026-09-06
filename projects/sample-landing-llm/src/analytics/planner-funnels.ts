@@ -14,6 +14,9 @@ export const PLANNER_ANALYTICS_TAGS = {
   sessionEnded: 'session_ended',
   mad: 'mad',
   unknown: 'unknown',
+  phoneDemoStarted: 'phone_demo_started',
+  phoneDemoTopic: 'phone_demo_topic',
+  phoneDemoHeardAbout: 'phone_demo_heard_about',
 } as const;
 
 export const PLANNER_FUNNELS: AnalyticsFunnelDefinition[] = [

@@ -401,7 +401,6 @@ export class FlowDiagramService {
       workflowId: flow.id,
       assistants: [],
       lanes: [
-        { id: 'conversation', label: 'Conversation' },
         { id: 'main', label: 'Main flow' },
         { id: 'portals', label: 'Shared portals' },
       ],
@@ -411,8 +410,9 @@ export class FlowDiagramService {
   }
 
   /**
-   * Single-flow PoC: synthetic Conversation start, assistant start/end bookends
-   * (workflow mode gets these per module from buildWorkflowAssistantsGraph).
+   * Single-flow PoC bookends:
+   * Start (inject / near-zero prep) → Greeting (flow.start) → …
+   * Studio Call / channel bootstrap is Start — not a separate Conversation-start hop.
    */
   private appendLegacyBookends(
     flow: FlowDefinition,
@@ -420,36 +420,35 @@ export class FlowDiagramService {
     edges: FlowDiagramGraph['edges'],
     nextEdgeId: () => string,
   ): void {
-    const conversationStartId = '__conversation_start';
-    const assistantStartId = '__start';
+    const startPrepId = '__start';
     const assistantEndId = '__end';
 
-    nodes.unshift(
-      {
-        id: conversationStartId,
-        type: 'studio',
-        data: {
-          label: 'Conversation start',
-          className: 'Call',
-          intentions: 'studio Call · entry phrase',
-          kind: 'conversation-start',
-          lane: 'conversation',
-          realNodeId: conversationStartId,
-        },
+    // Relabel the real flow.start as Greeting (first speak) — id stays for runtime.
+    const greeting = nodes.find((n) => n.id === flow.start);
+    if (greeting) {
+      greeting.data.label = 'Greeting';
+      greeting.data.kind = 'greeting';
+      greeting.data.intentions = [
+        greeting.data.intentions,
+        'first speak · flow.start',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+    }
+
+    nodes.unshift({
+      id: startPrepId,
+      type: 'studio',
+      data: {
+        label: 'Start',
+        className: 'start prep',
+        intentions:
+          'Call / bootstrap · inject metadata (company / email / name / phone) · near-zero prep · ConversationEntry',
+        kind: 'start-prep',
+        lane: 'main',
+        realNodeId: startPrepId,
       },
-      {
-        id: assistantStartId,
-        type: 'studio',
-        data: {
-          label: flow.id,
-          className: 'assistant start',
-          intentions: 'module entry',
-          kind: 'assistant-start',
-          lane: 'main',
-          assistantName: flow.id,
-        },
-      },
-    );
+    });
 
     nodes.push({
       id: assistantEndId,
@@ -460,7 +459,6 @@ export class FlowDiagramService {
         intentions: 'output.endCall',
         kind: 'assistant-end',
         lane: 'main',
-        assistantName: flow.id,
       },
     });
 
@@ -469,24 +467,16 @@ export class FlowDiagramService {
     if (has(flow.start)) {
       edges.unshift({
         id: nextEdgeId(),
-        source: conversationStartId,
-        target: assistantStartId,
-        label: 'Call',
+        source: startPrepId,
+        target: flow.start,
+        label: 'open',
         type: 'smoothstep',
         animated: true,
-        lane: 'conversation',
+        lane: 'main',
         style: {
           stroke: '#2dd4bf',
           strokeWidth: 2.5,
         },
-      });
-      edges.unshift({
-        id: nextEdgeId(),
-        source: assistantStartId,
-        target: flow.start,
-        label: '(open)',
-        type: 'smoothstep',
-        lane: 'main',
       });
     }
 

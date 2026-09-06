@@ -30,6 +30,7 @@ export const FLOW_NODE_CATALOG: Record<string, FlowNodeMeta> = {
   deliverEstimate: { label: 'Deliver est.', lane: 'instant', tag: 'estimate_delivered' },
   instantDone: { label: 'Estimate done', lane: 'instant' },
   farewell: { label: 'Farewell', lane: 'close', tag: 'call_ended' },
+  heardAbout: { label: 'How heard', lane: 'close', tag: 'phone_demo_heard_about' },
   goodbye: { label: 'Goodbye', lane: 'close', tag: 'call_ended' },
   pause: { label: 'Pause', lane: 'portal' },
   mad: { label: 'Mad', lane: 'portal', tag: 'mad' },

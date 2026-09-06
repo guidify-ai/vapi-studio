@@ -17,7 +17,15 @@ export type OutboundCallResult = {
   callId?: string;
   error?: string;
   normalizedPhone?: string;
+  /** Human-readable caller ID (from VAPI_PHONE_NUMBER_READABLE). */
+  fromNumberReadable?: string;
 };
+
+/** Display string for the number guests will see on caller ID. */
+export function outboundFromNumberReadable(): string | undefined {
+  const raw = process.env.VAPI_PHONE_NUMBER_READABLE?.trim();
+  return raw || undefined;
+}
 
 /** US-friendly E.164 normalize; returns null if unusable. */
 export function normalizePhoneE164(raw: string): string | null {
@@ -44,6 +52,7 @@ export class OutboundCallService {
   constructor(private readonly leadMail: PlannerLeadMailService) {}
 
   async requestCall(input: OutboundCallInput): Promise<OutboundCallResult> {
+    const fromNumberReadable = outboundFromNumberReadable();
     const companyName = input.companyName.trim();
     const contactName = input.contactName.trim();
     const contactEmail = input.contactEmail.trim();
@@ -51,6 +60,7 @@ export class OutboundCallService {
       return {
         ok: false,
         dialed: false,
+        fromNumberReadable,
         error: 'companyName, contactName, and contactEmail are required',
       };
     }
@@ -58,6 +68,7 @@ export class OutboundCallService {
       return {
         ok: false,
         dialed: false,
+        fromNumberReadable,
         error: 'Consent to receive a call is required',
       };
     }
@@ -66,6 +77,7 @@ export class OutboundCallService {
       return {
         ok: false,
         dialed: false,
+        fromNumberReadable,
         error: 'Enter a valid phone number (E.164 or 10-digit US)',
       };
     }
@@ -93,6 +105,7 @@ export class OutboundCallService {
         ok: true,
         dialed: false,
         normalizedPhone: phone,
+        fromNumberReadable,
         error: 'vapi_not_configured',
       };
     }
@@ -146,6 +159,7 @@ export class OutboundCallService {
           ok: false,
           dialed: false,
           normalizedPhone: phone,
+          fromNumberReadable,
           error: body.message || body.error || `Vapi HTTP ${res.status}`,
         };
       }
@@ -155,6 +169,7 @@ export class OutboundCallService {
         dialed: true,
         callId: body.id,
         normalizedPhone: phone,
+        fromNumberReadable,
       };
     } catch (err) {
       this.log.warn(`Vapi outbound error: ${err}`);
@@ -162,6 +177,7 @@ export class OutboundCallService {
         ok: false,
         dialed: false,
         normalizedPhone: phone,
+        fromNumberReadable,
         error: err instanceof Error ? err.message : String(err),
       };
     }

@@ -7,15 +7,27 @@ import {
   type NodeResult,
 } from '@guidify-ai/vapi-studio';
 import type { PlannerSchema } from '../planner-schema';
+import { PLANNER_INTENTIONS } from '../planner-schema';
 import { stampAnalyticsTag } from '../../analytics/stamp-analytics-tag';
 import { PLANNER_ANALYTICS_TAGS } from '../../analytics/planner-funnels';
 import { portalBoosts } from '../lib/portal-boosts';
 import {
+  OUTBOUND_DEMO_NO_TRANSFER,
+  isOutboundPhoneDemo,
+} from '../lib/outbound-phone-demo';
+import { looksLikeSoftContinue } from '../lib/looks-like-mad';
+import { PlannerLeadMailService } from '../../mail/planner-lead-mail.service';
+import {
   isAfterHoursMode,
   transferToHumanIfOpen,
 } from '../lib/working-hours';
-import { looksLikeSoftContinue } from '../lib/looks-like-mad';
-import { PlannerLeadMailService } from '../../mail/planner-lead-mail.service';
+import { DIDNT_QUITE_GET_IT } from '../lib/reask-prompt';
+import {
+  HEARD_ABOUT_ASK,
+  TOPIC_MENU,
+  USE_CASE_ASK,
+  topicMenuListen,
+} from './planner/phone-demo.nodes';
 
 /**
  * Escape hatch after a portal. Supervisor intercepts `isContinue` and silently
@@ -59,6 +71,12 @@ export class GoodbyeNode extends AgentNode<PlannerSchema> {
       await this.leadMail.notifySampleReady(ctx);
     }
     const name = ctx.memory.contactName?.trim()?.split(/\s+/)[0];
+    if (isOutboundPhoneDemo(ctx)) {
+      const thanks = name
+        ? `Thanks for trying this Vapi Studio sample, ${name}. The team will follow up. Goodbye.`
+        : 'Thanks for trying this Vapi Studio sample. The team will follow up. Goodbye.';
+      return ctx.output.endCall(thanks);
+    }
     const thanks = name
       ? `Thanks for planning with us, ${name}. Goodbye.`
       : 'Thanks for planning with us. Goodbye.';
@@ -88,6 +106,10 @@ export class PauseNode extends AgentNode<PlannerSchema> {
 
 @Injectable()
 export class MadNode extends AgentNode<PlannerSchema> {
+  constructor(private readonly leadMail: PlannerLeadMailService) {
+    super();
+  }
+
   async listen(): Promise<ListenExpectation> {
     return {
       intentions: [
@@ -114,6 +136,13 @@ export class MadNode extends AgentNode<PlannerSchema> {
     });
 
     if (strikes >= 2) {
+      if (isOutboundPhoneDemo(ctx)) {
+        await this.leadMail.notifyTransferHuman(ctx);
+        await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.transferHuman, {
+          phase: 'outbound_demo_blocked',
+        });
+        return ctx.output.endCall(OUTBOUND_DEMO_NO_TRANSFER);
+      }
       await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.transferHuman, {
         phase: 'mad_escalate',
       });
@@ -124,6 +153,12 @@ export class MadNode extends AgentNode<PlannerSchema> {
         beforeAfterHoursSay:
           "I understand you're frustrated. I can't reach a person right now.",
       });
+    }
+
+    if (isOutboundPhoneDemo(ctx)) {
+      return ctx.output.sayAndListen(
+        "I'm sorry — let's keep this short. Which topic helps: what we can do, cost, or building without being a developer?",
+      );
     }
 
     return ctx.output.sayAndListen(
@@ -141,8 +176,76 @@ export class UnknownTransitionNode extends AgentNode<PlannerSchema> {
 
   async run(ctx: NodeContext<PlannerSchema>): Promise<NodeResult> {
     await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.unknown);
+    const origin =
+      ctx.runtime.portalState.originNodeId ??
+      ctx.runtime.normalFlowNodeId ??
+      '';
+
+    if (origin === 'acknowledge' || origin === 'topicWhat' || origin === 'topicCost' || origin === 'topicNotDev') {
+      const menu = topicMenuListen();
+      return ctx.output.sayAndListen(DIDNT_QUITE_GET_IT + TOPIC_MENU, {
+        ...menu,
+        intentions: [
+          ...(menu.intentions ?? []),
+          { name: 'isContinue', boost: 6 },
+          { name: STANDARD_INTENTIONS.isUnknownTransition, boost: 5 },
+        ],
+        note: 'Unknown recovery — topic menu',
+      });
+    }
+
+    if (origin === 'leadGen') {
+      return ctx.output.sayAndListen(DIDNT_QUITE_GET_IT + USE_CASE_ASK, {
+        intentions: [
+          { name: PLANNER_INTENTIONS.phoneDemoUseCase, boost: 20, priority: 12 },
+          { name: 'isContinue', boost: 6 },
+          { name: STANDARD_INTENTIONS.isGoodbye, boost: 6 },
+          { name: STANDARD_INTENTIONS.isUnknownTransition, boost: 5 },
+          ...portalBoosts(),
+        ],
+        hints: [
+          'Substantive description of the first voice module → phone_demo_use_case.',
+        ],
+        resolveIntention: ({ userText }) => {
+          if (looksLikeSoftContinue(userText)) return 'isContinue';
+          if (userText.trim().length >= 8) {
+            return PLANNER_INTENTIONS.phoneDemoUseCase;
+          }
+          return null;
+        },
+        note: 'Unknown recovery — use case',
+      });
+    }
+
+    if (origin === 'heardAbout') {
+      return ctx.output.sayAndListen(DIDNT_QUITE_GET_IT + HEARD_ABOUT_ASK, {
+        intentions: [
+          {
+            name: PLANNER_INTENTIONS.phoneDemoHeardAbout,
+            boost: 20,
+            priority: 12,
+          },
+          { name: 'isContinue', boost: 6 },
+          { name: STANDARD_INTENTIONS.isGoodbye, boost: 6 },
+          { name: STANDARD_INTENTIONS.isUnknownTransition, boost: 5 },
+          ...portalBoosts(),
+        ],
+        hints: [
+          'Any source (friend, search, LinkedIn, GitHub, Vapi, etc.) → phone_demo_heard_about.',
+        ],
+        resolveIntention: ({ userText }) => {
+          if (looksLikeSoftContinue(userText)) return 'isContinue';
+          if (userText.trim().length >= 2) {
+            return PLANNER_INTENTIONS.phoneDemoHeardAbout;
+          }
+          return null;
+        },
+        note: 'Unknown recovery — heard about',
+      });
+    }
+
     return ctx.output.sayAndListen(
-      "Sorry — I missed that. Could you say it another way?",
+      DIDNT_QUITE_GET_IT + 'Could you say that again?',
       {
         intentions: [
           { name: 'isContinue', boost: 16 },
@@ -190,6 +293,11 @@ export class TransferToHumanNode extends AgentNode<PlannerSchema> {
       await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.transferHuman, {
         phase: 'ask_human',
       });
+      if (isOutboundPhoneDemo(ctx)) {
+        return ctx.output.sayAndListen(
+          "I can finish this sample here — which topic helps: what we can do, cost, or building without being a developer? Or say goodbye.",
+        );
+      }
       return ctx.output.sayAndListen(
         "I can often finish the plan here — how can I help? Or say you'd still like a person.",
       );
@@ -198,6 +306,13 @@ export class TransferToHumanNode extends AgentNode<PlannerSchema> {
     await stampAnalyticsTag(ctx, PLANNER_ANALYTICS_TAGS.transferHuman, {
       phase: 'transfer',
     });
+
+    // Outbound phone demo — never live-transfer.
+    if (isOutboundPhoneDemo(ctx)) {
+      await this.leadMail.notifyTransferHuman(ctx);
+      return ctx.output.endCall(OUTBOUND_DEMO_NO_TRANSFER);
+    }
+
     // After-hours Studio preset — block human path (web or phone).
     if (isAfterHoursMode(ctx.conversation.variables)) {
       return transferToHumanIfOpen(ctx, {

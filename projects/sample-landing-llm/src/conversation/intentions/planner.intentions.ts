@@ -319,6 +319,7 @@ export class UseCaseClarifyIntention extends CodeIntention<PlannerSchema> {
 @Injectable()
 export class DiscoveryProceedIntention extends CodeIntention<PlannerSchema> {
   readonly name = PLANNER_INTENTIONS.discoveryProceed;
+  /** Clear “enough / proceed / build” — Match skips Brain. */
   phase = INTENTION_CASCADE_PHASE.Match;
   boost = 24;
   priority = 16;
@@ -375,35 +376,49 @@ export class DiscoveryFaqIntention extends CodeIntention<PlannerSchema> {
   }
 }
 
+/**
+ * Substantive discovery reply — **Scan** (not Match).
+ * Open-ended answers used to Match at 0.85 for any ≥4 chars, which skipped Brain
+ * entirely. Cheap path is `DiscoveryNode` `resolveIntention`; ambiguous turns go to Brain.
+ */
 @Injectable()
 export class DiscoveryAnswerIntention extends CodeIntention<PlannerSchema> {
   readonly name = PLANNER_INTENTIONS.discoveryAnswer;
-  phase = INTENTION_CASCADE_PHASE.Match;
-  boost = 16;
-  priority = 10;
+  phase = INTENTION_CASCADE_PHASE.Scan;
+  boost = 18;
+  priority = 12;
   toNodeId = 'discovery';
-
-  async match(ctx: IntentionContext<PlannerSchema>): Promise<number | null> {
-    if (!ctx.memory.useCase || ctx.memory.discoveryComplete) return null;
-    if (ctx.runtime.portalState.activePortalId) return null;
-    if (looksLikeMad(ctx.userText)) return null;
-    if (looksLikeSoftContinue(ctx.userText)) return null;
-    if (looksLikeGibberish(ctx.userText)) return null;
-    if (
-      /\b(proceed|ready|enough|build|go ahead)\b/i.test(ctx.userText)
-    ) {
-      return null;
-    }
-    // Never treat product FAQs as discovery answers (Nest LP doctrine).
-    if (looksLikeKnowledgeQuestion(ctx.userText)) {
-      return null;
-    }
-    return ctx.userText.trim().length >= 4 ? 0.85 : null;
-  }
+  reason = 'discovery_answer';
 
   async run(
     ctx: IntentionContext<PlannerSchema>,
   ): Promise<IntentionRunResult | null> {
+    if (!ctx.memory.useCase || ctx.memory.discoveryComplete) {
+      return {
+        kind: INTENTION_RUN_KIND.Goto,
+        nodeId: 'discovery',
+        reason: 'discovery_answer_stale',
+      };
+    }
+    if (looksLikeMad(ctx.userText) || looksLikeKnowledgeQuestion(ctx.userText)) {
+      return {
+        kind: INTENTION_RUN_KIND.Goto,
+        nodeId: 'discovery',
+        reason: 'discovery_answer_guard',
+      };
+    }
+    // Bare yes/sure — re-ask same CTA; never store as a discovery answer.
+    if (
+      /^(yes|yeah|yep|yup|sure|ok|okay|alright|fine|cool|great|why not|sounds good)[.!]?\s*$/i.test(
+        ctx.userText.trim(),
+      )
+    ) {
+      return {
+        kind: INTENTION_RUN_KIND.Goto,
+        nodeId: 'discovery',
+        reason: 'discovery_answer_soft',
+      };
+    }
     const list = ctx.memory.discoveryAnswers ?? [];
     const t = ctx.userText.trim().slice(0, 400);
     if (t && list[list.length - 1] !== t && list.length < MAX_DISCOVERY_ANSWERS) {
@@ -626,7 +641,7 @@ export class NothingElseIntention extends CodeIntention<PlannerSchema> {
   phase = INTENTION_CASCADE_PHASE.Force;
   boost = 32;
   priority = 22;
-  toNodeId = 'goodbye';
+  toNodeId = 'farewell';
 
   async before(ctx: IntentionContext<PlannerSchema>): Promise<boolean> {
     if (!ctx.memory.sampleShown) return false;

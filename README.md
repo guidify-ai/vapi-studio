@@ -2,6 +2,8 @@
 
 **[@guidify-ai/vapi-studio](https://github.com/guidify-ai/vapi-studio)** — a **code-driven toolkit for [Vapi](https://vapi.ai)**.
 
+**Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) — live sample, product overview, and hire Guidify.
+
 **Self-hosted and Dockerized.** You run the NestJS app and Postgres (and any other services you add) on **your** infrastructure — laptop via Docker Compose, or your own cloud/VPS. There is no Guidify-hosted runtime and no managed SaaS for the conversation engine. Vapi stays the voice channel in the cloud; your Studio app is the Custom LLM + webhook endpoint Vapi calls.
 
 <p align="center">

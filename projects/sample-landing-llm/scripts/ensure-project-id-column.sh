@@ -22,7 +22,7 @@ print(str(d["id"]).strip().lower())
 
 echo ">> Ensuring conversations.project_id (backfill ${PROJECT_UUID})"
 
-docker compose exec -T postgres psql -U studio -d studio -v ON_ERROR_STOP=1 <<SQL
+docker compose exec -T postgres psql -U studio -d sample_landing_llm -v ON_ERROR_STOP=1 <<SQL
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE IF NOT EXISTS projects (

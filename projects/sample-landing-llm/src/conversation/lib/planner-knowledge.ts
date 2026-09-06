@@ -47,7 +47,7 @@ export const PLANNER_KNOWLEDGE_BASE: KnowledgeEntry[] = [
       'docker',
     ],
     answer:
-      'Yes — Vapi Studio is free to self-host with BYOK (your OpenAI/Claude/Gemini/Grok, Vapi, Twilio, CRM). You run it in Docker; Guidify can still help build the first module if you want.',
+      'Yes — Vapi Studio is free to self-host with BYOK (your OpenAI/Claude/Gemini/Grok, Vapi, Twilio, CRM). Running Vapi with Studio is cheaper than Vapi alone — about 500×–800× lower cost on some tools in our measurements. You run it in Docker; Guidify can still help build the first module if you want.',
   },
   {
     id: 'pricing-hours',
@@ -62,7 +62,7 @@ export const PLANNER_KNOWLEDGE_BASE: KnowledgeEntry[] = [
       'expensive',
     ],
     answer:
-      "We don't quote hours or price in this chat. Use Help me build it and Guidify will follow up with a scoped quote — often unexpectedly low for common setups.",
+      'Studio itself is free to self-host (BYOK). Running Vapi with Studio is cheaper than Vapi alone — about 500×–800× lower cost on some tools in our measurements. We don’t quote Guidify build hours in this chat — use Help me build it for a scoped quote.',
   },
   {
     id: 'guidify-team',

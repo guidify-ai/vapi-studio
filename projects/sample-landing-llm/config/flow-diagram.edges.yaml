@@ -1,37 +1,27 @@
-# Curated edges for the /flow diagram (planner product path).
+# Visual edges for /flow — mounted demo graph only.
 hide: []
-
 edges:
   - from: acknowledge
-    to: companyDoes
-    label: (open)
-  - from: companyDoes
-    to: useCase
-    label: company_does_collected
-  - from: useCase
-    to: discovery
-    label: use_case_*
-  - from: discovery
-    to: integrations
-    label: discovery_complete
-  - from: integrations
-    to: designPackage
-    label: integrations_*
-  - from: designPackage
-    to: showSample
-    label: (build package)
-  - from: showSample
-    to: corrections
-    label: sample_tweak
-  - from: showSample
-    to: offerHelp
-    label: help_build / sample_ok
-  - from: showSample
-    to: goodbye
-    label: nothing_else
-  - from: corrections
-    to: offerHelp
-    label: help_build
-  - from: offerHelp
-    to: goodbye
-    label: nothing_else
+    to: topicWhat
+    label: what can you do
+  - from: acknowledge
+    to: topicCost
+    label: how much
+  - from: acknowledge
+    to: topicNotDev
+    label: not a developer
+  - from: topicWhat
+    to: leadGen
+    label: ask use case
+  - from: topicCost
+    to: leadGen
+    label: ask use case
+  - from: topicNotDev
+    to: leadGen
+    label: ask use case
+  - from: leadGen
+    to: heardAbout
+    label: how heard
+  - from: heardAbout
+    to: farewell
+    label: farewell

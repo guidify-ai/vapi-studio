@@ -1,12 +1,14 @@
 # Sample Landing LLM — Planner
 
-Tracked Vapi Studio sample on **`:9998`**. Product: Landing Page **Planner LLM** — help a guest design the voice agent they want to build (company → use case → discovery → sample → Help me build it).
+Tracked Vapi Studio sample on **`:9998`**. Product: short **demo agent** (web + outbound phone) — greet → three topics → capture module-1 use case → farewell. Transfer to human is blocked (team follows up offline).
+
+Old full planner graph (company → discovery → sample package) is **unmounted**; this demo is the mounted flow for `/flow` and live calls.
 
 **LP intake → Conversation seed:** the marketing site collects **company name**, **email**, and **your name** before chat. Those arrive on `POST /studio/conversations/call` as `guestCompanyName` / `contactEmail` / `contactName`, land in memory on open, and are never re-asked (opening greets by name + company; hire uses the email).
 
 **Guidify wrap-up mail (Resend):** on first sample (`SUCCESS_LEAD`), Help me build it (`QUOTE_REQUEST`), and transfer wrap (`TRANSFER_HUMAN`). Requires `RESEND_ENABLED` + `RESEND_API_KEY` + `HOT_LEAD_TO` in this project's `.env` (not the LP Nest path — Studio chat hits `:9998` directly).
 
-**Outbound “Call me”:** `POST /studio/outbound-call` (company + email + name + phone + consent). Places a Vapi outbound call when `VAPI_API_KEY` + `VAPI_PHONE_NUMBER_ID` + `POC_ASSISTANT_ID` are set; always emails Guidify. Intake fields seed call metadata for the phone Conversation.
+**Outbound “Call me”:** `POST /studio/outbound-call` (company + email + name + phone + consent). Places a Vapi outbound call when `VAPI_API_KEY` + `VAPI_PHONE_NUMBER_ID` + `POC_ASSISTANT_ID` are set; always emails Guidify. Set `VAPI_PHONE_NUMBER_READABLE` so the LP can show the caller ID guests will see. Intake fields seed call metadata for the phone Conversation.
 
 Operator surfaces (same runtime as other Studio apps):
 

@@ -29,8 +29,10 @@ function metadataFeatureFlags(
 }
 
 /**
- * Seeds planner variables from Studio / landing metadata.
- * Contact fields come from the LP intake form (not re-asked in chat).
+ * Conversation **Start** (not a spoken flow hop): seed variables from Studio /
+ * landing / Vapi metadata and any near-zero prep. Contact fields come from the
+ * LP intake (or outbound call bag); phone comes from the channel caller id.
+ * First speech is `flow.start` (Greeting) — see docs/best-practices/nodes-and-listens.md.
  */
 @Injectable()
 export class PlannerConversationEntry
@@ -48,6 +50,7 @@ export class PlannerConversationEntry
       contactName: str(meta.contactName),
       contactEmail: str(meta.contactEmail),
       guestCompanyName: str(meta.guestCompanyName) || str(meta.companyName),
+      outboundDemo: meta.outbound === true || meta.consentOutboundCall === true,
       ...(caller
         ? { callerChannel: caller.channel, callerId: caller.id }
         : {}),
@@ -66,6 +69,9 @@ export class PlannerConversationEntry
     }
     if (ctx.variables.contactEmail && !memory.contactEmail) {
       memory.contactEmail = ctx.variables.contactEmail;
+    }
+    if (ctx.variables.outboundDemo) {
+      memory.outboundDemo = true;
     }
   }
 

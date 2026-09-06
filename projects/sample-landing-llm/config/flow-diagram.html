@@ -419,6 +419,16 @@
       box-shadow: 0 0 0 2px rgba(233, 196, 106, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
     }
     .rf-node.start { background: var(--start); border-color: #52b788; }
+    .rf-node.greeting {
+      background: var(--start);
+      border-color: #52b788;
+      font-weight: 700;
+    }
+    .rf-node.start-prep {
+      background: #134e4a;
+      border-color: #2dd4bf;
+      font-weight: 700;
+    }
     .rf-node.assistant-start {
       background: #0f766e;
       border-color: #2dd4bf;
@@ -757,11 +767,11 @@
         <div class="meta" id="flowMeta">Loading…</div>
       </div>
       <div class="legend">
-        <span><i class="swatch start"></i>assistant start</span>
-        <span><i class="swatch" style="background:#0d9488;border:2px solid #5eead4"></i>conversation start</span>
+        <span><i class="swatch" style="background:#134e4a;border-color:#2dd4bf"></i>Start</span>
+        <span><i class="swatch start"></i>Greeting</span>
         <span><i class="swatch normal"></i>node</span>
         <span><i class="swatch" style="background:#713f12"></i>handoff exit</span>
-        <span><i class="swatch" style="background:#44403c;border-style:dashed"></i>assistant end</span>
+        <span><i class="swatch" style="background:#44403c;border-style:dashed"></i>end</span>
         <span><i class="swatch portal"></i>portal</span>
         <span><i class="swatch current"></i>current node</span>
       </div>
@@ -1475,13 +1485,14 @@
       }));
     }
 
-    const CONVERSATION_START_ID = '__conversation_start';
+    const START_PREP_ID = '__start';
 
     function findFocusNode(nodes, opts) {
       const { currentNodeId, activeModuleId, entryModuleId, preCall } = opts;
       if (preCall) {
         return (
-          nodes.find((n) => n.id === CONVERSATION_START_ID) ||
+          nodes.find((n) => n.id === START_PREP_ID) ||
+          nodes.find((n) => n.data?.kind === 'start-prep') ||
           nodes.find((n) => n.data?.kind === 'conversation-start') ||
           null
         );
@@ -1528,6 +1539,8 @@
             n.data?.moduleId === entry && n.data?.kind === 'assistant-start',
         ) ||
         nodes.find((n) => n.data?.kind === 'assistant-start') ||
+        nodes.find((n) => n.data?.kind === 'greeting') ||
+        nodes.find((n) => n.data?.kind === 'start-prep') ||
         nodes.find((n) => n.data?.kind === 'start') ||
         null
       );
@@ -1573,7 +1586,8 @@
         let isCurrent = false;
         if (preCall) {
           isCurrent =
-            n.id === CONVERSATION_START_ID ||
+            n.id === START_PREP_ID ||
+            n.data?.kind === 'start-prep' ||
             n.data?.kind === 'conversation-start';
         } else if (currentNodeId && sameModule) {
           isCurrent =
@@ -1839,6 +1853,8 @@
             nodeColor: (n) => {
               if (n.data?.isCurrent) return '#f4a261';
               if (n.data?.kind === 'conversation-start') return '#14b8a6';
+              if (n.data?.kind === 'start-prep') return '#134e4a';
+              if (n.data?.kind === 'greeting') return '#2d6a4f';
               if (n.data?.kind === 'assistant-start') return '#0f766e';
               if (n.data?.kind === 'assistant-end') return '#78716c';
               if (n.data?.kind === 'handoff-exit') return '#e9c46a';

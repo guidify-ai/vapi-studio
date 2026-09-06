@@ -25,7 +25,11 @@ import {
   looksLikeKnowledgeQuestion,
   matchKnowledge,
 } from '../../lib/planner-knowledge';
-import { looksLikeMad, looksLikeSoftContinue } from '../../lib/looks-like-mad';
+import {
+  looksLikeGibberish,
+  looksLikeMad,
+  looksLikeSoftContinue,
+} from '../../lib/looks-like-mad';
 import { looksLikeSatisfiedClose, looksLikeSamplePraise } from '../../lib/satisfied-close';
 import {
   FF_SAMPLE_SCOPE_HINT,
@@ -41,7 +45,7 @@ function firstName(memory: PlannerSchema['memory']): string | undefined {
 }
 
 function softAffirmativeNoLane(text: string): boolean {
-  return /^(yeah|yep|yup|sure|ok|okay|fine|alright|why not|sounds good)[.!]?\s*$/i.test(
+  return /^(yes|yeah|yep|yup|sure|ok|okay|fine|alright|cool|great|why not|sounds good)[.!]?\s*$/i.test(
     text.trim(),
   );
 }
@@ -63,6 +67,15 @@ export class AcknowledgeNode extends AgentNode<PlannerSchema> {
       hasCompany: Boolean(company),
       complete: hasIntake,
     });
+
+    // Outbound “Call me” — short phone demo (not the full web planner).
+    if (
+      ctx.conversation.variables.outboundDemo === true ||
+      ctx.memory.outboundDemo === true
+    ) {
+      ctx.memory.outboundDemo = true;
+      return ctx.output.continueTo({ nodeId: 'phoneDemoTopics' });
+    }
 
     const who = name
       ? company
@@ -273,10 +286,12 @@ export class DiscoveryNode extends AgentNode<PlannerSchema> {
         intentions: [
           { name: PLANNER_INTENTIONS.discoveryProceed, boost: 24 },
           { name: PLANNER_INTENTIONS.discoveryAnswer, boost: 18 },
+          { name: 'discovery_faq', boost: 20 },
           { name: STANDARD_INTENTIONS.isGoodbye, boost: 5 },
           ...portalBoosts(),
         ],
         resolveIntention: discoveryResolve,
+        hints: discoveryListenHints(),
       });
     }
 
@@ -286,10 +301,12 @@ export class DiscoveryNode extends AgentNode<PlannerSchema> {
         intentions: [
           { name: PLANNER_INTENTIONS.discoveryProceed, boost: 24 },
           { name: PLANNER_INTENTIONS.discoveryAnswer, boost: 18 },
+          { name: 'discovery_faq', boost: 20 },
           { name: STANDARD_INTENTIONS.isGoodbye, boost: 5 },
           ...portalBoosts(),
         ],
         resolveIntention: discoveryResolve,
+        hints: discoveryListenHints(),
       });
     }
 
@@ -307,6 +324,7 @@ export class DiscoveryNode extends AgentNode<PlannerSchema> {
     if (
       ctx.intention === PLANNER_INTENTIONS.discoveryAnswer &&
       (ctx.userText || '').trim().length >= 4 &&
+      !softAffirmativeNoLane(ctx.userText || '') &&
       !looksLikeKnowledgeQuestion(ctx.userText || '') &&
       !looksLikeMad(ctx.userText || '')
     ) {
@@ -335,30 +353,47 @@ export class DiscoveryNode extends AgentNode<PlannerSchema> {
       intentions: [
         { name: PLANNER_INTENTIONS.discoveryProceed, boost: 24 },
         { name: PLANNER_INTENTIONS.discoveryAnswer, boost: 18 },
+        { name: 'discovery_faq', boost: 20 },
         { name: PLANNER_INTENTIONS.helpBuild, boost: 10 },
         { name: STANDARD_INTENTIONS.isGoodbye, boost: 5 },
         ...portalBoosts(),
       ],
-      hints: [
-        'Substantive answer → discovery_answer.',
-        'proceed / ready / enough / build → discovery_proceed.',
-        'Product FAQ → answer from knowledge; do not append to discoveryAnswers.',
-      ],
+      hints: discoveryListenHints(),
       resolveIntention: discoveryResolve,
     });
   }
+}
+
+function discoveryListenHints(): string[] {
+  return [
+    'discovery_answer — substantive design detail answering the current question (must-knows, transfer rules, who calls).',
+    'discovery_proceed — caller is done with discovery (proceed / ready / enough / build / skip).',
+    'discovery_faq — question about Vapi Studio / how this planner works (not a design answer).',
+    'Bare yes/sure/ok without detail is NOT discovery_answer — re-ask the same question locally.',
+  ];
 }
 
 function discoveryResolve({ userText }: { userText: string }): string | null {
   if (looksLikeMad(userText)) return null;
   if (looksLikeSoftContinue(userText)) return null;
   if (looksLikeKnowledgeQuestion(userText)) return null;
-  if (/\b(proceed|ready|enough|build|go ahead|skip)\b/i.test(userText)) {
+  if (looksLikeGibberish(userText)) return null;
+  if (
+    /\b(proceed|ready|enough|build|go ahead|skip|next|let'?s (do|go|build)|that'?s (all|enough))\b/i.test(
+      userText,
+    )
+  ) {
     return PLANNER_INTENTIONS.discoveryProceed;
   }
-  if (userText.trim().length >= 4) {
+  // Soft affirmatives with no substance — land on discovery to re-ask; do not store.
+  if (softAffirmativeNoLane(userText)) {
     return PLANNER_INTENTIONS.discoveryAnswer;
   }
+  // Clear substantive answer — skip Brain.
+  if (userText.trim().length >= 12) {
+    return PLANNER_INTENTIONS.discoveryAnswer;
+  }
+  // Short ambiguous text — Brain scan.
   return null;
 }
 

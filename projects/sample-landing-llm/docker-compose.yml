@@ -28,6 +28,9 @@ services:
     env_file:
       - .env
     environment:
+      # Fixed in-compose values only. Secrets (VAPI_*, OPENAI_*, RESEND_*,
+      # POC_ASSISTANT_ID, …) come from env_file — do not set empty ${VAR:-}
+      # here or they override .env with blanks.
       DATABASE_URL: postgres://studio:studio@postgres:5432/sample_landing_llm
       PORT: 9998
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:9998}
@@ -40,16 +43,7 @@ services:
       POC_COMPANY_NAME: ${POC_COMPANY_NAME:-Sample Studio}
       VAPI_TRANSFER_DESTINATION: ${VAPI_TRANSFER_DESTINATION:-+15551234567}
       VAPI_END_CALL_TOOL_NAME: ${VAPI_END_CALL_TOOL_NAME:-end_call_tool}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       CONFIG_DIR: /workspace/guidify-ai/projects/sample-landing-llm/config
-      VAPI_API_KEY: ${VAPI_API_KEY:-}
-      VAPI_PHONE_NUMBER_ID: ${VAPI_PHONE_NUMBER_ID:-}
-      POC_ASSISTANT_ID: ${POC_ASSISTANT_ID:-}
-      VAPI_ASSISTANT_ID: ${VAPI_ASSISTANT_ID:-}
-      RESEND_ENABLED: ${RESEND_ENABLED:-}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM: ${RESEND_FROM:-}
-      HOT_LEAD_TO: ${HOT_LEAD_TO:-}
     volumes:
       - ./logs:/workspace/guidify-ai/projects/sample-landing-llm/logs
       - ./config:/workspace/guidify-ai/projects/sample-landing-llm/config

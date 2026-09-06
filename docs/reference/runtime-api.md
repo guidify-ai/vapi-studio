@@ -75,8 +75,8 @@ Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom
 
 1. Channel bootstrap (`assistant-request`, `assistant.started`, lazy Custom LLM, or early `status-update`) calls `ConversationBootstrapService.bootstrap({ projectId, providerCallId, brainProfileId, metadata })`.
 2. Postgres row `conversations` (ACTIVE) + in-memory `SupervisedConversation` with a `runtimeInstanceId`. Concurrent bootstrap for the same call is serialized and reused. `caller_id` is stamped from metadata/variables and refreshed on every checkpoint.
-3. Optional `ConversationEntryPoint.createVariables` + `beforeEach`, then an initial `runtime_state` checkpoint. If a workflow is loaded, set `workflowId` / `activeModuleId` and load the entry module’s flow.
-4. Each Custom LLM / studio turn: correlate call id → same runtime → ensure active module flow → `Supervisor.handleTurn` → **checkpoint** (`conversations.runtime_state`, bumps `last_activity_at`). `output.continueTo` jumps within one flow (`FLOW_CONTINUE`); `output.handoff` switches workflow module on the same Conversation (`WORKFLOW_HANDOFF`). Neither finalizes.
+3. **Start (inject / near-zero prep):** optional `ConversationEntryPoint.createVariables` + `beforeEach` seed variables/memory from channel metadata (LP company/email/name, caller phone, feature flags; optional JWT/API warm). This must stay near-zero blocking — it is **not** a spoken flow hop and must not delay first speech. Then an initial `runtime_state` checkpoint. If a workflow is loaded, set `workflowId` / `activeModuleId` and load the entry module’s flow.
+4. **Greeting:** opening Supervisor turn runs **`flow.start` only** (no Brain scan) — first real speak. Each later Custom LLM / studio turn: correlate call id → same runtime → ensure active module flow → `Supervisor.handleTurn` → **checkpoint** (`conversations.runtime_state`, bumps `last_activity_at`). `output.continueTo` jumps within one flow (`FLOW_CONTINUE`); `output.handoff` switches workflow module on the same Conversation (`WORKFLOW_HANDOFF`). Neither finalizes.
 5. `status-update: ended` / studio hangup / farewell `endCall` → `afterEach` → persist `final_state` → drop registry + turn queue.
 
 Identity is the **provider call id**. One supervised runtime per active call.
@@ -322,6 +322,7 @@ YAML describes **paths**, not implementations. No URLs, no integration payloads.
 version: 1
 flow:
   id: my-bot
+  # Greeting — first speak (opening turn). Inject/prep is ConversationEntryPoint, not a prior Node.
   start: acknowledge
 nodes:
   acknowledge:

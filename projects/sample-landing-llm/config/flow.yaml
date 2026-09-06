@@ -1,85 +1,44 @@
 version: 1
 flow:
-  id: sample-landing-planner
+  id: sample-landing-demo
   start: acknowledge
 nodes:
   acknowledge:
     class: AcknowledgeNode
-  companyDoes:
-    class: CompanyDoesNode
     intentions:
-      - company_does_collected
+      - phone_demo_clarify
       - studio.isGoodbye
-  useCase:
-    class: UseCaseNode
+  topicWhat:
+    class: PhoneDemoWhatNode
     intentions:
-      - use_case_qualify
-      - use_case_book
-      - use_case_faq
-      - use_case_dispatch
-      - use_case_other
-      - use_case_clarify
-      - use_case_vague
+      - phone_demo_what
+  topicCost:
+    class: PhoneDemoCostNode
+    intentions:
+      - phone_demo_cost
+  topicNotDev:
+    class: PhoneDemoNotDevNode
+    intentions:
+      - phone_demo_not_dev
+  leadGen:
+    class: PhoneDemoLeadNode
+    intentions:
+      - phone_demo_use_case
       - studio.isGoodbye
-  discovery:
-    class: DiscoveryNode
+  heardAbout:
+    class: PhoneDemoHeardAboutNode
     intentions:
-      - discovery_answer
-      - discovery_proceed
+      - phone_demo_heard_about
       - studio.isGoodbye
-  integrations:
-    class: IntegrationsNode
+  farewell:
+    class: GoodbyeNode
+    terminal: true
     intentions:
-      - integrations_none
-      - integrations_crm
-      - integrations_tools
       - studio.isGoodbye
-  designPackage:
-    class: DesignPackageNode
-  showSample:
-    class: ShowSampleNode
-    intentions:
-      - help_build
-      - sample_tweak
-      - sample_ok
       - nothing_else
-      - product_faq
-      - studio.isGoodbye
-  corrections:
-    class: CorrectionsNode
-    intentions:
-      - sample_tweak
-      - help_build
-      - sample_ok
-      - nothing_else
-  offerHelp:
-    class: OfferHelpNode
-    intentions:
-      - product_faq
-      - help_build
-      - sample_ok
-      - nothing_else
-      - sample_tweak
-      - studio.isGoodbye
-
   continue:
     class: ContinueNode
     intentions:
-      - isContinue
-
-  pause:
-    class: PauseNode
-    portal: true
-    priority: 90
-    intentions:
-      - studio.isPause
-      - isContinue
-  mad:
-    class: MadNode
-    portal: true
-    priority: 95
-    intentions:
-      - studio.isMad
       - isContinue
   unknownTransition:
     class: UnknownTransitionNode
@@ -87,13 +46,6 @@ nodes:
     priority: 80
     intentions:
       - studio.isUnknownTransition
-      - isContinue
-  transferToHuman:
-    class: TransferToHumanNode
-    portal: true
-    priority: 98
-    intentions:
-      - studio.isTransferToHuman
       - isContinue
   stillThere:
     class: StillThereNode
@@ -104,11 +56,17 @@ nodes:
       - studio.isPositive
       - studio.isGoodbye
       - isContinue
-  goodbye:
-    class: GoodbyeNode
+  mad:
+    class: MadNode
     portal: true
-    priority: 100
-    terminal: true
+    priority: 95
     intentions:
-      - studio.isGoodbye
-      - nothing_else
+      - studio.isMad
+      - isContinue
+  transferToHuman:
+    class: TransferToHumanNode
+    portal: true
+    priority: 98
+    intentions:
+      - studio.isTransferToHuman
+      - isContinue

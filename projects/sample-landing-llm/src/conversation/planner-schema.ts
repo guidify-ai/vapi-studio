@@ -35,6 +35,12 @@ export type PlannerMemory = {
   quoteRequested?: boolean;
   correctionCount?: number;
   madStrikes?: number;
+  /** Outbound phone sample path (not the full web planner). */
+  outboundDemo?: boolean;
+  /** Topic chosen on phone demo: what | cost | not_dev | use_case */
+  phoneDemoTopic?: string;
+  /** How they heard about Vapi Studio (demo attribution). */
+  heardAbout?: string;
   /** Idempotent Resend flags (HOT_LEAD_TO). */
   leadMailSuccessSent?: boolean;
   leadMailQuoteSent?: boolean;
@@ -49,6 +55,8 @@ export type PlannerVariables = {
   contactName?: string;
   contactEmail?: string;
   guestCompanyName?: string;
+  /** True when Vapi outbound “Call me” metadata.outbound is set. */
+  outboundDemo?: boolean;
   /** Resolved Studio feature flags for this conversation. */
   featureFlags?: Record<string, boolean>;
 };
@@ -76,6 +84,12 @@ export const PLANNER_INTENTIONS = {
   productFaq: 'product_faq',
   nothingElse: 'nothing_else',
   isContinue: 'isContinue',
+  phoneDemoWhat: 'phone_demo_what',
+  phoneDemoCost: 'phone_demo_cost',
+  phoneDemoNotDev: 'phone_demo_not_dev',
+  phoneDemoClarify: 'phone_demo_clarify',
+  phoneDemoUseCase: 'phone_demo_use_case',
+  phoneDemoHeardAbout: 'phone_demo_heard_about',
 } as const;
 
 export const MAX_DISCOVERY_ANSWERS = 5;

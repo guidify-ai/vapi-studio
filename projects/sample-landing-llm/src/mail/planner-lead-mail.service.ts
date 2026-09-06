@@ -83,6 +83,22 @@ export class PlannerLeadMailService {
     });
   }
 
+  /** Outbound phone demo — use-case capture (SUCCESS_LEAD). */
+  async notifyPhoneDemoLead(
+    ctx: NodeContext<PlannerSchema>,
+  ): Promise<void> {
+    const topic = ctx.memory.phoneDemoTopic || 'unknown';
+    const useCase = (ctx.memory.companyDoes || '').trim().slice(0, 280);
+    const heard = (ctx.memory.heardAbout || '').trim().slice(0, 200);
+    await this.notify(ctx, 'success_lead', {
+      why:
+        `Outbound phone demo — topic=${topic}. Desired module: “${useCase || 'n/a'}”.` +
+        (heard ? ` Heard about: “${heard}”.` : ''),
+      closedReason: 'phone_demo_lead',
+      allowAfterSuccess: true,
+    });
+  }
+
   /** Landing “Call me” — no Conversation ctx yet; still alert Guidify. */
   async notifyOutboundCallRequest(input: {
     companyName: string;

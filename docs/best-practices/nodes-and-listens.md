@@ -2,6 +2,21 @@
 
 How to structure Vapi Studio Nodes so agents and humans can keep flows maintainable.
 
+## Start → Greeting
+
+Happy-path shape (how `/flow` should read, and how runtime should feel):
+
+```text
+Start  →  Greeting (flow.start)  →  …
+```
+
+| Step | What it is | Runtime |
+| --- | --- | --- |
+| **Start** | Call / bootstrap + inject bag + near-zero prep | `ConversationEntryPoint.createVariables` / `beforeEach` — company, email, name from LP; phone from caller; optional JWT/API warm. **Must not block first speech** (target &lt; 1.5s to first SSE). Not a spoken Node; do not burn a Supervisor turn on silence. |
+| **Greeting** | First real speak | `flow.start` Node — opening turn only (no Brain scan). Then the product DAG. |
+
+**Do not** add Conversation-start or assistant-name bookends before Greeting on single-flow diagrams — Start is the entry. Squad/workflow lanes may still show per-module `__start` labels for handoff identity.
+
 ## Node = one job
 
 Each Node should own a small slice: one ask, one verification, one side effect, or one lane step. If you need two sequential CTAs, use two Nodes (or `output.continueTo({ nodeId })`) — see [conversation-design.md](./conversation-design.md).
@@ -14,6 +29,7 @@ Whatever you just asked for, `listen()` should advertise:
 - `hints` for the Brain (short, operational)
 - `extract` fields with **constraint-aware** `description`s when collecting data
 - `resolveIntention` for cheap local matches (skip Brain when obvious) — include short answers like “new one” / “yes” / “ASAP” when the ask is constrained
+- **Open-ended discovery:** prefer `INTENTION_CASCADE_PHASE.Scan` for the catch-all answer intention (so Brain can classify short/ambiguous turns). Use Match only for clear proceed phrases; keep FAQ as Force. `resolveIntention` should skip Brain for long substantive answers (≥ ~12 chars) and re-ask soft affirmatives locally — do **not** Match every ≥4-char utterance (that starves Scan)
 - **Multi-choice soft affirmatives** (“yeah, why not”, bare “sure”) that do **not** name an option → re-ask which lane locally; never leave that to Brain/unknown ([conversation-design.md](./conversation-design.md#do-not-auto-pick-lanes))
 - After a resolved binary fork (existing vs new, yes/no), **stamp memory** so the next menu advances; otherwise unknown recovery and re-prompts keep re-asking the same choice
 - Unknown portal: Supervisor re-tries the **origin listen** on the next utterance before unknown’s own candidates — keep origin `resolveIntention` strong so restatements land on this turn
