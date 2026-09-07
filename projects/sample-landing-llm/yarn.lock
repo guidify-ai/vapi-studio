@@ -8,7 +8,7 @@
   integrity sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==
 
 "@guidify-ai/vapi-studio@file:../..":
-  version "0.1.0"
+  version "0.0.1"
   dependencies:
     uuid "^11.1.0"
     yaml "^2.7.0"

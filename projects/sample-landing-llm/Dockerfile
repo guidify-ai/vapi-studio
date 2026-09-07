@@ -6,6 +6,7 @@ RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 WORKDIR /workspace/guidify-ai/packages/vapi-studio
 COPY --from=vapi-studio package.json tsconfig.json ./
 COPY --from=vapi-studio src ./src
+COPY --from=vapi-studio studio-ui ./studio-ui
 COPY --from=vapi-studio test ./test
 COPY --from=vapi-studio scripts ./scripts
 COPY --from=vapi-studio docs ./docs

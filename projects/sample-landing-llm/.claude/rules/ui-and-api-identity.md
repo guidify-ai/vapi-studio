@@ -1,0 +1,9 @@
+# UI and API identity
+
+When editing Nest APIs, persistence entities, Studio UI, or app FE that talks to Studio:
+
+1. Read `node_modules/@guidify-ai/vapi-studio/docs/best-practices/ui-and-api-identity.md` (repo: `docs/best-practices/ui-and-api-identity.md`).
+2. **External (FE / clients):** identify records by `uuid` only — never numeric/`bigint` `id` in paths, bodies, or links.
+3. **Internal (BE):** durable entities use `id` (int/`bigint` PK) + unique `uuid` — `id` for joins/filters/sorts; `uuid` for HTTP and external comms.
+4. **UI DTOs:** always include human `label`; UI prints `label`, not UUID (UUID only as opaque key / URL).
+5. New APIs: JSON field is `uuid`, not `id`. Update `docs/reference/runtime-api.md` when the public contract changes.

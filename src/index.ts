@@ -145,6 +145,10 @@ export {
   BRAIN_ADAPTER,
   MockBrainAdapter,
   MockBrainService,
+  MockChatGptBrainAdapter,
+  MockClaudeBrainAdapter,
+  MockGeminiBrainAdapter,
+  MockGrokBrainAdapter,
   ChatGptBrainAdapter,
   ClaudeBrainAdapter,
   GeminiBrainAdapter,
@@ -463,3 +467,12 @@ export {
   FormFilloutTimeoutError,
   FormChannelUnavailableError,
 } from './forms/form.types';
+
+export {
+  StudioUiModule,
+  mountStudioUiAssets,
+  resolveStudioUiRoot,
+  sendStudioIndex,
+  STUDIO_UI_ROOT,
+} from './studio-ui-mount';
+export type { StudioUiModuleOptions } from './studio-ui-mount';

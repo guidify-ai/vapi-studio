@@ -5,14 +5,22 @@ import { join } from 'path';
 import {
   BRAIN_SERVICE,
   ChatGptBrainAdapter,
+  ClaudeBrainAdapter,
+  GeminiBrainAdapter,
+  GrokBrainAdapter,
+  MockBrainAdapter,
+  MockChatGptBrainAdapter,
+  MockClaudeBrainAdapter,
+  MockGeminiBrainAdapter,
+  MockGrokBrainAdapter,
   ConversationEntity,
   ConversationEventEntity,
   FlowLoader,
-  MockBrainAdapter,
   ProjectEntity,
   ProviderIngressEntity,
   VapiStudioModule,
   WorkflowLoader,
+  StudioUiModule,
   type BrainAdapter,
 } from '@guidify-ai/vapi-studio';
 import { HealthController } from './health/health.controller';
@@ -77,9 +85,22 @@ function resolveBrainAdapter() {
   switch (brainConfig.adapter) {
     case 'studio-chatgpt':
       return ChatGptBrainAdapter;
+    case 'studio-claude':
+      return ClaudeBrainAdapter;
+    case 'studio-gemini':
+      return GeminiBrainAdapter;
+    case 'studio-grok':
+      return GrokBrainAdapter;
+    case 'mock-claude':
+      return MockClaudeBrainAdapter;
+    case 'mock-gemini':
+      return MockGeminiBrainAdapter;
+    case 'mock-grok':
+      return MockGrokBrainAdapter;
     case 'mock':
+    case 'mock-chatgpt':
     default:
-      return MockBrainAdapter;
+      return MockChatGptBrainAdapter;
   }
 }
 
@@ -101,6 +122,7 @@ function resolveBrainAdapter() {
       synchronize: true,
     }),
     CallerPersistenceModule,
+    StudioUiModule.forRoot(),
     VapiStudioModule.forRoot({
       entryPoint: PlannerConversationEntry,
       brainAdapter: resolveBrainAdapter(),

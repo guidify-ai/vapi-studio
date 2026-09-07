@@ -9,7 +9,7 @@ Examples are **NestJS projects under `projects/`** that implement **`@guidify-ai
 
 Private experimental apps under `projects/` stay gitignored.
 
-The tracked sample exposes the operator surface: `/analytics`, `/flow`, `/studio/conversations/*`, `/{PROJECT_UUID}/vapi/...`.
+The tracked sample exposes the operator **React SPA**: `/flow`, `/conversations`, `/analytics`, plus JSON `/studio/conversations/*` and `/{PROJECT_UUID}/vapi/...`.
 
 ```json
 {

@@ -141,6 +141,7 @@ export async function executeOpeningTurn(this: SupervisorEngine, input: {
     throw new Error(`Start node class not registered: ${candidate.class}`);
   }
 
+  const openingIntention = 'studio.opening';
   const output = new BufferedConversationOutput(onSay);
   const ctx = nodeContextFromRuntime({
     runtime,
@@ -150,7 +151,9 @@ export async function executeOpeningTurn(this: SupervisorEngine, input: {
     brain: this.brain,
     integrations: this.integrations,
     forms: this.forms,
-    intention: candidate.intentions[0] ?? 'studio.opening',
+    // Never use flow.nodes[start].intentions[0] — that list is for *routing into*
+    // the node (e.g. soft re-ask), not for the speak-first opening turn.
+    intention: openingIntention,
   });
 
   this.events.log('info', 'OPENING_TURN', {
@@ -181,7 +184,7 @@ export async function executeOpeningTurn(this: SupervisorEngine, input: {
     output,
     node,
     candidate,
-    intentionName: candidate.intentions[0] ?? 'studio.opening',
+    intentionName: openingIntention,
     ctx,
     restarts: 0,
     forceHop: 0,

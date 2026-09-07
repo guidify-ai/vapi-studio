@@ -170,11 +170,10 @@ export class AcknowledgeNode extends AgentNode<PlannerSchema> {
       complete: Boolean(fullName && company && email),
     });
 
-    // Soft re-ask after unclear pick (same node).
+    // Soft re-ask after unclear pick (same node) — never the speak-first opening.
     if (ctx.intention === PLANNER_INTENTIONS.phoneDemoClarify) {
       return ctx.output.sayAndListen(
-        DIDNT_QUITE_GET_IT +
-          'Which of the three: what we can do, cost, or building without being a developer?',
+        DIDNT_QUITE_GET_IT + TOPIC_MENU,
         topicMenuListen(),
       );
     }

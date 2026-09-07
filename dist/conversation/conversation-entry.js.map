@@ -1,1 +1,0 @@
-{"version":3,"file":"conversation-entry.js","sourceRoot":"","sources":["../../src/conversation/conversation-entry.ts"],"names":[],"mappings":";;;AA4Ca,QAAA,wBAAwB,GAAG,MAAM,CAAC,0BAA0B,CAAC,CAAC;AAE3E,MAAa,wBAAwB;IAC5B,eAAe;QACpB,OAAO,EAAE,CAAC;IACZ,CAAC;IAEM,KAAK,CAAC,UAAU,CAAC,IAAqC;QAC3D,QAAQ;IACV,CAAC;IAEM,KAAK,CAAC,SAAS,CAAC,IAAqC;QAC1D,QAAQ;IACV,CAAC;CACF;AAZD,4DAYC"}

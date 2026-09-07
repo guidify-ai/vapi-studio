@@ -16,4 +16,4 @@ alwaysApply: true
 5. **`projects/README.md`** — how apps live in `projects/`
 6. **`projects/<app>/README.md`** — northern stars only (gitignored app dirs)
 
-Apps get `AGENTS.md` + `.cursor/rules/vapi-studio-best-practices.mdc` from `@guidify-ai/vapi-studio` postinstall.
+Apps get `AGENTS.md` + `CLAUDE.md` + `.cursor/rules/*` + `.claude/rules/*` from `@guidify-ai/vapi-studio` postinstall.

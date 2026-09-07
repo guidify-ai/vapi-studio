@@ -1,14 +1,12 @@
 import {
   Controller,
   Get,
-  Header,
   Query,
   Req,
   Res,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { AnalyticsService } from './analytics.service';
-import { renderAnalyticsPage } from './analytics-page.render';
 import {
   analyticsCsvFilename,
   parseAnalyticsCsvKind,
@@ -19,7 +17,7 @@ import {
 export class AnalyticsController {
   constructor(private readonly analytics: AnalyticsService) {}
 
-  /** JSON snapshot — funnels + top tags (for scripts / integrations). */
+  /** JSON snapshot — funnels + top tags (Studio SPA + scripts). */
   @Get('api')
   snapshotApi(
     @Req() req: Request,
@@ -67,17 +65,5 @@ export class AnalyticsController {
       `attachment; filename="${filename}"`,
     );
     res.send(body);
-  }
-
-  /** Server-rendered admin dashboard (HTML). */
-  @Get()
-  @Header('Content-Type', 'text/html; charset=utf-8')
-  async page(@Query('sinceDays') sinceDays?: string): Promise<string> {
-    const days = Math.min(
-      Math.max(sinceDays ? Number(sinceDays) : 30, 1),
-      365,
-    );
-    const snapshot = await this.analytics.snapshot({ sinceDays: days });
-    return renderAnalyticsPage(snapshot, days);
   }
 }

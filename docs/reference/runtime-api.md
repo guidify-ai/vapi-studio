@@ -76,7 +76,7 @@ Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom
 1. Channel bootstrap (`assistant-request`, `assistant.started`, lazy Custom LLM, or early `status-update`) calls `ConversationBootstrapService.bootstrap({ projectId, providerCallId, brainProfileId, metadata })`.
 2. Postgres row `conversations` (ACTIVE) + in-memory `SupervisedConversation` with a `runtimeInstanceId`. Concurrent bootstrap for the same call is serialized and reused. `caller_id` is stamped from metadata/variables and refreshed on every checkpoint.
 3. **Start (inject / near-zero prep):** optional `ConversationEntryPoint.createVariables` + `beforeEach` seed variables/memory from channel metadata (LP company/email/name, caller phone, feature flags; optional JWT/API warm). This must stay near-zero blocking — it is **not** a spoken flow hop and must not delay first speech. Then an initial `runtime_state` checkpoint. If a workflow is loaded, set `workflowId` / `activeModuleId` and load the entry module’s flow.
-4. **Greeting:** opening Supervisor turn runs **`flow.start` only** (no Brain scan) — first real speak. Each later Custom LLM / studio turn: correlate call id → same runtime → ensure active module flow → `Supervisor.handleTurn` → **checkpoint** (`conversations.runtime_state`, bumps `last_activity_at`). `output.continueTo` jumps within one flow (`FLOW_CONTINUE`); `output.handoff` switches workflow module on the same Conversation (`WORKFLOW_HANDOFF`). Neither finalizes.
+4. **Greeting:** opening Supervisor turn runs **`flow.start` only** (no Brain scan) — first real speak. Context intention is always `studio.opening` (not `flow.nodes[start].intentions[0]`, which is for *routing into* that node later). Each later Custom LLM / studio turn: correlate call id → same runtime → ensure active module flow → `Supervisor.handleTurn` → **checkpoint** (`conversations.runtime_state`, bumps `last_activity_at`). `output.continueTo` jumps within one flow (`FLOW_CONTINUE`); `output.handoff` switches workflow module on the same Conversation (`WORKFLOW_HANDOFF`). Neither finalizes.
 5. `status-update: ended` / studio hangup / farewell `endCall` → `afterEach` → persist `final_state` → drop registry + turn queue.
 
 Identity is the **provider call id**. One supervised runtime per active call.
@@ -387,11 +387,17 @@ Judge result: `{ passed, confidence, reasoning, belowThreshold }`. `confidence` 
 
 Stock adapters:
 
-- `MockBrainAdapter` — deterministic sequences / profiles (PoC default)
-- `ChatGptBrainAdapter` — cheap OpenAI whitelist (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Env: `OPENAI_API_KEY`.
-- `ClaudeBrainAdapter` — cheap Anthropic Haiku whitelist (`claude-haiku-4-5-20251001`, `claude-3-5-haiku-latest`, …). Env: `ANTHROPIC_API_KEY`.
-- `GeminiBrainAdapter` — cheap Gemini Flash whitelist (`gemini-2.0-flash`, `gemini-2.0-flash-lite`, …). Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
-- `GrokBrainAdapter` — cheap xAI Grok whitelist (`grok-3-mini`, `grok-4-fast-non-reasoning`, …) via OpenAI-compatible API. Env: `XAI_API_KEY`.
+**Live (JSON-LLM, cheap whitelist only):**
+
+- `ChatGptBrainAdapter` — OpenAI (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Env: `OPENAI_API_KEY`.
+- `ClaudeBrainAdapter` — Anthropic Haiku (`claude-haiku-4-5-20251001`, `claude-3-5-haiku-latest`, …). Env: `ANTHROPIC_API_KEY`.
+- `GeminiBrainAdapter` — Gemini Flash (`gemini-2.0-flash`, `gemini-2.0-flash-lite`, …). Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
+- `GrokBrainAdapter` — xAI Grok (`grok-3-mini`, `grok-4-fast-non-reasoning`, …) via OpenAI-compatible API. Env: `XAI_API_KEY`.
+
+**Mock (deterministic sequences / profiles; no provider network):**
+
+- `MockBrainAdapter` — generic PoC default
+- `MockChatGptBrainAdapter` / `MockClaudeBrainAdapter` / `MockGeminiBrainAdapter` / `MockGrokBrainAdapter` — same engine, tagged by intended live provider for app wiring (`mockProvider`)
 
 All JSON-LLM stock adapters share the same scan/clarify/judge contracts: HTTP timeout **3s**; scan failure → unknown; live path with no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code** via `brainAdapter`.
 
@@ -403,7 +409,39 @@ Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
 Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — model must be on the **selected adapter’s** cheap whitelist (default when omitted). Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
 
-## Standard intentions and portals
+## Studio UI (operator SPA)
+
+### Identity contract (hard)
+
+See [ui-and-api-identity.md](../best-practices/ui-and-api-identity.md).
+
+1. Studio FE ↔ Nest JSON identifies records by **`uuid` only** (never internal numeric/`bigint` `id`).
+2. Durable entities store **`id` + `uuid`** — `id` for joins/filters/sorts; `uuid` for HTTP and other external comms.
+3. List/detail DTOs always include a human **`label`** so the UI can title rows without printing UUIDs.
+
+Route params and JSON fields for resource identity use the name `uuid` (not `id`) on new/changed APIs. Transitional tables may still use UUID-as-PK named `id` — migrate when touching persistence.
+
+Mount the shared React Studio SPA (Flow / Conversations / Analytics) from the package:
+
+```ts
+// app.module.ts
+imports: [StudioUiModule.forRoot(), VapiStudioModule.forRoot({ ... })]
+
+// main.ts
+const app = await NestFactory.create<NestExpressApplication>(AppModule);
+mountStudioUiAssets(app);
+```
+
+Routes (client SPA + Nest JSON APIs):
+
+| UI | JSON |
+| --- | --- |
+| `GET /flow` | `GET /flow/graph`, `PUT /flow/edges`, `/studio/*` |
+| `GET /conversations`, `/conversations/:uuid` | `GET /conversations/api`, `/conversations/api/:uuid` |
+| `GET /analytics` | `GET /analytics/api`, `/analytics/export.csv` |
+
+Build assets: `yarn build` (or `yarn build:studio-ui`) produces `dist/studio-ui/`. Do **not** ship per-app `config/*.html` operator pages.
+
 
 Package-owned **names** (behavior is always an application Node):
 

@@ -33,6 +33,7 @@ In a **vapi-studio** source checkout, the same files live at `docs/best-practice
 - **Human-like UX** — never speak node/transition/intention names, event types, or graph state to the caller; product language only (`docs/best-practices/conversation-design.md` § Human-like UX).
 - **Logs/events must explain the call** — if you cannot answer “why this step / what was said / what memory changed” from daily logs + `conversation_events`, add structured fields in the same change (`docs/best-practices/debugging-and-observability.md`).
 - **Analytics funnels** — code catalog (`AnalyticsFunnelDefinition[]`); stamp tags only (`persistAnalyticsTag` / `stampAnalyticsTag`). Catalog step bindings decide which chart a tag appears on — do not put `funnels[]` on the event.
+- **UI / API identity** — FE and external clients use `uuid` only (never internal `id`); durable rows are `id` + `uuid`; every UI DTO includes human `label` so the UI never prints UUIDs as titles (`docs/best-practices/ui-and-api-identity.md`).
 - **Update docs in the same change** — `docs/reference/runtime-api.md` for behavior; best-practices guides for doctrine; app README for northern stars only.
 - **TypeScript style** — explicit `public` / `protected` / `private` on every class member; typed class properties (no bare `name = '…'`). Run `yarn lint` in the framework repo.
 

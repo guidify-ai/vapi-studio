@@ -23,7 +23,7 @@ vapi-studio/
 
 Project **content** under `projects/` is gitignored by default; `projects/README.md`, `projects/.gitignore`, and the tracked Vapi Studio sample **`projects/sample-landing-llm/`** (`:9998` — `/analytics`, `/flow`, `/studio`, Vapi routes) are included. Marketing landing (`:4173`) and other private apps stay gitignored.
 
-New tools will appear here as they are built. Documentation for how to use them lives under [`docs/`](./docs/README.md).
+Product tools (same catalog as [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca)): **five named surfaces** plus room for more. Shipped docs live under [`docs/`](./docs/README.md).
 
 ---
 
@@ -31,11 +31,16 @@ New tools will appear here as they are built. Documentation for how to use them 
 
 | # | Tool | Status | Summary |
 | --- | --- | --- | --- |
-| 1 | **Deterministic Assistant for Vapi** | Shipped | Typed agent steps + `flow.yaml` paths. Supervisor routes each turn; Brain interprets speech only at listen boundaries — it does not own the graph. |
+| 1 | **Vapi Studio** | Shipped | Deterministic agents — typed steps + `flow.yaml`. Supervisor routes every turn; Brain only at listen boundaries. |
+| 2 | **Vapi Conversation Analytics** | Shipped | Funnel tags, call forensics, and operator views so every conversation explains itself. |
+| 3 | **Vapi Custom Transcriber** | Coming soon | Controllable ASR for digit listens, names, and constrained extracts — fewer junk transcripts as PII. |
+| 4 | **Vapi Voice Profiles** | Coming soon | Reusable voice + persona packs for Vapi assistants — consistent brand sound across flows. |
+| 5 | **Vapi Integrations** | Coming soon | Signed outbound hooks to CRM and tools — BYOK wiring without leaking provider protocols into Nodes. |
+| — | **And more** | Coming soon | More controllable surfaces for Vapi — same self-hosted stack, same graph-owned philosophy. |
 
-More tools may be added later. Each gets its own section here when shipped.
+**Vapi Studio (deterministic agents)** — [Introduction](./docs/getting-started/introduction.md) · [Concepts](./docs/guide/concepts.md) · [Runtime API](./docs/reference/runtime-api.md).
 
-**Deterministic Assistant** — start at [Introduction](./docs/getting-started/introduction.md) · [Concepts](./docs/guide/concepts.md) · [Runtime API](./docs/reference/runtime-api.md).
+**Conversation Analytics** — [Events & logging](./docs/reference/events-and-logging.md) · [Runtime API](./docs/reference/runtime-api.md) (Studio UI `/analytics`).
 
 ---
 
@@ -83,7 +88,7 @@ Example apps render the full interactive graph at **`/flow`** (Flow Studio).
 | --- | --- |
 | **Documentation** | [`docs/README.md`](./docs/README.md) — install, guides, building apps |
 | **Best practices** | [`docs/best-practices/`](./docs/best-practices/) — conversation doctrine (one CTA, PII, forensics) |
-| **Agent-first RAD** | [`agent/AGENTS.md`](./agent/AGENTS.md) · postinstall → `.cursor/rules/vapi-studio-best-practices.mdc` · [Agents & Cursor](./docs/guides/agents.md) |
+| **Agent-first RAD** | [`agent/AGENTS.md`](./agent/AGENTS.md) · [`agent/CLAUDE.md`](./agent/CLAUDE.md) · postinstall → Cursor + Claude Code rules · [Agents & CLIs](./docs/guides/agents.md) |
 | **Runtime API** | [`docs/reference/runtime-api.md`](./docs/reference/runtime-api.md) — shipped contracts (update with code changes) |
 | **Example apps** | [`docs/building-apps/example-apps.md`](./docs/building-apps/example-apps.md) · [`projects/`](./projects/README.md) |
 

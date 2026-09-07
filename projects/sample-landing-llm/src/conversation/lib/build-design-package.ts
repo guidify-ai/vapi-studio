@@ -277,21 +277,12 @@ export function formatSampleForSpeech(sample: string): string {
 }
 
 /** Brief visitor-facing wrapper — no funnel lecture (Nest LP doctrine). */
-export function sampleRevealMessage(
-  sample: string,
-  opts?: { scopeHint?: string },
-): string {
-  const parts = [
+export function sampleRevealMessage(sample: string): string {
+  return [
     "Here's a sample call based on what you shared.",
     '',
     sample,
     '',
-  ];
-  if (opts?.scopeHint) {
-    parts.push(opts.scopeHint, '');
-  }
-  parts.push(
     'Tell me what to change, or say Help me build it if you want Guidify to take it from here. Is there anything else I can help with?',
-  );
-  return parts.join('\n');
+  ].join('\n');
 }

@@ -1,0 +1,14 @@
+# Documentation layers
+
+**Repo:** [guidify-ai/vapi-studio](https://github.com/guidify-ai/vapi-studio) — framework at root, apps in `projects/`.
+
+## Layers
+
+1. **`README.md`** — product intro, tools, diagram, install path
+2. **`docs/`** — documentation site (`docs/README.md`)
+3. **`docs/reference/runtime-api.md`** — shipped runtime contracts (update with code)
+4. **`docs/best-practices/`** — conversation doctrine
+5. **`projects/README.md`** — how apps live in `projects/`
+6. **`projects/<app>/README.md`** — northern stars only (gitignored app dirs)
+
+Apps get `AGENTS.md` + `CLAUDE.md` + `.cursor/rules/*` + `.claude/rules/*` from `@guidify-ai/vapi-studio` postinstall.

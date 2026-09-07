@@ -55,58 +55,125 @@ listens, extracts, or identity flows:
 - \`node_modules/@guidify-ai/vapi-studio/docs/best-practices/README.md\`
 - \`node_modules/@guidify-ai/vapi-studio/agent/AGENTS.md\`
 - Cursor rule: \`.cursor/rules/vapi-studio-best-practices.mdc\` (installed with the package)
+- Cursor rule: \`.cursor/rules/ui-and-api-identity.mdc\` (UUID externally; \`id\`+\`uuid\` in DB; human \`label\`)
+- Claude Code: \`CLAUDE.md\` + \`.claude/rules/\` (same doctrine; installed with the package)
 
 Hard rules (summary): **one CTA per turn**; conversations **must end** (limits always on);
 constrained fields **fail closed**; short listen timeouts for digits; never store ASR junk
-as PII; soft affirmatives on multi-choice → local re-ask; silent handoffs; analytics
-\`funnels[]\` on milestones (omit when standalone); update the matching doc layer in the
+as PII; soft affirmatives on multi-choice → local re-ask; silent handoffs; FE uses **uuid**
+only (never internal id) and DTOs include human **label**; update the matching doc layer in the
 same change. Runtime contracts: \`docs/reference/runtime-api.md\`.
 ${END}
 `;
 
-function writeCursorRule() {
-  const src = path.join(pkgRoot, 'agent', 'cursor', 'vapi-studio-best-practices.mdc');
+const CLAUDE_BEGIN = '<!-- VAPI-STUDIO-CLAUDE:BEGIN -->';
+const CLAUDE_END = '<!-- VAPI-STUDIO-CLAUDE:END -->';
+
+const claudeBlock = `${CLAUDE_BEGIN}
+# Vapi Studio (Claude Code)
+
+Import the shared agent handbook (same content Cursor loads via AGENTS.md):
+
+@node_modules/@guidify-ai/vapi-studio/agent/AGENTS.md
+
+Rules installed by postinstall:
+
+- \`.claude/rules/vapi-studio-best-practices.md\`
+- \`.claude/rules/ui-and-api-identity.md\`
+
+Doctrine index: \`node_modules/@guidify-ai/vapi-studio/docs/best-practices/README.md\`.
+${CLAUDE_END}
+`;
+
+function writeCursorRules() {
   const destDir = path.join(consumerRoot, '.cursor', 'rules');
-  const dest = path.join(destDir, 'vapi-studio-best-practices.mdc');
-  if (!fs.existsSync(src)) {
-    console.warn('[vapi-studio] agent cursor rule template missing; skip');
-    return;
-  }
   fs.mkdirSync(destDir, { recursive: true });
-  fs.copyFileSync(src, dest);
-  console.log('[vapi-studio] wrote', path.relative(consumerRoot, dest) || dest);
+  const files = [
+    'vapi-studio-best-practices.mdc',
+    'ui-and-api-identity.mdc',
+  ];
+  for (const name of files) {
+    const src = path.join(pkgRoot, 'agent', 'cursor', name);
+    const dest = path.join(destDir, name);
+    if (!fs.existsSync(src)) {
+      console.warn('[vapi-studio] agent cursor rule template missing:', name);
+      continue;
+    }
+    fs.copyFileSync(src, dest);
+    console.log('[vapi-studio] wrote', path.relative(consumerRoot, dest) || dest);
+  }
 }
 
-function upsertAgentsMd() {
-  const dest = path.join(consumerRoot, 'AGENTS.md');
+function writeClaudeRules() {
+  const destDir = path.join(consumerRoot, '.claude', 'rules');
+  fs.mkdirSync(destDir, { recursive: true });
+  const files = [
+    'vapi-studio-best-practices.md',
+    'ui-and-api-identity.md',
+  ];
+  for (const name of files) {
+    const src = path.join(pkgRoot, 'agent', 'claude', 'rules', name);
+    const dest = path.join(destDir, name);
+    if (!fs.existsSync(src)) {
+      console.warn('[vapi-studio] agent claude rule template missing:', name);
+      continue;
+    }
+    fs.copyFileSync(src, dest);
+    console.log('[vapi-studio] wrote', path.relative(consumerRoot, dest) || dest);
+  }
+}
+
+function upsertMarkdownBlock(destPath, begin, end, block, emptyTitle) {
   let existing = '';
-  if (fs.existsSync(dest)) {
-    existing = fs.readFileSync(dest, 'utf8');
+  if (fs.existsSync(destPath)) {
+    existing = fs.readFileSync(destPath, 'utf8');
   }
 
   const blockPattern = new RegExp(
-    `${escapeRegExp(BEGIN)}[\\s\\S]*?${escapeRegExp(END)}`,
+    `${escapeRegExp(begin)}[\\s\\S]*?${escapeRegExp(end)}`,
   );
 
   if (blockPattern.test(existing)) {
-    const next = existing.replace(blockPattern, agentsBlock.trim());
-    fs.writeFileSync(dest, ensureTrailingNewline(next));
-    console.log('[vapi-studio] refreshed AGENTS.md block');
+    const next = existing.replace(blockPattern, block.trim());
+    fs.writeFileSync(destPath, ensureTrailingNewline(next));
+    console.log('[vapi-studio] refreshed', path.basename(destPath), 'block');
     return;
   }
 
   if (!existing.trim()) {
-    const body = `# Agents\n\nProject-specific agent notes for this app.\n\n${agentsBlock}\n`;
-    fs.writeFileSync(dest, body);
-    console.log('[vapi-studio] created AGENTS.md');
+    fs.writeFileSync(
+      destPath,
+      ensureTrailingNewline(`${emptyTitle}\n\n${block}\n`),
+    );
+    console.log('[vapi-studio] created', path.basename(destPath));
     return;
   }
 
   fs.writeFileSync(
-    dest,
-    ensureTrailingNewline(`${existing.trimEnd()}\n\n${agentsBlock}\n`),
+    destPath,
+    ensureTrailingNewline(`${existing.trimEnd()}\n\n${block}\n`),
   );
-  console.log('[vapi-studio] appended block to AGENTS.md');
+  console.log('[vapi-studio] appended block to', path.basename(destPath));
+}
+
+function upsertAgentsMd() {
+  upsertMarkdownBlock(
+    path.join(consumerRoot, 'AGENTS.md'),
+    BEGIN,
+    END,
+    agentsBlock,
+    '# Agents\n\nProject-specific agent notes for this app.',
+  );
+}
+
+function upsertClaudeMd() {
+  upsertMarkdownBlock(
+    path.join(consumerRoot, 'CLAUDE.md'),
+    CLAUDE_BEGIN,
+    CLAUDE_END,
+    claudeBlock,
+    '# Agents\n\nProject notes for Claude Code. Shared handbook is imported below.',
+  );
 }
 
 function escapeRegExp(s) {
@@ -118,8 +185,10 @@ function ensureTrailingNewline(s) {
 }
 
 try {
-  writeCursorRule();
+  writeCursorRules();
+  writeClaudeRules();
   upsertAgentsMd();
+  upsertClaudeMd();
 } catch (err) {
   console.warn('[vapi-studio] install-agent-refs failed (non-fatal):', err.message);
   process.exit(0);

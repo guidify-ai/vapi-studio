@@ -42,7 +42,7 @@ Templates: `.specify/templates/`
 
 ## Historical artifacts
 
-Older SpecKit PoC specs live under `archive/` (not indexed for agents). Prefer current `docs/` and `docs/reference/runtime-api.md`.
+Older SpecKit PoC dumps may exist under a local `archive/` folder (gitignored — not in the repo). Prefer current `docs/` and `docs/reference/runtime-api.md`.
 
 **Authority:** root `README.md` and `docs/` over SpecKit contracts.
 

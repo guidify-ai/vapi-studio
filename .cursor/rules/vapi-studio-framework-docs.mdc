@@ -14,4 +14,4 @@ Update root `README.md` only when **product framing** changes (tools table, diag
 
 Application code belongs under `projects/<name>/` — not in `src/`.
 
-Conversation-design **doctrine** lives in `docs/best-practices/`. Agent entry: `agent/AGENTS.md` / `agent/cursor/vapi-studio-best-practices.mdc`.
+Conversation-design **doctrine** lives in `docs/best-practices/`. Agent entry: `agent/AGENTS.md` · `agent/CLAUDE.md` · `agent/cursor/` · `agent/claude/`.

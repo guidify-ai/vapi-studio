@@ -22,7 +22,9 @@ cd projects/<slug>
 
 This writes a Nest skeleton plus **`config/project.identity.json`** (stable ingress UUID). Prefer that over hand-mkdir. You can still copy patterns from an [example](./example-apps.md).
 
-Minimum: `app.module.ts`, `main.ts`, `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
+Minimum: `app.module.ts` (including `StudioUiModule.forRoot()`), `main.ts` (`mountStudioUiAssets`), `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
+
+Operator UI is the **framework React SPA** (`/flow`, `/conversations`, `/analytics`) — not per-app HTML shells.
 
 ## 3. Depend on Vapi Studio
 

@@ -196,10 +196,13 @@ nodes:
     path.join(dir, 'src', 'main.ts'),
     `import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { mountStudioUiAssets } from '@guidify-ai/vapi-studio';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { rawBody: false });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { rawBody: false });
+  mountStudioUiAssets(app);
   const port = Number(process.env.PORT ?? 9999);
   await app.listen(port);
   // eslint-disable-next-line no-console
@@ -491,6 +494,7 @@ import {
   MockBrainAdapter,
   ProjectEntity,
   ProviderIngressEntity,
+  StudioUiModule,
   VapiStudioModule,
 } from '@guidify-ai/vapi-studio';
 import { HealthController } from './health/health.controller';
@@ -514,6 +518,7 @@ import { GoodbyeNode } from './conversation/nodes/goodbye.node';
       ],
       synchronize: true,
     }),
+    StudioUiModule.forRoot(),
     VapiStudioModule.forRoot({
       entryPoint: AppConversationEntry,
       brainAdapter: MockBrainAdapter,

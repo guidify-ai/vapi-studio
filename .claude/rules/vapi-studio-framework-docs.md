@@ -1,0 +1,20 @@
+---
+paths:
+  - "src/**/*.ts"
+  - "docs/**/*.md"
+  - "README.md"
+  - "agent/CLAUDE.md"
+  - "CLAUDE.md"
+---
+
+# Vapi Studio runtime reference (hard rule)
+
+`docs/reference/runtime-api.md` is the living runtime reference. Root `README.md` is an **entry index only**.
+
+When you change the framework, update `runtime-api.md` in the **same** change.
+
+Update root `README.md` only when **product framing** changes (tools table, diagram, install path).
+
+Application code belongs under `projects/<name>/` — not in `src/`.
+
+Conversation-design **doctrine** lives in `docs/best-practices/`. Agent entry: `agent/AGENTS.md` · `agent/CLAUDE.md` · `agent/cursor/` · `agent/claude/`.

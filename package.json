@@ -21,7 +21,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && yarn build:studio-ui",
+    "build:studio-ui": "yarn --cwd studio-ui install && yarn --cwd studio-ui build",
     "clean": "rm -rf dist",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",

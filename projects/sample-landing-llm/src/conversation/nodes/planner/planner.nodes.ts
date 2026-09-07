@@ -31,11 +31,6 @@ import {
   looksLikeSoftContinue,
 } from '../../lib/looks-like-mad';
 import { looksLikeSatisfiedClose, looksLikeSamplePraise } from '../../lib/satisfied-close';
-import {
-  FF_SAMPLE_SCOPE_HINT,
-  SAMPLE_SCOPE_HINT_LINE,
-  isFeatureEnabled,
-} from '../../lib/feature-flags';
 import { PlannerLeadMailService } from '../../../mail/planner-lead-mail.service';
 
 function firstName(memory: PlannerSchema['memory']): string | undefined {
@@ -519,14 +514,7 @@ export class ShowSampleNode extends AgentNode<PlannerSchema> {
       ? `${kb}\n\nTell me what to change, or say Help me build it. Is there anything else I can help with?`
       : alreadyShown
         ? 'Tell me what to change, or say Help me build it. Is there anything else I can help with?'
-        : sampleRevealMessage(sample, {
-            scopeHint: isFeatureEnabled(
-              ctx.conversation.variables.featureFlags,
-              FF_SAMPLE_SCOPE_HINT,
-            )
-              ? SAMPLE_SCOPE_HINT_LINE
-              : undefined,
-          });
+        : sampleRevealMessage(sample);
     // soft none / empty re-entry uses the alreadyShown CTA without replaying the sample
     if (
       alreadyShown &&

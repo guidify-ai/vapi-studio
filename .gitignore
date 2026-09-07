@@ -5,6 +5,25 @@
 
 # IDE — never commit
 .idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Dependencies & build output — never commit
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.turbo/
+.next/
+.vite/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Application projects (content gitignored; README + .gitignore tracked)
 projects/*
@@ -17,3 +36,10 @@ projects/*
 projects/roofr-poc/
 projects/roofr-poc/**
 # Marketing landing (:4173) and other private apps stay gitignored
+
+# Local-only leftovers (legacy PoCs / SpecKit dumps) — never track
+archive/
+
+# uv / SpecKit local tool shims (machine-absolute symlinks)
+.uv-bin/
+.uv-tools/

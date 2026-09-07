@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://vapi-studio.guidify.ca/sitemap.xml

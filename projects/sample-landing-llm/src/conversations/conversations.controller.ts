@@ -2,34 +2,24 @@ import {
   Controller,
   Get,
   Header,
-  NotFoundException,
+  Inject,
+  Optional,
   Param,
   Query,
   Res,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import { STUDIO_UI_ROOT, sendStudioIndex } from '@guidify-ai/vapi-studio';
 import { ConversationsService } from './conversations.service';
 
 @Controller('conversations')
 export class ConversationsController {
-  constructor(private readonly conversations: ConversationsService) {}
+  constructor(
+    private readonly conversations: ConversationsService,
+    @Optional() @Inject(STUDIO_UI_ROOT) private readonly studioUiRoot?: string,
+  ) {}
 
-  private configDir(): string {
-    return process.env.CONFIG_DIR ?? join(process.cwd(), 'config');
-  }
-
-  private sendHtml(res: Response, fileName: string): void {
-    const path = join(this.configDir(), fileName);
-    try {
-      res.type('text/html; charset=utf-8').send(readFileSync(path, 'utf8'));
-    } catch {
-      throw new NotFoundException(`Missing ${fileName}`);
-    }
-  }
-
-  /** JSON list for the debug UI. */
+  /** JSON list for the Studio SPA. */
   @Get('api')
   listApi(
     @Query('limit') limit?: string,
@@ -47,15 +37,14 @@ export class ConversationsController {
     return this.conversations.getDetail(id);
   }
 
-  @Get()
-  @Header('Content-Type', 'text/html; charset=utf-8')
-  listPage(@Res() res: Response): void {
-    this.sendHtml(res, 'conversations-list.html');
-  }
-
+  /** SPA shell for conversation detail (React Router). */
   @Get(':id')
-  @Header('Content-Type', 'text/html; charset=utf-8')
+  @Header('Cache-Control', 'no-cache')
   showPage(@Res() res: Response): void {
-    this.sendHtml(res, 'conversation-show.html');
+    if (!this.studioUiRoot) {
+      res.status(503).type('text/plain').send('Studio UI not mounted');
+      return;
+    }
+    sendStudioIndex(this.studioUiRoot, res);
   }
 }
