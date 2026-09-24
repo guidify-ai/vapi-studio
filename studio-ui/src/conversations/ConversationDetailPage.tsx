@@ -26,12 +26,6 @@ type Detail = {
     }>;
   };
   memory: Record<string, unknown>;
-  events: Array<{
-    id: string;
-    type: string;
-    createdAt: string;
-    payload: Record<string, unknown>;
-  }>;
 };
 
 export function ConversationDetailPage() {
@@ -159,28 +153,6 @@ export function ConversationDetailPage() {
             <section className="panel">
               <h2>Memory</h2>
               <pre className="json">{JSON.stringify(data.memory || {}, null, 2)}</pre>
-            </section>
-            <section className="panel">
-              <h2>
-                Events <span className="meta">({data.events?.length || 0})</span>
-              </h2>
-              <div className="events">
-                {!data.events?.length ? (
-                  <p className="meta" style={{ padding: 12 }}>
-                    No events.
-                  </p>
-                ) : (
-                  data.events.map((ev) => (
-                    <div key={ev.id} className="event">
-                      <div className="event-type">{ev.type}</div>
-                      <div className="meta">{fmtDate(ev.createdAt)}</div>
-                      <pre className="json">
-                        {JSON.stringify(ev.payload, null, 2)}
-                      </pre>
-                    </div>
-                  ))
-                )}
-              </div>
             </section>
           </aside>
         </div>

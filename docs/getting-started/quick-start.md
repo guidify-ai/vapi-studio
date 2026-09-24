@@ -1,33 +1,25 @@
 # Quick start
 
-## 1. Clone, build, test
+## App from npm (recommended)
 
 ```bash
-git clone git@github.com:guidify-ai/vapi-studio.git
-cd vapi-studio
-yarn install
-yarn build
-yarn test
+mkdir my-voice-app && cd my-voice-app
+yarn init -y
+yarn add @guidify-ai/vapi-studio @nestjs/common @nestjs/core @nestjs/typeorm \
+  reflect-metadata rxjs typeorm
 ```
 
-## 2. Create a project
-
-```bash
-mkdir -p projects/my-voice-app
-cd projects/my-voice-app
-```
-
-Add to `package.json`:
+Or copy the tracked sample from the [GitHub repo](https://github.com/guidify-ai/vapi-studio/tree/main/projects/sample-landing-llm) and change the dependency to:
 
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:../.."
+    "@guidify-ai/vapi-studio": "0.1.0"
   }
 }
 ```
 
-## 3. Minimal Nest wiring
+## Minimal Nest wiring
 
 ```typescript
 import { Module } from '@nestjs/common';
@@ -51,23 +43,26 @@ export class AppModule {}
 
 Add `config/flow.yaml` with `start: greet` and Vapi HTTP routes — see [Creating an app](../building-apps/creating-an-app.md).
 
-## 4. Run and wire Vapi
+## Run and wire Vapi
 
-Install **[ngrok](https://ngrok.com/download)** if you have not already. Local dev tunnels Docker (`localhost:9999` in example apps) to HTTPS — Vapi cannot call localhost directly.
+Install **[ngrok](https://ngrok.com/download)** if you have not already. Local dev tunnels Docker to HTTPS — Vapi cannot call localhost directly.
 
 ```bash
 yarn install
 yarn start   # Docker + ngrok; keeps tunnel open until Ctrl+C
 ```
 
-`yarn start` prints **Webhook** and **Conversation** URLs on the ngrok origin. Paste them into your Vapi assistant before testing a call. Restart `yarn start` when you need a fresh tunnel URL (or use an ngrok reserved domain).
+Paste the printed **Webhook** and **Conversation** URLs into your Vapi assistant. Keep the process running while you test calls.
 
-## 5. Read next
+## Framework contributors only
 
-| Topic | Doc |
-| --- | --- |
-| Projects folder | [`projects/README.md`](../../projects/README.md) |
-| Module options | [Module setup](../guide/module-setup.md) |
-| Mental model | [Concepts](../guide/concepts.md) |
-| Runtime API | [runtime-api.md](../reference/runtime-api.md) |
-| Examples | [Example apps](../building-apps/example-apps.md) |
+```bash
+git clone git@github.com:guidify-ai/vapi-studio.git
+cd vapi-studio
+yarn install && yarn build && yarn test
+cd projects/sample-landing-llm && yarn start
+```
+
+In-repo apps may use `"@guidify-ai/vapi-studio": "file:../.."`. Production / private apps should pin the published package.
+
+Full install notes: [Installation](./installation.md).

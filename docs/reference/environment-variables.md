@@ -22,7 +22,8 @@ App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJ
 | `TWILIO_AUTH_TOKEN` | — | Twilio auth token |
 | `TWILIO_FROM_NUMBER` | — | E.164 from-number (or use messaging service sid) |
 | `TWILIO_MESSAGING_SERVICE_SID` | — | Alternative to `TWILIO_FROM_NUMBER` |
-| `TWILIO_SMS_DRY_RUN` | on | Prepare mode — persist `OUTBOUND_NOTIFICATION` dry-run; no Twilio API |
+| `TWILIO_SMS_DRY_RUN` | on | Prepare mode — emit `OUTBOUND_NOTIFICATION` dry-run; no Twilio API |
+| `PUBLIC_BASE_URL` | — | App HTTPS origin; Twilio SMS dispose uses `{PUBLIC_BASE_URL}/forms/{exposeId}` when `disposeContext.formUrl` is omitted |
 | `VAPI_END_CALL_TOOL_NAME` | `end_call_tool` | End-call tool name |
 | `VAPI_TRANSFER_CALL_TOOL_NAME` | `transferCall` | Transfer tool name |
 | `VAPI_HANDOFF_TOOL_NAME` | `handoff` | Squad handoff tool |
@@ -30,7 +31,8 @@ App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJ
 | `VAPI_DASHBOARD_CALL_URL` | `https://dashboard.vapi.ai/call/{callId}` | Debug UI link to Vapi call (`{callId}` = `provider_call_id`) |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` root |
 
-## Related
+Event export / remote sinks are application-owned — not framework env.
+See [Extending events](../guides/extending-events.md).
 
 - [Runtime API](./runtime-api.md)
 - [Security](./security.md)

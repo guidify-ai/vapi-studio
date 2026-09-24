@@ -28,8 +28,8 @@ type GrokChatResponse = {
  */
 @Injectable()
 export class GrokBrainAdapter extends JsonLlmBrainAdapter {
-  protected readonly adapterId = 'studio-grok';
-  protected readonly logger = new Logger('GrokBrainAdapter');
+  protected readonly adapterId: string = 'studio-grok';
+  protected readonly logger: Logger = new Logger('GrokBrainAdapter');
 
   public constructor(
     usage: BrainUsageTracker,

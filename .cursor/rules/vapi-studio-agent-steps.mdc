@@ -28,12 +28,23 @@ alwaysApply: false
 
 `before()` → `listen()` → `run()` → `after()` → `catch()`
 
+| Method | Put here | Not here |
+| --- | --- | --- |
+| `before()` | CAN gate; async prep / JWT or integration **warm** (spawn without await when speech must not wait) | Spoken copy |
+| `listen()` | Intentions / extract / hints | I/O |
+| `run()` | Speech + one terminal output | Auth/CRM/teardown that can live in before/after |
+| `after()` | Non-speech teardown | TTS / terminal output |
+| `catch()` | Recovery only when overridden | Happy-path side effects |
+
+Do **not** overload `run()` with integrations — prefer `before()` / `after()`. Detached warms: hold `Promise` on a Nest service keyed by conversation id; later Nodes `await` it.
+
 ```ts
 export class ExampleStep extends AgentNode<Schema> {
-  public async before(ctx): Promise<boolean> { /* … */ }
+  public async before(ctx): Promise<boolean> { /* gate + spawn warm */ return true; }
   public async listen(ctx): Promise<ListenExpectation | null> { /* … */ }
-  public async run(ctx): Promise<NodeResult> { /* … */ }
+  public async run(ctx): Promise<NodeResult> { /* speak + terminal only */ }
+  public async after(ctx, result): Promise<void> { /* teardown */ }
 }
 ```
 
-Full rules: `docs/guides/node-conventions.md` and `docs/best-practices/`.
+Full rules: `docs/guides/node-conventions.md` and `docs/best-practices/nodes-and-listens.md`.

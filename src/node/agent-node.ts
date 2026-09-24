@@ -40,6 +40,10 @@ import {
   type ChannelToolsApi,
   type VapiTurnContext,
 } from '../channel/channel-tools';
+import {
+  createStudioTasksApi,
+  type StudioTasksApi,
+} from '../tasks/studio-task-queue';
 
 /**
  * Typed view of the Conversation for Nodes.
@@ -134,14 +138,20 @@ export interface NodeContext<
    * Vapi call/turn metadata for this request (null fields when not delivered).
    */
   vapi: VapiTurnContext;
+  /**
+   * Background / waitable work queue (I/O counterpart to the speech phrase pool).
+   * Prefer `mode: 'async'` for multi-second side effects with a spoken bridge;
+   * `mode: 'wait'` when the next CTA needs the result.
+   */
+  tasks: StudioTasksApi;
 }
 
 /**
  * Node lifecycle (per turn selection) — declare overrides in this order:
- *   before()  → authorize / prepare (return false to reject)
- *   listen()  → register listen expectation before speech
- *   run()     → execute
- *   after()   → teardown for this Node execution
+ *   before()  → authorize / prepare (return false to reject); async prep / warms here
+ *   listen()  → register listen expectation before speech (no I/O)
+ *   run()     → speech + one terminal output (do not overload with integrations)
+ *   after()   → teardown for this Node execution (non-speech)
  *   catch()   → recover from FlowUncertainError / other errors
  */
 export abstract class AgentNode<
@@ -160,6 +170,10 @@ export abstract class AgentNode<
    */
   public interruptible: boolean = true;
 
+  /**
+   * CAN gate + prepare. Return false to reject this candidate.
+   * Prefer async prep / warms here (spawn without await when speech must stay fast).
+   */
   public async before(_ctx: NodeContext<TSchema>): Promise<boolean> {
     return true;
   }
@@ -168,8 +182,10 @@ export abstract class AgentNode<
     return null;
   }
 
+  /** Speech + one terminal output. Do not overload with integrations — use before()/after(). */
   public abstract run(ctx: NodeContext<TSchema>): Promise<NodeResult>;
 
+  /** Non-speech teardown after the terminal action. */
   public async after(
     _ctx: NodeContext<TSchema>,
     _result: NodeResult,
@@ -329,5 +345,11 @@ export function nodeContextFromRuntime<
       );
     },
     vapi,
+    tasks: createStudioTasksApi({
+      events: input.events,
+      runtime: input.runtime,
+      conversationId: input.runtime.conversationId,
+      runtimeInstanceId: input.runtime.runtimeInstanceId,
+    }),
   };
 }

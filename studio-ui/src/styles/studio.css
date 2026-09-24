@@ -412,27 +412,6 @@ pre.json {
   font-size: 0.95rem;
 }
 
-.funnel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-bottom: 10px;
-}
-
-.funnel-step {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 0;
-  font-size: 0.85rem;
-  border-bottom: 1px solid #243040;
-}
-
-.funnel-step:last-child {
-  border-bottom: none;
-}
-
 /* Flow studio */
 .flow-page {
   flex: 1;

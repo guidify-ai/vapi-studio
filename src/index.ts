@@ -323,7 +323,28 @@ export type {
   StudioEventListener,
   StudioEventType,
 } from './events/studio-event';
-export { PostgresEventListener } from './events/postgres-event.listener';
+export {
+  StudioTaskQueue,
+  createStudioTasksApi,
+  studioTaskQueueForRuntime,
+  STUDIO_TASK_EVENTS,
+  STUDIO_TASK_QUEUE_META,
+} from './tasks/studio-task-queue';
+export type {
+  StudioTaskHandle,
+  StudioTaskMode,
+  StudioTaskSpec,
+  StudioTaskStatus,
+  StudioTaskRequireRef,
+  StudioTasksApi,
+} from './tasks/studio-task-queue';
+export {
+  STUDIO_EVENT_BUS_CHANNEL,
+  studioEventBus,
+  onStudioEvent,
+  emitStudioEventBus,
+} from './events/studio-event-bus';
+export type { StudioEventBusHandler } from './events/studio-event-bus';
 export {
   printConversationConsole,
   snapshotUserMemory,
@@ -347,7 +368,6 @@ export {
   isFileLogEnabled,
 } from './events/daily-log.driver';
 export { ConversationEntity } from './persistence/conversation.entity';
-export { ConversationEventEntity } from './persistence/conversation-event.entity';
 export { ConversationRepository, extractCallerIdFromBags } from './persistence/conversation.repository';
 export type { ResumableConversation } from './persistence/conversation.repository';
 export {
@@ -429,6 +449,7 @@ export {
   normalizeSmsToE164,
   pickSmsDestination,
   pickSmsFormUrl,
+  resolveSmsFormUrl,
   buildDefaultSmsBody,
   resolveSmsBody,
 } from './forms/twilio-sms.env';
@@ -476,3 +497,9 @@ export {
   STUDIO_UI_ROOT,
 } from './studio-ui-mount';
 export type { StudioUiModuleOptions } from './studio-ui-mount';
+
+export {
+  EMAIL_EXTRACT_DESCRIPTION,
+  collectedEmail,
+  parseSpelledEmail,
+} from './identity';

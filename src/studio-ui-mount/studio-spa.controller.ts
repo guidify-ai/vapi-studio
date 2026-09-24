@@ -31,11 +31,11 @@ export function sendStudioIndex(root: string, res: HtmlResponse): void {
  */
 @Controller()
 export class StudioSpaController {
-  constructor(@Inject(STUDIO_UI_ROOT) private readonly root: string) {}
+  public constructor(@Inject(STUDIO_UI_ROOT) private readonly root: string) {}
 
-  @Get(['flow', 'conversations', 'analytics'])
+  @Get(['flow', 'conversations'])
   @Header('Cache-Control', 'no-cache')
-  spa(@Res() res: HtmlResponse): void {
+  public spa(@Res() res: HtmlResponse): void {
     sendStudioIndex(this.root, res);
   }
 }

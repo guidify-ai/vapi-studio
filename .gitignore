@@ -25,17 +25,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Application projects (content gitignored; README + .gitignore tracked)
+# Application projects (other than the tracked sample) — never commit private bots here
 projects/*
 !projects/README.md
 !projects/.gitignore
-# Tracked in-repo Vapi Studio sample (port 9998 — same surface as PoCs)
+# Public sample shipped with the OSS repo (port 9998)
 !projects/sample-landing-llm/
 !projects/sample-landing-llm/**
-# Private experiments — never track (belt + suspenders vs projects/*)
-projects/roofr-poc/
-projects/roofr-poc/**
-# Marketing landing (:4173) and other private apps stay gitignored
 
 # Local-only leftovers (legacy PoCs / SpecKit dumps) — never track
 archive/
@@ -43,3 +39,8 @@ archive/
 # uv / SpecKit local tool shims (machine-absolute symlinks)
 .uv-bin/
 .uv-tools/
+node_modules
+
+# Local make orchestration (promote from Makefile.stub) — OSS sample only
+Makefile
+!Makefile.stub

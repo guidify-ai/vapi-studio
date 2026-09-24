@@ -11,7 +11,7 @@ Opinionated guides for **deterministic voice agents** on `@guidify-ai/vapi-studi
 | Guide | Use when |
 | --- | --- |
 | [Conversation design](./conversation-design.md) | Writing or changing what the bot says / asks |
-| [Nodes and listens](./nodes-and-listens.md) | Adding Nodes, `listen()`, extract, `continueTo` |
+| [Nodes and listens](./nodes-and-listens.md) | Adding Nodes, `before()` / `after()` async, `listen()`, extract, `continueTo` |
 | [Identity and PII](./identity-and-pii.md) | Names, phones, email, forms, consent |
 | [UI and API identity](./ui-and-api-identity.md) | Studio FE↔BE: UUID only externally, `id`+`uuid` in DB, human `label` on DTOs |
 | [Brain and prompt injection](./brain-and-prompt-injection.md) | Untrusted caller speech, Brain allowlists, no spoken jailbreaks |

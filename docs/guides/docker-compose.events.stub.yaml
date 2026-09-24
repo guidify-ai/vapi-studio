@@ -1,0 +1,27 @@
+# Optional compose fragment — Redis + a consumer process only.
+# Use the app's existing `postgres` service; create a second database on it
+# instead of a second Postgres container. Wire your own consumer image/env.
+#
+#   EVENT_STORE_DATABASE_URL=postgres://studio:studio@postgres:5432/app_events
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${STUDIO_EVENTS_REDIS_HOST_PORT:-16379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  event-consumer:
+    image: ${STUDIO_EVENT_CONSUMER_IMAGE:-studio-event-consumer:local}
+    environment:
+      DATABASE_URL: ${EVENT_STORE_DATABASE_URL:-postgres://studio:studio@postgres:5432/app_events}
+      STUDIO_EVENTS_REDIS_URL: ${STUDIO_EVENTS_REDIS_URL:-redis://redis:6379}
+      STUDIO_EVENTS_REDIS_STREAM: ${STUDIO_EVENTS_REDIS_STREAM:-studio:events}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped

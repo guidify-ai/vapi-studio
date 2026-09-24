@@ -1,67 +1,72 @@
 # Installation
 
-Vapi Studio apps are **self-hosted** and **Dockerized**: you run the NestJS app + Postgres (Compose by default). There is no Guidify-hosted runtime. Vapi remains the cloud voice channel; your containers serve Custom LLM + webhook.
+**[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** is a public npm package. Your voice bot is a **separate NestJS app** that depends on it — same idea as installing a framework and maintaining your own application code.
+
+Vapi Studio apps are **self-hosted** and **Dockerized**. There is no Guidify-hosted runtime. Vapi is the cloud voice channel; your containers serve Custom LLM + webhook.
 
 ## Requirements
 
-### Framework (repo root)
-
 - **Node.js 22+**
-- **Yarn 1.x**
+- **Yarn 1.x** or npm
+- **Docker** + Compose (to run a live call stack)
+- **[ngrok](https://ngrok.com/download)** for local HTTPS to Vapi
+- A **Vapi** account
 
-### App runtime (`projects/<name>/`)
+## Install into your app (recommended)
 
-- **Docker** with Compose — app + Postgres in containers (required for the live call stack)
-- **[ngrok](https://ngrok.com/download)** on your PATH — local only: tunnels the Compose port to HTTPS so Vapi can reach webhooks and Custom LLM
-- **Vapi** account and assistant configured with the URLs `yarn start` prints
+In your application directory (private repo, or any folder you own):
 
-Framework work (`yarn build`, `yarn test`, `yarn new-project`) does not need Docker or ngrok. Running a bot against live Vapi does — and production deploys the same Docker image/stack without ngrok, behind your own HTTPS.
+```bash
+yarn add @guidify-ai/vapi-studio
+# or: npm install @guidify-ai/vapi-studio
+```
 
-## Clone and build
+Pin a version when you care about upgrades:
+
+```json
+{
+  "dependencies": {
+    "@guidify-ai/vapi-studio": "0.1.0"
+  }
+}
+```
+
+Wire `VapiStudioModule.forRoot(...)` in your Nest module, add `flow.yaml` + nodes, and run with Docker. See [Quick start](./quick-start.md) and [Creating an app](../building-apps/creating-an-app.md).
+
+On `yarn install` / `npm install`, the package **postinstall** stamps agent rules (`AGENTS.md`, `.cursor/rules/…`) into your app when present.
+
+## What is published (and what is not)
+
+The npm tarball includes **`dist/`**, **`docs/`**, **`agent/`**, **`scripts/`**, **`LICENSE`**, **`README.md`**. It does **not** include:
+
+- `.env` / secrets
+- `projects/` (sample lives in the GitHub repo only)
+- Docker volumes, lab orchestrators, or private apps
+
+Never put API keys in the package source. Apps keep secrets in their own `.env` (gitignored).
+
+## Contribute to the framework (optional)
+
+Clone the public repo if you are changing the framework itself or running the tracked sample:
 
 ```bash
 git clone git@github.com:guidify-ai/vapi-studio.git
 cd vapi-studio
 yarn install
 yarn build
-```
-
-## Verify
-
-```bash
 yarn test
 ```
 
-## Your project under `projects/`
+Tracked sample: `projects/sample-landing-llm/` (`yarn start` → http://127.0.0.1:9998/flow).
+
+Framework developers may use `"@guidify-ai/vapi-studio": "file:../.."` inside `projects/<name>/`. Application teams should depend on the **published** version.
+
+## Agent refs
+
+Manual refresh after upgrading the package:
 
 ```bash
-mkdir -p projects/my-voice-app
-cd projects/my-voice-app
+INIT_CWD=$PWD node node_modules/@guidify-ai/vapi-studio/scripts/install-agent-refs.cjs
 ```
 
-```json
-{
-  "dependencies": {
-    "@guidify-ai/vapi-studio": "file:../.."
-  }
-}
-```
-
-`file:../..` is the framework at the **repository root** (two levels up from `projects/<name>/`).
-
-After framework changes: `yarn build` at the repo root, then `yarn install` in the project if needed.
-
-In the project, `yarn start` starts Docker, launches ngrok on the app port, sets `PUBLIC_BASE_URL` in `.env`, and prints **Webhook** and **Conversation** endpoints for your Vapi assistant. See [Quick start](./quick-start.md).
-
-A private npm registry is optional for teams that split repos later; the default is one clone with `projects/`.
-
-## Agent refs in projects
-
-When your project runs `yarn install`, postinstall copies:
-
-- `.cursor/rules/vapi-studio-best-practices.mdc`
-- `AGENTS.md` block
-
-Manual refresh: `INIT_CWD=$PWD node node_modules/@guidify-ai/vapi-studio/scripts/install-agent-refs.cjs`
-
-Next: [Quick start](./quick-start.md) · [`projects/README.md`](../../projects/README.md)
+Next: [Quick start](./quick-start.md) · [Creating an app](../building-apps/creating-an-app.md)

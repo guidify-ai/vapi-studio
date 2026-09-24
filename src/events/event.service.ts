@@ -10,13 +10,14 @@ import {
   type StudioEventInput,
   type StudioEventListener,
 } from './studio-event';
+import { emitStudioEventBus } from './studio-event-bus';
 import { normalizeAnalyticsFunnels } from '../analytics/analytics-tags';
 
 export type { StudioLogLevel } from './conversation-console';
 
 /**
- * Framework event shim: emit → console + every registered listener.
- * Persistence is a listener (Postgres by default), not this class.
+ * Framework event shim: emit → console + in-process Node bus + Nest listeners.
+ * Durable sinks are application-owned (subscribe with {@link onStudioEvent}).
  */
 @Injectable()
 export class EventService {
@@ -79,6 +80,19 @@ export class EventService {
       ...event.payload,
     });
 
+    try {
+      emitStudioEventBus(event);
+    } catch (error) {
+      this.logger.error(
+        JSON.stringify({
+          type: 'EVENT_BUS_ERROR',
+          eventType: event.type,
+          eventId: event.id,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+    }
+
     for (const listener of this.listeners) {
       try {
         await listener.handle(event);
@@ -98,7 +112,9 @@ export class EventService {
     return event;
   }
 
-  /** Persist-shaped emit — conversation-scoped event for listeners (Postgres). */
+  /**
+   * Conversation-scoped emit for listeners / brokers (not an automatic PG write).
+   */
   public async persist(
     conversationId: string,
     type: string,
@@ -113,10 +129,8 @@ export class EventService {
   }
 
   /**
-   * Funnel / dashboard tag. Stored as type `ANALYTICS_TAG` with `payload.tag`.
-   * Funnel charts score via the app’s code catalog (`AnalyticsFunnelDefinition[]`);
-   * stamps only need a stable `tag`. Optional legacy `payload.funnels` is still
-   * normalized when present.
+   * Funnel / dashboard tag. Emitted as type `ANALYTICS_TAG` with `payload.tag`.
+   * Apps may export further via `onStudioEvent`.
    */
   public async persistAnalyticsTag(
     conversationId: string,

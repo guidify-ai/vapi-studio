@@ -33,8 +33,8 @@ type OpenAiChatResponse = {
  */
 @Injectable()
 export class ChatGptBrainAdapter extends JsonLlmBrainAdapter {
-  protected readonly adapterId = 'studio-chatgpt';
-  protected readonly logger = new Logger('ChatGptBrainAdapter');
+  protected readonly adapterId: string = 'studio-chatgpt';
+  protected readonly logger: Logger = new Logger('ChatGptBrainAdapter');
 
   public constructor(
     usage: BrainUsageTracker,

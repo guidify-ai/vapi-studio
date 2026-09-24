@@ -1,3 +1,9 @@
+# Framework stub — promoted to docker-compose.yaml on first `yarn start`.
+# The promoted file is gitignored: edit it for extra local services if needed.
+# See docs/guides/extending-events.md and docs/guides/docker-compose.events.stub.yaml
+#
+# Do not commit docker-compose.yaml — only this stub stays in git.
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -15,8 +21,6 @@ services:
       timeout: 5s
       retries: 10
 
-  # Baked default: Nest app + Postgres. Prefer OrbStack as the Docker engine.
-  # One command: yarn start (+ ngrok)
   app:
     build:
       context: .
@@ -28,9 +32,6 @@ services:
     env_file:
       - .env
     environment:
-      # Fixed in-compose values only. Secrets (VAPI_*, OPENAI_*, RESEND_*,
-      # POC_ASSISTANT_ID, …) come from env_file — do not set empty ${VAR:-}
-      # here or they override .env with blanks.
       DATABASE_URL: postgres://studio:studio@postgres:5432/sample_landing_llm
       PORT: 9998
       PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:9998}
@@ -51,7 +52,6 @@ services:
       postgres:
         condition: service_healthy
 
-  # Fully mocked unit/integration tests — no app, no postgres, no real secrets
   test:
     profiles: ["test"]
     image: node:24-bookworm-slim
@@ -81,7 +81,6 @@ services:
         echo ">> sample-landing-llm compile + mocked tests"
         cd /workspace/projects/sample-landing-llm
         yarn install
-        # Refresh file: link so Nest app + tests see freshly built @guidify-ai/vapi-studio
         rm -rf node_modules/@guidify-ai/vapi-studio
         yarn install --check-files
         yarn build

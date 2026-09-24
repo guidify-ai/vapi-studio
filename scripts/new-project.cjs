@@ -133,7 +133,19 @@ function renderFiles({ slug, name, uuid }) {
 
   write(
     path.join(dir, '.gitignore'),
-    `node_modules/\ndist/\n.env\nlogs/\n`,
+    `node_modules/
+dist/
+.env
+logs/
+.DS_Store
+.cache/
+
+# Local compose (promoted from docker-compose.stub.yaml on first yarn start)
+docker-compose.yaml
+docker-compose.yml
+!docker-compose.stub.yaml
+!docker-compose.stub.yml
+`,
   );
 
   write(
@@ -489,7 +501,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { join } from 'path';
 import {
   ConversationEntity,
-  ConversationEventEntity,
   FlowLoader,
   MockBrainAdapter,
   ProjectEntity,
@@ -512,7 +523,6 @@ import { GoodbyeNode } from './conversation/nodes/goodbye.node';
       url: process.env.DATABASE_URL ?? 'postgres://studio:studio@postgres:5432/studio',
       entities: [
         ConversationEntity,
-        ConversationEventEntity,
         ProviderIngressEntity,
         ProjectEntity,
       ],
@@ -586,8 +596,12 @@ CMD ["node", "dist/main.js"]
   );
 
   write(
-    path.join(dir, 'docker-compose.yml'),
-    `services:
+    path.join(dir, 'docker-compose.stub.yaml'),
+    `# Framework stub — promoted to docker-compose.yaml on first yarn start.
+# The promoted file is gitignored: edit it for extra local services if needed.
+# See docs/guides/extending-events.md
+
+services:
   postgres:
     image: postgres:16-alpine
     environment:
@@ -682,6 +696,19 @@ bash "$ROOT/scripts/ensure-docker.sh"
 if [[ ! -f .env ]]; then
   echo ">> No .env — copying .env.example"
   cp .env.example .env
+fi
+
+if [[ ! -f docker-compose.yaml && ! -f docker-compose.yml ]]; then
+  if [[ -f docker-compose.stub.yaml ]]; then
+    echo ">> Promoting docker-compose.stub.yaml → docker-compose.yaml (local; gitignored)"
+    cp docker-compose.stub.yaml docker-compose.yaml
+  elif [[ -f docker-compose.stub.yml ]]; then
+    echo ">> Promoting docker-compose.stub.yml → docker-compose.yaml (local; gitignored)"
+    cp docker-compose.stub.yml docker-compose.yaml
+  else
+    echo "Missing docker-compose.stub.yaml" >&2
+    exit 1
+  fi
 fi
 
 PROJECT_UUID="$PROJECT_UUID" python3 -c '

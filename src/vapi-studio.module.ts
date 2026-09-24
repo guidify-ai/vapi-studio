@@ -19,7 +19,6 @@ import {
   STUDIO_EVENT_LISTENERS,
   type StudioEventListener,
 } from './events/studio-event';
-import { PostgresEventListener } from './events/postgres-event.listener';
 import { BrainUsageTracker } from './brain/brain-usage.tracker';
 import { IntegrationClient } from './integrations/integration-client';
 import { FlowLoader } from './flow/flow-loader';
@@ -40,7 +39,6 @@ import {
   type ConversationLimitsConfig,
 } from './conversation/conversation-limits';
 import { ConversationEntity } from './persistence/conversation.entity';
-import { ConversationEventEntity } from './persistence/conversation-event.entity';
 import { ConversationRepository } from './persistence/conversation.repository';
 import { ProviderIngressEntity } from './persistence/provider-ingress.entity';
 import { ProviderIngressRepository } from './persistence/provider-ingress.repository';
@@ -73,8 +71,8 @@ export interface VapiStudioModuleOptions {
    */
   brainAdapter?: Type<BrainAdapter>;
   /**
-   * Extra event listeners (additive). PostgresEventListener is always registered.
-   * App code (e.g. your Nest app) can append Datadog / webhook listeners here.
+   * Nest `StudioEventListener`s (in-process only — e.g. Studio UI event buffer).
+   * Remote exporters belong in app code via `onStudioEvent`, not here.
    */
   eventListeners?: Array<Type<StudioEventListener>>;
   /**
@@ -146,7 +144,6 @@ export class VapiStudioModule {
       imports: [
         TypeOrmModule.forFeature([
           ConversationEntity,
-          ConversationEventEntity,
           ProviderIngressEntity,
           ProjectEntity,
         ]),
@@ -169,13 +166,17 @@ export class VapiStudioModule {
         ConversationRepository,
         ProviderIngressRepository,
         ProjectRepository,
-        PostgresEventListener,
         ...extraListeners,
-        {
-          provide: STUDIO_EVENT_LISTENERS,
-          useFactory: (...listeners: StudioEventListener[]) => listeners,
-          inject: [PostgresEventListener, ...extraListeners],
-        },
+        extraListeners.length > 0
+          ? {
+              provide: STUDIO_EVENT_LISTENERS,
+              useFactory: (...listeners: StudioEventListener[]) => listeners,
+              inject: [...extraListeners],
+            }
+          : {
+              provide: STUDIO_EVENT_LISTENERS,
+              useValue: [] as StudioEventListener[],
+            },
         EventService,
         IntegrationClient,
         BrainUsageTracker,

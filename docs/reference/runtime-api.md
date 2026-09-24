@@ -62,7 +62,7 @@ Conversation **limits are always on** (defaults apply when `limits` is omitted).
 | **Flow YAML** | Paths: start node, class names, intentions, portals, priority, optional **condition transitions** |
 | **Brain** | `scan` / `clarify` / `judge`. Does not own routing |
 | **Adapter** | Channel wire format (Vapi Custom LLM SSE, call id, tools). Nodes never see it |
-| **Events** | `EventService.emit` → console + listeners (Postgres by default) |
+| **Events** | Event-driven bus: `EventService.emit` → console + `onStudioEvent` + Nest `eventListeners`. Custom listeners welcome; no broker required in OSS |
 | **Integrations** | Signed outbound HTTP from Nodes via `ctx.integrations.request` |
 
 Happy-path live call (MVP): bootstrap → in-memory runtime reused across Custom LLM turns → checkpoint to Postgres after each turn → `status-update: ended` finalize. Checkpoints are for **forensics and durability**, not automatic session restore in the MVP.
@@ -166,11 +166,13 @@ String-only intention names in `flow.yaml` still work (`phase: scan` behavior).
 
 `AgentNode<TSchema>` — declare overrides in **runtime order**:
 
-1. `before(ctx)` — authorize / prepare; `false` rejects this candidate
-2. `listen(ctx)` — register the **next** listen (intentions, hints, extract, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind
-3. `run(ctx)` — **required**; must end the turn with a terminal output action
-4. `after(ctx, result)` — teardown for this execution
+1. `before(ctx)` — authorize / prepare; `false` rejects this candidate. Put **async prep** here (JWT/API warm, auth). Prefer spawn-without-await when first speech must stay fast; `await` only when the gate needs the result. Do not dump that I/O into `run()`.
+2. `listen(ctx)` — register the **next** listen (intentions, hints, extract, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind (no I/O)
+3. `run(ctx)` — **required**; speech + exactly one terminal output action — keep integrations/teardown out unless speak cannot proceed without the result
+4. `after(ctx, result)` — teardown for this execution (non-speech side effects; no TTS)
 5. `catch(ctx, error)` — optional recovery (`restartNode`, `forceIntention`, `catchResult`, `rethrowCatch`)
+
+Doctrine: [`docs/best-practices/nodes-and-listens.md`](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
 Intention **action** names: `is{VerbInPast}…` (`isCollectedFirstName`). Polarity adjectives are fine (`studio.isPositive`).
 
@@ -224,13 +226,40 @@ return ctx.output.invokeAdvertisedTool({
 ```
 
 `endCall` / `transferToHuman` / `handoff` resolve tool names via adapter env. `invokeAdvertisedTool` emits the exact `name` you pass — it does **not** sync or invent the assistant tool list. Provision matching tools on the Vapi assistant before you call.
+
+### Tasks (`ctx.tasks.dispatch` / `require`)
+
+I/O counterpart to the speech phrase pool ([`CallTurnQueue`](../../src/conversation/call-turn-queue.ts)). The queue is **conversation-scoped** (survives node transitions).
+
+- **`dispatch`** — `mode: 'wait'` blocks this turn; `mode: 'async'` returns a handle and continues (user speech still queues). Optional `dedupeKey` coalesces in-flight work and is the handle for later nodes.
+- **`require(dedupeKey | { taskId, dedupeKey })`** — postponed debt: a later node waits for work a previous node started async. Already-finished tasks resolve immediately; still-running emits `TASK_AWAITED` then waits.
+
+```ts
+// Node A — start work, keep talking
+await ctx.tasks.dispatch({
+  kind: 'roofr.appointment.availability',
+  mode: 'async',
+  dedupeKey: `availability:${ctx.conversation.id}`,
+  run: () => fetchAppointmentAvailability(dayHint),
+});
+return ctx.output.continueTo({
+  nodeId: 'offerSlots',
+  text: 'One moment — checking openings.',
+});
+
+// Node B — dependency: must have the result before listing slots
+const slots = await ctx.tasks.require(`availability:${ctx.conversation.id}`);
+```
+
+Lifecycle events (persist): `TASK_ENQUEUED`, `TASK_STARTED`, `TASK_COMPLETED`, `TASK_FAILED`, `TASK_DEDUPED`, `TASK_AWAITED`. Never speak `taskId`s. Prefer async + a short spoken bridge when the next node can absorb the wait; use `require` at the node that needs the result.
+
 ### Forms (`ctx.forms.expose`)
 
 Blocking structured collection. Apps deliver via a dispose adapter — Studio modal, **first-party HTML** (`renderFormHtml` + `GET/POST /forms/:exposeId`), or **Twilio SMS** (`TwilioSmsFormDisposeAdapter`, `branch: sms`).
 
 The dispose adapter is the **sendout driver**. It declares a delivery `branch` (`html_link`, `sms`, `unavailable`, …). The app may also pass a conversation `branch` on expose (e.g. `identity_html_form`) so logs show which flow lane requested the form.
 
-**Twilio SMS (prepared):** reserved env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, and `TWILIO_SMS_DRY_RUN` (default **on**). Sends emit durable `OUTBOUND_NOTIFICATION` (and `OUTBOUND_NOTIFICATION_ERROR` on failure) via `EventService` → Postgres listener. Dry-run still persists with `status: dry_run`. Live send needs optional peer `twilio` and `TWILIO_SMS_DRY_RUN=0`. `disposeContext`: `contactPhone` + `formUrl` (optional `body`). See [Forms](../guide/forms.md) and [environment variables](./environment-variables.md).
+**Twilio SMS (prepared):** reserved env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, and `TWILIO_SMS_DRY_RUN` (default **on**). Sends emit `OUTBOUND_NOTIFICATION` (and `OUTBOUND_NOTIFICATION_ERROR` on failure) via `EventService` (in-process Node bus + Nest listeners). Dry-run still emits with `status: dry_run`. Live send needs optional peer `twilio` and `TWILIO_SMS_DRY_RUN=0`. `disposeContext`: `contactPhone` (optional `formUrl` — defaults to `{PUBLIC_BASE_URL}/forms/{exposeId}`; optional `body`). See [Forms](../guide/forms.md) and [environment variables](./environment-variables.md).
 
 ```ts
 const values = await ctx.forms.expose({
@@ -405,6 +434,30 @@ All JSON-LLM stock adapters share the same scan/clarify/judge contracts: HTTP ti
 
 Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 
+### Email PII helpers (boxed)
+
+Voice / ASR email recovery — use on listen extracts; fail closed before writing memory.
+
+**Import (preferred):**
+
+```ts
+import {
+  EMAIL_EXTRACT_DESCRIPTION,
+  collectedEmail,
+  parseSpelledEmail,
+} from '@guidify-ai/vapi-studio/identity';
+```
+
+Also available from `@guidify-ai/vapi-studio`.
+
+| Export | Role |
+| --- | --- |
+| `EMAIL_EXTRACT_DESCRIPTION` | GOT string for `extract.fields[].description` (normal + spelled ASR) |
+| `parseSpelledEmail(raw)` | Direct `name@domain` or spelled (`mark at example dot com`, letter-by-letter) → address or `null` |
+| `collectedEmail(extracted, spoken)` | Prefer Brain extract, then spoken |
+
+See [identity-and-pii.md](../best-practices/identity-and-pii.md).
+
 Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
 Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — model must be on the **selected adapter’s** cheap whitelist (default when omitted). Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
@@ -421,7 +474,7 @@ See [ui-and-api-identity.md](../best-practices/ui-and-api-identity.md).
 
 Route params and JSON fields for resource identity use the name `uuid` (not `id`) on new/changed APIs. Transitional tables may still use UUID-as-PK named `id` — migrate when touching persistence.
 
-Mount the shared React Studio SPA (Flow / Conversations / Analytics) from the package:
+Mount the shared React Studio SPA (Flow / Conversations) from the package:
 
 ```ts
 // app.module.ts
@@ -438,9 +491,10 @@ Routes (client SPA + Nest JSON APIs):
 | --- | --- |
 | `GET /flow` | `GET /flow/graph`, `PUT /flow/edges`, `/studio/*` |
 | `GET /conversations`, `/conversations/:uuid` | `GET /conversations/api`, `/conversations/api/:uuid` |
-| `GET /analytics` | `GET /analytics/api`, `/analytics/export.csv` |
 
-Build assets: `yarn build` (or `yarn build:studio-ui`) produces `dist/studio-ui/`. Do **not** ship per-app `config/*.html` operator pages.
+Analytics dashboards are not part of the Studio operator SPA. Stamp tags via
+`persistAnalyticsTag`; export events from application code if needed
+([Extending events](../guides/extending-events.md)).
 
 
 Package-owned **names** (behavior is always an application Node):
@@ -524,15 +578,17 @@ JWT HS256 of the canonical body bytes in `x-signature` (Node `crypto`, no `jsonw
 
 ## Events, console, daily logs
 
-**Doctrine:** logs + persisted events must be enough to answer any question about a call. See [`docs/best-practices/debugging-and-observability.md`](../best-practices/debugging-and-observability.md).
+**Doctrine:** logs + structured events must be enough to answer any question about a call. See [`docs/best-practices/debugging-and-observability.md`](../best-practices/debugging-and-observability.md).
 
-`EventService.emit` / `.log` → pretty conversation console **and** (for `emit`/`persist`) registered listeners.
+Vapi Studio is **event-driven**. `EventService.emit` / `.log` → pretty conversation console. `emit` / `persist` also fan out to:
 
-- Default listener: `PostgresEventListener` → `conversation_events`
-- Extra listeners: `VapiStudioModule.forRoot({ eventListeners: [...] })` (`StudioEventListener[]`)
-- `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag`. Apps define funnel charts as a code catalog (`AnalyticsFunnelDefinition[]`); steps bind to `tags[]` and/or `eventTypes[]`, or outcome steps use `requireAllTags` / `excludeTags` (AND / NOT). Stamp milestones with a stable tag id — **do not** put funnel membership on the event.
-- Funnel scoring: `ConversationRepository.countConversationsMatchingStep({ … })` (omit `funnelId`). Catalog membership decides which chart a tag appears on.
-- Aggregation helpers on `ConversationRepository`: `countConversationsByProject`, `countConversationsByEventType`, `countConversationsByAnalyticsTag`, `countConversationsMatchingStep`, `countConversationsMatchingTagRules`, `countConversationsMatchingEventMatchers`, `callDurationPercentiles`
+- **Node EventEmitter** — `onStudioEvent(handler)` for any process-level listener
+- **Nest `eventListeners`** — `VapiStudioModule.forRoot({ eventListeners: [...] })` for DI services (`StudioEventListener`)
+
+Build custom logic on those hooks (queues, warehouses, CRM, metrics). Guidify AI companion tools integrate the same way. The OSS package does **not** ship a durable event store or remote event API — durability is application-owned. Guide: [`docs/guides/extending-events.md`](../guides/extending-events.md).
+
+- `persistAnalyticsTag(conversationId, tag, payload?)` → type `ANALYTICS_TAG` with `payload.tag`. Stamp milestones with a stable tag id — **do not** put funnel membership on the event (`payload.funnels`).
+- Conversation aggregates that remain in Studio Postgres: `countConversationsByProject`, `callDurationPercentiles` (on `ConversationRepository`)
 - Console: `STUDIO_CONSOLE_DEBUG` (default on). Disable with `0` / `false` / `off`
 - File driver: still prints console; also appends ANSI-stripped lines to `{LOG_DIR}/dailyYYYYMMDD.log`
 - **The log directory is owned by the application** (each project keeps a `logs/` folder and sets `LOG_DIR`). The framework only writes there.
@@ -561,7 +617,7 @@ Caller Phone Number: {webhook customer number, or blank}
 | `FLOW_CONTINUE` | persist | Same-flow jump from/to/reason |
 | `NODE_REJECT` | log | Single `before()` refusal (also rolled into `ROUTE_DECISION.rejected`) |
 | `FORM_*` | log/persist | Expose / deliver / submit / timeouts (carry `branch` + `deliveryBranch`) |
-| `ANALYTICS_TAG` | **persist** | Milestone (`payload.tag`). Funnel charts use the app code catalog — stamps do not need `funnels` |
+| `ANALYTICS_TAG` | **persist** | Milestone (`payload.tag`). Stamps do not need `funnels` |
 
 Memory console diffs include conversation-critical flags such as `introSpoken` (only bootstrap infra keys are stripped).
 
@@ -569,12 +625,13 @@ Disable file logs with `STUDIO_FILE_LOG=0`. Tests skip files unless `LOG_DIR` is
 
 ## Persistence (PoC)
 
-TypeORM + PostgreSQL:
+TypeORM + PostgreSQL (Studio / app DB):
 
 - `projects` — durable project identity; public ingress UUID for `/{projectUuid}/vapi/...`
 - `conversations` — durable identity (`project_id` + `provider_call_id` unique), status, metadata, final snapshot
-- `conversation_events` — event history
 - `provider_ingress` — raw webhook / Custom LLM bodies for operator inspection (`project_id` when scoped)
+
+Event history is not a Studio TypeORM table. See [Extending events](../guides/extending-events.md).
 
 Vapi HTTP routes are **app-owned** and must be mounted under `/{projectUuid}/vapi/...`. Apps seed a stable `PROJECT_UUID` on boot. Vapi `assistantId` is forensics only — not used for project routing.
 
@@ -596,6 +653,7 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 - `BrainService` / adapters / `STANDARD_INTENTIONS` / `STUDIO_CLARIFY_CANNOT_ANSWER`
 - `FlowLoader`, `WorkflowLoader`, `WorkflowHandoffService`
 - `FormsService`, `FORM_DISPOSE_ADAPTER`, `TwilioSmsFormDisposeAdapter`, form types / timeout errors
+- `StudioTaskQueue`, `createStudioTasksApi`, `ctx.tasks`, `STUDIO_TASK_EVENTS` / `STUDIO_EVENTS.TASK_*`
 - `EventService` (incl. `persistAnalyticsTag`), daily-log helpers
 - `ANALYTICS_TAG_EVENT`, `normalizeAnalyticsFunnels`, analytics funnel types (`AnalyticsFunnelDefinition`, `AnalyticsFunnelStep`, `AnalyticsTagPayload`)
 - `IntegrationClient`, JWT helpers

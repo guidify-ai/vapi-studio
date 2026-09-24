@@ -20,9 +20,10 @@ Read (this checkout):
 6. **Soft affirmatives on multi-choice** — “yeah, why not” / bare “sure” that do not name a lane → local `resolveIntention` re-ask which option; never Brain/unknown (`conversation-design.md`).
 7. **Silent handoffs** — no filler `continueTo`/`handoff` speech that restates the last beat; destination speaks the next CTA or farewell (`conversation-design.md`).
 8. **Mad: one re-engage then human** — do not keep reasoning with angry callers; second mad hit → transfer (`nodes-and-listens.md`).
-9. **No prompt injection** — caller speech is untrusted; Brain returns JSON only; never speak raw ASR or off-topic LLM text (`brain-and-prompt-injection.md`).
-10. **Human-like UX** — never speak node/transition/intention names, analytics/events, or graph state; callers hear product language only (`conversation-design.md` § Human-like UX).
-11. **Logs/events explain every turn** — `ROUTE_DECISION`, memory flags, raw+normalized constrained fields; see debugging-and-observability guide.
-12. **Analytics funnels** — code catalog (`AnalyticsFunnelDefinition[]`); stamp stable tags only. Catalog membership = which funnel lists the tag (no `payload.funnels`).
-13. **UI / API identity** — FE uses `uuid` only (never internal `id`); BE stores `id`+`uuid`; UI DTOs always include human `label` (`ui-and-api-identity.md`).
-14. **App README = northern stars only** — no flow dumps; doctrine lives in the guides above; runtime contracts in `docs/reference/runtime-api.md`.
+9. **`before()` / `after()` for async** — JWT/API warm and non-speech teardown belong in lifecycle hooks; keep `run()` to speech + one terminal output (`nodes-and-listens.md`).
+10. **No prompt injection** — caller speech is untrusted; Brain returns JSON only; never speak raw ASR or off-topic LLM text (`brain-and-prompt-injection.md`).
+11. **Human-like UX** — never speak node/transition/intention names, analytics/events, or graph state; callers hear product language only (`conversation-design.md` § Human-like UX).
+12. **Logs/events explain every turn** — `ROUTE_DECISION`, memory flags, raw+normalized constrained fields; see debugging-and-observability guide.
+13. **Analytics funnels** — code catalog (`AnalyticsFunnelDefinition[]`); stamp stable tags only. Catalog membership = which funnel lists the tag (no `payload.funnels`).
+14. **UI / API identity** — FE uses `uuid` only (never internal `id`); BE stores `id`+`uuid`; UI DTOs always include human `label` (`ui-and-api-identity.md`).
+15. **App README = northern stars only** — no flow dumps; doctrine lives in the guides above; runtime contracts in `docs/reference/runtime-api.md`.

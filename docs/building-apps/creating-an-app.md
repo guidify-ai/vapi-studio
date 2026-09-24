@@ -1,50 +1,32 @@
 # Creating an application
 
-Stand up a NestJS voice bot under **`projects/`** in your Vapi Studio clone.
+Install **[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** into **your** NestJS app (private repo). The tracked sample lives under **`projects/sample-landing-llm/`** in the public GitHub tree for reference — copy patterns from it; do not put production secrets in the OSS repo.
 
-## 1. Clone and build the framework
-
-```bash
-git clone git@github.com:guidify-ai/vapi-studio.git
-cd vapi-studio
-yarn install
-yarn build
-```
-
-## 2. Create `projects/<name>/`
+## 1. Depend on the package
 
 ```bash
-# from repo root
-yarn new-project
-# or: yarn new-project --name "My Voice App" --slug my-voice-app --yes
-cd projects/<slug>
+yarn add @guidify-ai/vapi-studio@0.1.0
 ```
-
-This writes a Nest skeleton plus **`config/project.identity.json`** (stable ingress UUID). Prefer that over hand-mkdir. You can still copy patterns from an [example](./example-apps.md).
-
-Minimum: `app.module.ts` (including `StudioUiModule.forRoot()`), `main.ts` (`mountStudioUiAssets`), `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.yml`, `.env.example`.
-
-Operator UI is the **framework React SPA** (`/flow`, `/conversations`, `/analytics`) — not per-app HTML shells.
-
-## 3. Depend on Vapi Studio
 
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:../.."
+    "@guidify-ai/vapi-studio": "0.1.0"
   }
 }
 ```
 
-`file:../..` points at the **repository root** (two levels up from `projects/<name>/`).
+Framework contributors editing the clone may use `"file:../.."` or `"file:../guidify-ai"` temporarily. Ship private apps against a **published** version.
 
-```bash
-yarn install
-```
+## 2. Scaffold
 
-If you changed framework code: `yarn build` from the repo root, then `yarn install` again in the project if types are stale.
+Copy from [sample-landing-llm](https://github.com/guidify-ai/vapi-studio/tree/main/projects/sample-landing-llm) or run `yarn new-project` from a framework clone (writes under `projects/<slug>` for experiments). Prefer a **sibling / private** app directory for anything with customer data.
 
-## 4. Register agent steps
+Minimum: `app.module.ts` (including `StudioUiModule.forRoot()`), `main.ts` (`mountStudioUiAssets`), `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.stub.yaml`, `.env.example`.
+
+Operator UI is the **framework React SPA** (`/flow`, `/conversations`) — not per-app HTML shells.
+
+## 3. Register agent steps
 
 Every step class:
 
@@ -52,7 +34,7 @@ Every step class:
 2. Listed in `VapiStudioModule.forRoot({ nodes: [{ className, useClass }] })`
 3. Referenced in `flow.yaml`
 
-## 5. Vapi HTTP layer (your code)
+## 4. Vapi HTTP layer (your code)
 
 Implement endpoints that:
 
@@ -62,36 +44,23 @@ Implement endpoints that:
 
 See [Vapi adapter](../guide/vapi-adapter.md) for contracts.
 
-## 6. Run
+## 5. Run
 
 Local dev needs **Docker** and **[ngrok](https://ngrok.com/download)**. The app listens on `localhost`; ngrok publishes HTTPS so Vapi can POST webhooks and Custom LLM traffic.
 
 ```bash
-cd projects/my-voice-app
-yarn start   # Docker + ngrok (see scripts/start.sh in example apps)
+yarn start   # Docker + ngrok (see scripts/start.sh in the sample)
 ```
 
-Ship a `start` script in `package.json` that brings up Docker, waits for `/health`, starts **ngrok** on the app port, writes `PUBLIC_BASE_URL` to `.env`, and prints the two URLs your Vapi assistant needs:
+Ship a `start` script that brings up Docker, waits for `/health`, starts **ngrok**, writes `PUBLIC_BASE_URL` to `.env`, and prints:
 
 | Vapi assistant setting | Endpoint |
 | --- | --- |
 | **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
 | **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
 
-Each app owns a stable UUID in **`config/project.identity.json`**. `yarn start` / app boot **upserts** it into the Postgres `projects` table (create or exist). Do not regenerate the id after wiring Vapi.
+Each app owns a stable UUID in **`config/project.identity.json`**. Do not regenerate it after wiring Vapi.
 
-Example apps use `scripts/start.sh` → `docker compose up -d --build`, health checks, then ngrok on the app port. Callers should use **`yarn start`**, not raw `docker compose`.
+## Contributors / local lab
 
-First time in the project: `yarn install` after you add the `file:../..` dependency.
-
-## 7. Environment
-
-Keep secrets in `.env` (gitignored). See [Environment variables](../reference/environment-variables.md).
-
-## 8. Project README
-
-`projects/<name>/README.md`: northern stars only — not flow YAML. Conversation design: [best practices](../best-practices/README.md).
-
-## Optional: separate repository
-
-If you must host the app in its own git repo, depend on a published `@guidify-ai/vapi-studio` or `file:../vapi-studio`. The supported default is **`projects/` inside one clone**.
+Clone [vapi-studio](https://github.com/guidify-ai/vapi-studio) to change the framework. Optional sibling **`guidify-lab`** orchestrates shared Postgres/Redis for private stacks — not published to npm.

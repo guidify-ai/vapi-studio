@@ -14,8 +14,8 @@ import type {
 import { FormChannelUnavailableError } from './form.types';
 import {
   pickSmsDestination,
-  pickSmsFormUrl,
   resolveSmsBody,
+  resolveSmsFormUrl,
   resolveTwilioSmsConfig,
 } from './twilio-sms.env';
 import {
@@ -31,10 +31,12 @@ import {
  * `TWILIO_SMS_DRY_RUN` (default **on** — prepare mode, no live API).
  *
  * On success (dry-run or live) emits `OUTBOUND_NOTIFICATION` via EventService
- * → listeners (Postgres by default) → `conversation_events`.
+ * → listeners / app exporters (`onStudioEvent`).
  *
  * Wire: `VapiStudioModule.forRoot({ formDisposeAdapter: TwilioSmsFormDisposeAdapter })`.
  * Install peer `twilio` only when leaving dry-run for live sends.
+ * `disposeContext.contactPhone` required; `formUrl` optional (falls back to
+ * `{PUBLIC_BASE_URL}/forms/{exposeId}`).
  */
 @Injectable()
 export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
@@ -64,9 +66,13 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
       await this.persistOutboundError(payload, reason);
       throw new FormChannelUnavailableError(reason);
     }
-    const formUrl = pickSmsFormUrl(payload.disposeContext);
+    const formUrl = resolveSmsFormUrl(
+      payload.disposeContext,
+      payload.exposeId,
+    );
     if (!formUrl) {
-      const reason = 'Twilio SMS dispose needs disposeContext.formUrl';
+      const reason =
+        'Twilio SMS dispose needs disposeContext.formUrl or PUBLIC_BASE_URL (for /forms/{exposeId})';
       await this.persistOutboundError(payload, reason);
       throw new FormChannelUnavailableError(reason);
     }
@@ -86,7 +92,7 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
         : new FormChannelUnavailableError(reason);
     }
 
-    // Produce → listeners (Postgres) → conversation_events.
+    // Produce → listeners / onStudioEvent exporters.
     await this.events?.persist(
       payload.conversationId,
       STUDIO_EVENTS.OUTBOUND_NOTIFICATION,

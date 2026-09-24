@@ -4,18 +4,18 @@
 
 **Operator-only:** Event types (`ROUTE_DECISION`, `CONDITION_TRANSITION`, …), node ids, and memory keys exist for **you** and Studio UIs — the bot must never mention them to the caller. See [conversation-design.md](./conversation-design.md) § Human-like UX.
 
-If you change routing, listens, extracts, identity, or speech and cannot reconstruct the turn from `conversation_events` + daily file logs alone, the change is incomplete: add structured fields in the **same** work.
+If you change routing, listens, extracts, identity, or speech and cannot reconstruct the turn from structured events + daily file logs alone, the change is incomplete: add structured fields in the **same** work.
 
 ## Where forensics live
 
 | Source | What it answers |
 | --- | --- |
 | `{LOG_DIR}/dailyYYYYMMDD.log` + console | Full turn stream: user text, condition transitions, Brain/listen resolve, `ROUTE_DECISION`, `NODE_*`, `SAY`, memory diffs |
-| `conversation_events` (Postgres via `emit`/`persist`) | Durable subset: lifecycle, `CONDITION_TRANSITION`, `FORM_SENDOUT`, `ROUTE_DECISION` / `ROUTE_FAILED`, `FLOW_CONTINUE`, app events (`PHONE_DIGITS_EVAL`, `FORM_LINK_READY`, caller CRM), funnel `ANALYTICS_TAG` |
+| Structured events (`EventService` / `onStudioEvent`) | Event-driven forensics + extension surface: lifecycle, `CONDITION_TRANSITION`, `FORM_SENDOUT`, `ROUTE_DECISION` / `ROUTE_FAILED`, `FLOW_CONTINUE`, app events, funnel `ANALYTICS_TAG`. **Studio emits Node events**; attach custom listeners for any sink. Guidify tools use the same hooks. |
 | `provider_ingress` | Raw Vapi webhook / Custom LLM bodies (ASR archaeology) |
 | `conversations.runtime_state` / `final_state` | Full memory checkpoint |
 
-Turn detail that only used `EventService.log` historically is **not** in Studio’s emit buffer. Prefer `persist` (or `emit`) for any decision you would need to debug after the container restarts.
+Turn detail that only used `EventService.log` historically is **not** on the bus. Prefer `persist` (or `emit`) for any decision you would need to debug after the container restarts. Durability beyond the process is application-owned — implement via `onStudioEvent` or Nest `eventListeners` ([Extending events](../guides/extending-events.md)).
 
 ## Must-answer questions (checklist)
 
@@ -33,7 +33,10 @@ Before merging conversation/routing work, confirm logs can answer:
 
 Apps should `ctx.events.persist(conversationId, TYPE, { … })` for domain decisions that framework routing does not cover (phone digit eval, form mock wait, CRM hydrate). Include `runtimeInstanceId`, `providerCallId`, `turnNumber`, and the raw + normalized inputs — never only the spoken apology text.
 
-For **admin funnel stats**, define an `AnalyticsFunnelDefinition[]` catalog in code (ordered steps → `tags[]` and/or `eventTypes[]`). Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag` using stable `snake_case` tags — **catalog membership**, not `payload.funnels`. Charts score via `countConversationsMatchingStep({ tags, eventTypes })`. One project = one analytics page with outcomes, funnel charts, and top tags. Product apps usually model outcome paths (e.g. appointment only / estimate only / both), not internal graph stages.
+For **funnel instrumentation**, stamp milestones with `persistAnalyticsTag` /
+`stampAnalyticsTag` using stable `snake_case` tags — **do not** put
+`payload.funnels` on events. Scoring catalogs and dashboards are application
+concerns outside Studio operator UI.
 
 Ended calls should persist **`CONVERSATION_PATH`** (node signature) and **`CALL_OUTCOME`** (`success` / `failure` / `unknown` via Brain judge at teardown).
 

@@ -1,14 +1,29 @@
 {
   "name": "@guidify-ai/vapi-studio",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Vapi Studio — deterministic voice agents for Vapi (NestJS)",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/guidify-ai/vapi-studio.git"
+  },
+  "homepage": "https://github.com/guidify-ai/vapi-studio#readme",
+  "bugs": {
+    "url": "https://github.com/guidify-ai/vapi-studio/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./identity": {
+      "types": "./dist/identity/index.d.ts",
+      "default": "./dist/identity/index.js"
     },
     "./docs/best-practices/*": "./docs/best-practices/*",
     "./agent/AGENTS.md": "./agent/AGENTS.md"

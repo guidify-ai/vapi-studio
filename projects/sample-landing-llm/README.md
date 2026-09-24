@@ -13,13 +13,15 @@ Old full planner graph (company → discovery → sample package) is **unmounted
 Operator surfaces (same runtime as other Studio apps):
 
 - `/flow` — planner graph
-- `/analytics` — planner funnels (`intake_seeded` when intro fields arrive)
 - `/conversations` — transcripts
 - `/studio` — text chat
 - `/{projectUuid}/vapi/*` — Vapi ingress
 
+Stamp analytics tags in agent code (`persistAnalyticsTag`). Durable sinks and
+dashboards are app-owned — see `docs/guides/extending-events.md`.
+
 ```bash
-yarn start   # Docker app + Postgres on :9998 + ngrok → PUBLIC_BASE_URL for Vapi
+yarn start   # promotes docker-compose.stub.yaml → docker-compose.yaml if needed; app + Postgres on :9998 + ngrok
 yarn stop    # docker compose down (ngrok stops with Ctrl+C on start)
 ```
 

@@ -70,7 +70,7 @@ Portal re-engages (transfer “I can help instead”, mad apology, after-hours) 
 
 **Hard rule:** Everything the caller hears must sound like a human on a business phone call — not like a developer debugging a state machine.
 
-Forensics (node ids, transition reasons, event types, memory keys, analytics) belong in **logs, Postgres, Flow Studio, and operator UIs only**. They must **never** be spoken, paraphrased, or implied in assistant copy.
+Forensics (node ids, transition reasons, event types, memory keys, analytics tags) belong in **logs, Flow Studio, and operator UIs only**. They must **never** be spoken, paraphrased, or implied in assistant copy.
 
 ### Flow chart layout (Flow Studio / docs)
 

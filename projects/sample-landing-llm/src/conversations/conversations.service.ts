@@ -49,12 +49,6 @@ export interface ConversationDetail {
   metadata: Record<string, unknown>;
   liveInMemory: boolean;
   vapiCallUrl: string | null;
-  events: Array<{
-    id: string;
-    type: string;
-    createdAt: string;
-    payload: Record<string, unknown>;
-  }>;
 }
 
 @Injectable()
@@ -81,23 +75,15 @@ export class ConversationsService {
       throw new NotFoundException('Conversation not found');
     }
 
-    const events = await this.conversations.listEvents(conversationId);
-    const eventDtos = events.map((ev) => ({
-      id: ev.id,
-      type: ev.type,
-      createdAt: ev.createdAt.toISOString(),
-      payload: ev.payload ?? {},
-    }));
-
     const live = this.registry.getByConversationId(conversationId);
     if (live && live.status !== 'ENDED') {
-      return { ...this.detailFromLive(row, live), events: eventDtos };
+      return this.detailFromLive(row, live);
     }
 
     const state = (row.finalState ?? row.runtimeState) as
       | Record<string, unknown>
       | null;
-    return { ...this.detailFromSnapshot(row, state), events: eventDtos };
+    return this.detailFromSnapshot(row, state);
   }
 
   private toListItem(row: ConversationEntity): ConversationListItem {
@@ -127,7 +113,7 @@ export class ConversationsService {
   private detailFromLive(
     row: ConversationEntity,
     live: SupervisedConversation,
-  ): Omit<ConversationDetail, 'events'> {
+  ): ConversationDetail {
     const meta =
       live.metadata && typeof live.metadata === 'object' ? live.metadata : {};
     return {
@@ -161,7 +147,7 @@ export class ConversationsService {
   private detailFromSnapshot(
     row: ConversationEntity,
     state: Record<string, unknown> | null,
-  ): Omit<ConversationDetail, 'events'> {
+  ): ConversationDetail {
     const meta =
       row.metadata && typeof row.metadata === 'object'
         ? { ...row.metadata }

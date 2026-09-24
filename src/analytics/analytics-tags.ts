@@ -1,7 +1,7 @@
 /**
- * Durable analytics tags — milestones for operator dashboards.
+ * Analytics tags — funnel milestones stamped on the in-process event bus.
  *
- * Persist via `EventService.persistAnalyticsTag` (type `ANALYTICS_TAG`).
+ * Emit via `EventService.persistAnalyticsTag` (type `ANALYTICS_TAG`).
  *
  * **Funnels:** apps define an `AnalyticsFunnelDefinition[]` catalog in code.
  * Charts score conversations that match each step’s `tags` / `eventTypes`.

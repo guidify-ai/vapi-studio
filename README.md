@@ -4,24 +4,24 @@
 
 **Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) — live sample, product overview, and hire Guidify.
 
-**Self-hosted and Dockerized.** You run the NestJS app and Postgres (and any other services you add) on **your** infrastructure — laptop via Docker Compose, or your own cloud/VPS. There is no Guidify-hosted runtime and no managed SaaS for the conversation engine. Vapi stays the voice channel in the cloud; your Studio app is the Custom LLM + webhook endpoint Vapi calls.
+This repository is the **public** source for **[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** on npm. Install it into your NestJS app; keep your bot and secrets in **your** private repo.
 
-<p align="center">
-  <img src="./docs/assets/vapi-studio-stack.svg" alt="Vapi to Vapi Studio to nodes to optional Brain" width="720" />
-</p>
-
-This repository ships NestJS libraries at the **repo root** (`src/`, `@guidify-ai/vapi-studio`). Your bots live in **`projects/`** in the same clone — no `packages/` layer, no second repository required. Example apps are **Docker Compose–first**: the supported way to run a call stack is `yarn start` (Compose build/up + optional ngrok for local Vapi HTTPS), not a long-lived host-machine Node process for the app.
-
-```text
-vapi-studio/
-├── src/                  ← framework
-├── docs/
-├── projects/             ← your NestJS apps (`file:../..`)
-│   └── my-voice-app/
-└── package.json
+```bash
+yarn add @guidify-ai/vapi-studio
 ```
 
-Project **content** under `projects/` is gitignored by default; `projects/README.md`, `projects/.gitignore`, and the tracked Vapi Studio sample **`projects/sample-landing-llm/`** (`:9998` — `/analytics`, `/flow`, `/studio`, Vapi routes) are included. Marketing landing (`:4173`) and other private apps stay gitignored.
+```text
+vapi-studio/              ← this repo (framework source + docs + sample)
+├── src/                  ← published as dist/ on npm
+├── docs/
+├── projects/
+│   └── sample-landing-llm/   ← tracked public sample (:9998)
+└── package.json          ← name: @guidify-ai/vapi-studio
+```
+
+Your production app (e.g. a private `roofr-poc`) lives **elsewhere** and depends on a published version (`0.1.0`, …). Other local folders under `projects/` stay gitignored so they never leak into the OSS tree; only the sample is tracked.
+
+**Self-hosted and Dockerized.** You run the NestJS app and Postgres on **your** infrastructure. There is no Guidify-hosted runtime. Vapi stays the voice channel; your Studio app is the Custom LLM + webhook endpoint.
 
 Product tools (same catalog as [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca)): **five named surfaces** plus room for more. Shipped docs live under [`docs/`](./docs/README.md).
 
@@ -32,7 +32,7 @@ Product tools (same catalog as [vapi-studio.guidify.ca](https://vapi-studio.guid
 | # | Tool | Status | Summary |
 | --- | --- | --- | --- |
 | 1 | **Vapi Studio** | Shipped | Deterministic agents — typed steps + `flow.yaml`. Supervisor routes every turn; Brain only at listen boundaries. |
-| 2 | **Vapi Conversation Analytics** | Shipped | Funnel tags, call forensics, and operator views so every conversation explains itself. |
+| 2 | **Conversation events** | Shipped | Event-driven bus — `onStudioEvent` + Nest `eventListeners`. Build any custom logic on the hooks; Guidify tools use the same surface. |
 | 3 | **Vapi Custom Transcriber** | Coming soon | Controllable ASR for digit listens, names, and constrained extracts — fewer junk transcripts as PII. |
 | 4 | **Vapi Voice Profiles** | Coming soon | Reusable voice + persona packs for Vapi assistants — consistent brand sound across flows. |
 | 5 | **Vapi Integrations** | Coming soon | Signed outbound hooks to CRM and tools — BYOK wiring without leaking provider protocols into Nodes. |
@@ -40,7 +40,7 @@ Product tools (same catalog as [vapi-studio.guidify.ca](https://vapi-studio.guid
 
 **Vapi Studio (deterministic agents)** — [Introduction](./docs/getting-started/introduction.md) · [Concepts](./docs/guide/concepts.md) · [Runtime API](./docs/reference/runtime-api.md).
 
-**Conversation Analytics** — [Events & logging](./docs/reference/events-and-logging.md) · [Runtime API](./docs/reference/runtime-api.md) (Studio UI `/analytics`).
+**Conversation events** — event-driven forensics and extension hooks. Subscribe with `onStudioEvent` or Nest `eventListeners`; emit app events with `EventService.persist`. OSS does not limit what you build on those hooks — Guidify’s own tools integrate the same way. [Events & logging](./docs/reference/events-and-logging.md) · [Extending events](./docs/guides/extending-events.md).
 
 ---
 
@@ -102,7 +102,7 @@ Example apps render the full interactive graph at **`/flow`** (Flow Studio).
 | --- | --- |
 | **Vapi** (telephony, ASR/TTS, assistant config) | Vapi cloud |
 | **Your Studio app** (Supervisor, nodes, Brain, webhooks) | **Self-hosted** — Docker Compose locally, or containers/VM you operate |
-| **Postgres** (conversations, events) | **Self-hosted** beside the app (Compose `db` service by default) |
+| **Postgres** (conversations / checkpoints) | **Self-hosted** beside the app (Compose `postgres` by default). Event durability beyond the process is application-owned via listeners. |
 
 Local and production alike: ship the app as **containers**. Host Node/Yarn is for **framework build and scaffolding** (`yarn build`, `yarn new-project`); the live call process is Docker.
 
@@ -115,6 +115,8 @@ Local and production alike: ship the app as **containers**. Host Node/Yarn is fo
 | **Local Vapi calls** | **[ngrok](https://ngrok.com/download)** on your PATH, Vapi account |
 
 Vapi runs in the cloud and must call your machine over **HTTPS**. Local dev uses **ngrok** to tunnel the Docker-published port (example apps use **9999**) to a public URL. `yarn start` in a project starts **Docker Compose** **and** ngrok, writes `PUBLIC_BASE_URL` to `.env`, and prints the Webhook + Conversation links below.
+
+Optional root orchestration: copy **`Makefile.stub`** → gitignored **`Makefile`**, then `make start`. The stub boots the tracked sample; your local Makefile can chain private ecosystem targets (`start-ecosystem-analytics`, …) before `start-vapi-studio`.
 
 ### 1. Clone and build
 

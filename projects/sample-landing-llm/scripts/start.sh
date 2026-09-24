@@ -43,6 +43,20 @@ fi
 
 bash "$ROOT/scripts/ensure-docker.sh"
 
+# Promote framework stub → local compose (gitignored) once.
+if [[ ! -f docker-compose.yaml && ! -f docker-compose.yml ]]; then
+  if [[ -f docker-compose.stub.yaml ]]; then
+    echo ">> Promoting docker-compose.stub.yaml → docker-compose.yaml (local; gitignored)"
+    cp docker-compose.stub.yaml docker-compose.yaml
+  elif [[ -f docker-compose.stub.yml ]]; then
+    echo ">> Promoting docker-compose.stub.yml → docker-compose.yaml (local; gitignored)"
+    cp docker-compose.stub.yml docker-compose.yaml
+  else
+    echo "Missing docker-compose.stub.yaml" >&2
+    exit 1
+  fi
+fi
+
 if [[ ! -f .env ]]; then
   echo ">> No .env — copying .env.example (set OPENAI_API_KEY for ChatGPT Brain)"
   cp .env.example .env
@@ -68,7 +82,7 @@ path.write_text("\n".join(out) + "\n")
 '
 
 echo ">> Project ${PROJECT_NAME} (${PROJECT_SLUG}) id=${PROJECT_UUID}"
-echo ">> Starting baked stack (app + Postgres) on :${PORT}"
+echo ">> Starting Docker stack on :${PORT} (edit docker-compose.yaml for extra local services if needed)"
 echo ">> App boot upserts this UUID into the projects table (create or exist)"
 docker compose up -d --build postgres
 echo ">> Waiting for Postgres"
@@ -82,6 +96,18 @@ docker compose exec -T postgres pg_isready -U studio -d sample_landing_llm >/dev
   echo "Postgres failed to become ready" >&2
   exit 1
 }
+# Optional local hook (not part of the OSS sample). Private .env may set
+# ENSURE_EXTRA_POSTGRES_DBS_SCRIPT to create extra DBs on shared Postgres.
+if [[ -f .env ]]; then
+  # shellcheck disable=SC1091
+  set -a
+  # Only pull the optional hook vars — do not source the whole .env here.
+  eval "$(grep -E '^(ENSURE_EXTRA_POSTGRES_DBS_SCRIPT|POSTGRES_ADMIN_DB)=' .env | sed 's/\r$//' || true)"
+  set +a
+fi
+if [[ -n "${ENSURE_EXTRA_POSTGRES_DBS_SCRIPT:-}" && -f "$ENSURE_EXTRA_POSTGRES_DBS_SCRIPT" ]]; then
+  bash "$ENSURE_EXTRA_POSTGRES_DBS_SCRIPT"
+fi
 bash "$ROOT/scripts/ensure-project-id-column.sh"
 docker compose up -d --build
 
@@ -177,7 +203,7 @@ else
   echo "Webhook (Vapi):         ${public_url}/${PROJECT_UUID}/vapi/webhook"
   echo "Custom LLM (Vapi):      ${public_url}/${PROJECT_UUID}/vapi/chat/completions"
   echo "Flow Studio:            http://localhost:${PORT}/flow"
-  echo "Analytics:              http://localhost:${PORT}/analytics"
+  echo "Conversations:          http://localhost:${PORT}/conversations"
   echo "ngrok inspector:        http://127.0.0.1:4040"
   echo
   echo "Paste Custom LLM + Server URL into your Vapi assistant, then give this chat"

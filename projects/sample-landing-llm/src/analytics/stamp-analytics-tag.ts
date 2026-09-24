@@ -8,7 +8,7 @@ export type StampAnalyticsOptions = {
 
 /**
  * Stamp a durable ANALYTICS_TAG.
- * Funnel charts score via the code catalog (`PLANNER_FUNNELS`) — do not pass `funnels`.
+ * Funnel membership belongs in your scoring catalog — do not pass `funnels` on stamps.
  */
 export async function stampAnalyticsTag(
   ctx: NodeContext<PlannerSchema>,

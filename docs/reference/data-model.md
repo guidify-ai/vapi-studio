@@ -30,9 +30,12 @@ Unique on `(project_id, provider_call_id)`.
 
 ### `conversation_events`
 
-Durable subset from `EventService.persist` — lifecycle, `ROUTE_DECISION`, `FORM_SENDOUT`, app events.
+Not a Studio TypeORM table. Studio is event-driven: it emits Node events
+(`onStudioEvent` / Nest `eventListeners`). Durable history — if any — is
+application-owned infrastructure you attach to those hooks. See
+[Extending events](../guides/extending-events.md).
 
-`ConversationRepository.listRecent({ limit, offset })` — newest-first list for operator debug UIs.
+Studio TypeORM entities: `projects`, `conversations`, `provider_ingress` only.
 
 ### `provider_ingress`
 

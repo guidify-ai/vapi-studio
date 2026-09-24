@@ -12,11 +12,13 @@ Human-readable summary of `.cursor/rules/vapi-studio-agent-steps.mdc`. Agents sh
 
 Declare in source in **runtime call order**:
 
-1. `before()` — CAN gate
-2. `listen()` — register extract / intentions (before speech completes)
-3. `run()`
-4. `after()`
+1. `before()` — CAN gate **and** async prep (auth warm, JWT spawn, lookups needed to authorize). Prefer non-blocking spawn when speech must not wait; `await` only for the gate.
+2. `listen()` — register extract / intentions (before speech completes); no I/O
+3. `run()` — speech + one terminal output only; do not overload with integrations that belong in `before()` / `after()`
+4. `after()` — teardown / non-speech side effects after the terminal action (no TTS)
 5. `catch()` — only when overridden
+
+Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
 ## Brain (live ChatGPT path)
 

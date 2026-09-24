@@ -14,7 +14,7 @@ export type StudioUiModuleOptions = {
  */
 @Module({})
 export class StudioUiModule {
-  static forRoot(options: StudioUiModuleOptions = {}): DynamicModule {
+  public static forRoot(options: StudioUiModuleOptions = {}): DynamicModule {
     const rootPath = options.rootPath ?? resolveStudioUiRoot();
     return {
       module: StudioUiModule,

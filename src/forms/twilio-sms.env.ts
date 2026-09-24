@@ -140,6 +140,24 @@ export function pickSmsFormUrl(
   return typeof v === 'string' && v.trim() ? v.trim() : null;
 }
 
+/**
+ * Absolute form URL for SMS: prefer `disposeContext.formUrl`, else
+ * `{PUBLIC_BASE_URL}/forms/{exposeId}` (same path apps serve for HTML fill).
+ */
+export function resolveSmsFormUrl(
+  ctx: Record<string, unknown> | undefined,
+  exposeId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  const fromCtx = pickSmsFormUrl(ctx);
+  if (fromCtx) return fromCtx;
+  const id = typeof exposeId === 'string' ? exposeId.trim() : '';
+  if (!id) return null;
+  const base = (env.PUBLIC_BASE_URL ?? '').trim().replace(/\/$/, '');
+  if (!base) return null;
+  return `${base}/forms/${id}`;
+}
+
 export function buildDefaultSmsBody(formUrl: string): string {
   return `Please fill out this short form: ${formUrl}`;
 }

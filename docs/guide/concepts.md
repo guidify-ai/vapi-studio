@@ -85,7 +85,7 @@ Vapi Custom LLM and webhooks translate wire format ↔ Vapi Studio I/O.
 
 ## Events
 
-`EventService` emits `StudioEvent`s (`STUDIO_EVENTS` constants) and persists forensic events via `StudioEventListener`s. Logs must explain **why** a turn routed. See [Events & logging](../reference/events-and-logging.md).
+Vapi Studio is **event-driven**. `EventService` emits `StudioEvent`s (`STUDIO_EVENTS` constants) onto the console, an in-process Node bus (`onStudioEvent`), and optional Nest `eventListeners`. Attach custom listeners for any logic you need — Guidify companion tools use the same hooks; OSS does not limit what you build there. Logs must explain **why** a turn routed. See [Events & logging](../reference/events-and-logging.md) · [Extending events](../guides/extending-events.md).
 
 ## Conversation limits
 

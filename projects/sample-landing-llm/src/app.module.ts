@@ -14,7 +14,6 @@ import {
   MockGeminiBrainAdapter,
   MockGrokBrainAdapter,
   ConversationEntity,
-  ConversationEventEntity,
   FlowLoader,
   ProjectEntity,
   ProviderIngressEntity,
@@ -28,8 +27,6 @@ import { FlowDiagramController } from './flow-diagram/flow-diagram.controller';
 import { FlowDiagramService } from './flow-diagram/flow-diagram.service';
 import { ConversationsController } from './conversations/conversations.controller';
 import { ConversationsService } from './conversations/conversations.service';
-import { AnalyticsController } from './analytics/analytics.controller';
-import { AnalyticsService } from './analytics/analytics.service';
 import { StudioController } from './studio/studio.controller';
 import { StudioSessionService } from './studio/studio-session.service';
 import { StudioEventBuffer } from './studio/studio-event-buffer';
@@ -114,7 +111,6 @@ function resolveBrainAdapter() {
         'postgres://studio:studio@postgres:5432/studio',
       entities: [
         ConversationEntity,
-        ConversationEventEntity,
         ProviderIngressEntity,
         ProjectEntity,
         CallerProfileEntity,
@@ -166,14 +162,12 @@ function resolveBrainAdapter() {
     HealthController,
     FlowDiagramController,
     ConversationsController,
-    AnalyticsController,
     StudioController,
     VapiController,
   ],
   providers: [
     FlowDiagramService,
     ConversationsService,
-    AnalyticsService,
     StudioEventBuffer,
     StudioLiveSpeechBuffer,
     StudioSessionService,

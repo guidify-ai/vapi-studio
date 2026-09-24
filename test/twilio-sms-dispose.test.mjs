@@ -22,8 +22,10 @@ function mockEvents() {
 
 describe('Twilio SMS env + dispose adapter', () => {
   const prev = {};
+  let prevPublicBase;
 
   before(() => {
+    prevPublicBase = process.env.PUBLIC_BASE_URL;
     for (const key of Object.values(TWILIO_SMS_ENV)) {
       prev[key] = process.env[key];
       delete process.env[key];
@@ -35,6 +37,8 @@ describe('Twilio SMS env + dispose adapter', () => {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
     }
+    if (prevPublicBase === undefined) delete process.env.PUBLIC_BASE_URL;
+    else process.env.PUBLIC_BASE_URL = prevPublicBase;
   });
 
   it('defaults TWILIO_SMS_DRY_RUN to on', () => {
@@ -113,5 +117,33 @@ describe('Twilio SMS env + dispose adapter', () => {
     assert.equal(events.persist.mock.callCount(), 1);
     assert.equal(events.persist.mock.calls[0].arguments[1], 'OUTBOUND_NOTIFICATION_ERROR');
     assert.equal(events.persist.mock.calls[0].arguments[2].status, 'error');
+  });
+
+  it('builds formUrl from PUBLIC_BASE_URL + exposeId when disposeContext omits it', async () => {
+    process.env.TWILIO_SMS_DRY_RUN = '1';
+    process.env.PUBLIC_BASE_URL = 'https://tunnel.example.test/';
+    const events = mockEvents();
+    const forms = { ack: mock.fn(() => null) };
+    const adapter = new TwilioSmsFormDisposeAdapter(
+      events,
+      forms,
+      new DryRunTwilioSmsSender(),
+    );
+
+    await adapter.dispose({
+      exposeId: 'exp-fallback',
+      formId: 1,
+      conversationId: 'conv-sms-2',
+      fields: [],
+      disposeContext: { contactPhone: '+15550100999' },
+    });
+
+    assert.equal(forms.ack.mock.callCount(), 1);
+    const [, type, payload] = events.persist.mock.calls[0].arguments;
+    assert.equal(type, 'OUTBOUND_NOTIFICATION');
+    assert.match(
+      payload.body,
+      /https:\/\/tunnel\.example\.test\/forms\/exp-fallback/,
+    );
   });
 });

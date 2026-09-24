@@ -215,12 +215,14 @@ export class ConversationResumeService {
       resumedFromProviderCallId: prior.providerCallId,
     };
 
-    const cloned = await this.conversations.cloneEvents({
-      fromConversationId: prior.conversationId,
-      toConversationId: runtime.conversationId,
-    });
+    const cloned = 0;
+    // Durable events live in analytics PG — resume does not clone Studio rows.
 
     await this.events.persist(runtime.conversationId, 'CONVERSATION_RESUMED', {
+      projectId:
+        typeof runtime.metadata.projectId === 'string'
+          ? runtime.metadata.projectId
+          : undefined,
       fromConversationId: prior.conversationId,
       fromProviderCallId: prior.providerCallId,
       fromStatus: prior.status,

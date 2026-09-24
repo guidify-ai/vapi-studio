@@ -51,6 +51,8 @@ NestJS apps under **`projects/`** in the same clone.
 | [Documentation layers](./best-practices/documentation-layers.md) | What to update when |
 | [Agents & Cursor](./guides/agents.md) | AGENTS.md, rules |
 | [Node conventions](./guides/node-conventions.md) | Naming, lifecycle, Brain SLOs |
+| [Extending events](./guides/extending-events.md) | Event-driven hooks — custom listeners, Guidify tools |
+
 
 ## Reference
 
@@ -59,7 +61,7 @@ NestJS apps under **`projects/`** in the same clone.
 | [Environment variables](./reference/environment-variables.md) | Framework env |
 | [Flow schema](./reference/flow-schema.md) | `flow.yaml` |
 | [Data model](./reference/data-model.md) | Persistence |
-| [Events & logging](./reference/events-and-logging.md) | Forensics |
+| [Events & logging](./reference/events-and-logging.md) | Event bus, forensics, extension hooks |
 | [Standard intentions](./reference/standard-intentions.md) | `STANDARD_INTENTIONS` |
 | [Runtime API](./reference/runtime-api.md) | Shipped contracts (handbook) |
 | [Security](./reference/security.md) | Secrets policy |

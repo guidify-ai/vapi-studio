@@ -12,20 +12,20 @@ import { MockBrainAdapter } from './mock-brain.adapter';
 
 @Injectable()
 export class MockChatGptBrainAdapter extends MockBrainAdapter {
-  readonly mockProvider = 'chatgpt' as const;
+  public readonly mockProvider: 'chatgpt' = 'chatgpt';
 }
 
 @Injectable()
 export class MockClaudeBrainAdapter extends MockBrainAdapter {
-  readonly mockProvider = 'claude' as const;
+  public readonly mockProvider: 'claude' = 'claude';
 }
 
 @Injectable()
 export class MockGeminiBrainAdapter extends MockBrainAdapter {
-  readonly mockProvider = 'gemini' as const;
+  public readonly mockProvider: 'gemini' = 'gemini';
 }
 
 @Injectable()
 export class MockGrokBrainAdapter extends MockBrainAdapter {
-  readonly mockProvider = 'grok' as const;
+  public readonly mockProvider: 'grok' = 'grok';
 }

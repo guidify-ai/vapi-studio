@@ -174,13 +174,17 @@ export class ConversationBootstrapService {
       brainProfileId: input.brainProfileId,
       startNodeId: flow.start,
       runtimeInstanceId,
-      metadata: input.metadata,
+      metadata: {
+        ...(input.metadata ?? {}),
+        projectId: input.projectId,
+      },
       variables,
     });
 
     this.registry.set(runtime);
     this.openCallLog(runtime, input.metadata);
     await this.events.persist(runtime.conversationId, 'BOOTSTRAP', {
+      projectId: input.projectId,
       providerCallId: runtime.providerCallId,
       runtimeInstanceId: runtime.runtimeInstanceId,
       flowId: runtime.flowId,
@@ -256,6 +260,10 @@ export class ConversationBootstrapService {
       ),
     });
     await this.events.persist(runtime.conversationId, 'FINALIZE', {
+      projectId:
+        typeof runtime.metadata.projectId === 'string'
+          ? runtime.metadata.projectId
+          : undefined,
       providerCallId,
       runtimeInstanceId: runtime.runtimeInstanceId,
       finalState,

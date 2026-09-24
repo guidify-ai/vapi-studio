@@ -15,7 +15,6 @@ export default defineConfig({
     proxy: {
       '/flow': 'http://127.0.0.1:9998',
       '/conversations': 'http://127.0.0.1:9998',
-      '/analytics': 'http://127.0.0.1:9998',
       '/studio': 'http://127.0.0.1:9998',
       '/health': 'http://127.0.0.1:9998',
     },

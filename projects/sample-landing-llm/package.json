@@ -1,7 +1,7 @@
 {
   "name": "sample-landing-llm",
   "version": "0.1.0",
-  "description": "Tracked Vapi Studio sample \u2014 LP chat engine + code sample (port 9998)",
+  "description": "Tracked Vapi Studio sample — LP chat engine + code sample (port 9998)",
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/express": "^5.0.1",
     "@types/node": "^22.13.10",
+    "@types/pg": "^8.23.1",
     "@types/uuid": "^10.0.0",
     "typescript": "^5.8.2"
   }

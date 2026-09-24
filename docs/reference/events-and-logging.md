@@ -1,17 +1,46 @@
 # Events & logging
 
-Call forensics — every turn should be explainable from logs + `conversation_events`.
+Vapi Studio is an **event-driven** runtime. Structured events explain every turn
+and are the extension surface for custom logic — metrics, exporters, CRM sync,
+or any tool that listens on the same bus.
+
+Call forensics: every turn should be explainable from daily logs + structured
+events (and any durable sink your app attaches).
+
+## Event-driven hooks (OSS is open)
+
+| Hook | When to use |
+| --- | --- |
+| `onStudioEvent(handler)` | Process-wide subscribe — any sink you own |
+| Nest `eventListeners` | DI / Nest services implementing `StudioEventListener` |
+| `EventService.persist` / `emit` | Emit framework or **app-defined** event types |
+
+The framework does **not** ship a durable event store or dashboard. That is
+intentional: attach your own listeners. Guidify AI companion tools integrate
+through these same hooks; your projects are not limited by the OSS package.
+
+Full guide: [Extending events](../guides/extending-events.md).
 
 ## EventService
 
 | Method | Purpose |
 | --- | --- |
-| `emit({ type, conversationId, payload })` | In-process listeners + optional persist |
-| `persist(conversationId, type, payload)` | Postgres `conversation_events` |
+| `emit({ type, conversationId, payload })` | Console + **Node EventEmitter** (`onStudioEvent`) + Nest `StudioEventListener`s |
+| `persist(conversationId, type, payload)` | Conversation-scoped `emit` (not an automatic Postgres write) |
 | `persistAnalyticsTag(conversationId, tag, payload?)` | Funnel milestone — type `ANALYTICS_TAG`, `payload.tag` |
-| `log(...)` | Structured console / daily file |
+| `log(...)` | Structured console / daily file only (no listeners / bus) |
 
-Apps add `eventListeners` in `VapiStudioModule.forRoot`.
+```ts
+import { onStudioEvent } from '@guidify-ai/vapi-studio';
+
+onStudioEvent((event) => {
+  /* your listener — metrics, queue, warehouse, … */
+});
+
+VapiStudioModule.forRoot({
+  eventListeners: [StudioEventBuffer], // Nest DI listeners
+});
+```
 
 ## Console driver
 
@@ -52,32 +81,18 @@ Files: `logs/dailyYYYYMMDD.log`
 
 Full doctrine: [Debugging and observability](../best-practices/debugging-and-observability.md)
 
-## Analytics tags & funnels
+## Analytics tags
 
-Business funnels are a **code catalog** (`AnalyticsFunnelDefinition[]`). Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag`:
+Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag`:
 
 | Piece | Role |
 | --- | --- |
-| `ANALYTICS_TAG` | Durable tag (`payload.tag`) |
-| Funnel catalog (app) | Ordered steps → `tags[]` / `eventTypes[]`, or outcome steps → `requireAllTags` + optional `excludeTags` |
-| Scoring | `countConversationsMatchingStep` — omit `funnelId` |
-| Operator UI | Funnel charts (% of funnel entry) + top tags / event types |
+| `ANALYTICS_TAG` | Milestone (`payload.tag`) |
+| App tag catalog | Stable `snake_case` ids used by your tooling |
 
-| Event | Role |
-| --- | --- |
-| `ANALYTICS_TAG` | Milestone (`payload.tag`, optional `label`) |
-
-Operator UI (example): `/analytics` — trapezoid funnel cards (e.g. appointment only / estimate only / both) + top tags for the project.
+Do **not** put funnel membership on the event (`payload.funnels`).
 
 ## App events
 
-Applications may persist custom events via `EventService.persist` — name and document them in the app repo.
-
-| Event | Payload | When |
-| --- | --- | --- |
-| `CONVERSATION_PATH` | `signature`, `branchLabel`, `nodes[]`, `portalHits` | App teardown — actual node path |
-| `CALL_OUTCOME` | `outcome` (`success` \| `failure` \| `unknown`), `reasoning[]`, `confidence`, `source` | App teardown — Brain judge triage |
-
-## Related
-
-- [Data model](./data-model.md)
+Applications may emit custom events via `EventService.persist` — name and
+document them in the app repo.

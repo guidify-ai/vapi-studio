@@ -34,8 +34,8 @@ type GeminiGenerateResponse = {
  */
 @Injectable()
 export class GeminiBrainAdapter extends JsonLlmBrainAdapter {
-  protected readonly adapterId = 'studio-gemini';
-  protected readonly logger = new Logger('GeminiBrainAdapter');
+  protected readonly adapterId: string = 'studio-gemini';
+  protected readonly logger: Logger = new Logger('GeminiBrainAdapter');
 
   public constructor(
     usage: BrainUsageTracker,

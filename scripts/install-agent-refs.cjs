@@ -60,7 +60,8 @@ listens, extracts, or identity flows:
 
 Hard rules (summary): **one CTA per turn**; conversations **must end** (limits always on);
 constrained fields **fail closed**; short listen timeouts for digits; never store ASR junk
-as PII; soft affirmatives on multi-choice → local re-ask; silent handoffs; FE uses **uuid**
+as PII; soft affirmatives on multi-choice → local re-ask; silent handoffs;
+**async prep/teardown in before()/after()** (do not overload run()); FE uses **uuid**
 only (never internal id) and DTOs include human **label**; update the matching doc layer in the
 same change. Runtime contracts: \`docs/reference/runtime-api.md\`.
 ${END}

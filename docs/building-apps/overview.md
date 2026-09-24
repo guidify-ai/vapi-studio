@@ -12,7 +12,7 @@ vapi-studio/                    ← one git clone
     └── my-voice-app/           ← your bot
         ├── package.json        ← "file:../.." → repo root
         ├── config/flow.yaml
-        ├── docker-compose.yml
+        ├── docker-compose.stub.yaml
         └── src/
             ├── conversation/   agent steps, copy
             └── vapi/           webhooks, Custom LLM

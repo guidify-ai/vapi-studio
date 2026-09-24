@@ -28,8 +28,8 @@ type AnthropicMessageResponse = {
  */
 @Injectable()
 export class ClaudeBrainAdapter extends JsonLlmBrainAdapter {
-  protected readonly adapterId = 'studio-claude';
-  protected readonly logger = new Logger('ClaudeBrainAdapter');
+  protected readonly adapterId: string = 'studio-claude';
+  protected readonly logger: Logger = new Logger('ClaudeBrainAdapter');
 
   public constructor(
     usage: BrainUsageTracker,

@@ -53,17 +53,19 @@ Reserved env (default **dry-run on** — no live Twilio calls until you opt in):
 | `TWILIO_MESSAGING_SERVICE_SID` | Messaging Service SID |
 | `TWILIO_SMS_DRY_RUN` | Default `1` — still emits durable `OUTBOUND_NOTIFICATION` (`status: dry_run`) and ACKs without API. Set `0` for live send (requires peer package `twilio`) |
 
-Each send (dry-run or live) goes through `EventService.persist` → listeners → Postgres `conversation_events` as `OUTBOUND_NOTIFICATION`. Failures emit `OUTBOUND_NOTIFICATION_ERROR`.
+Each send (dry-run or live) goes through `EventService.persist` as `OUTBOUND_NOTIFICATION` (in-process Node bus + Nest listeners). Failures emit `OUTBOUND_NOTIFICATION_ERROR`.
 
 `disposeContext` for this driver:
 
 ```ts
 disposeContext: {
   contactPhone: '5550100999', // or E.164 / `to` / `phone`
-  formUrl: `${process.env.PUBLIC_BASE_URL}/forms/${exposeId}`,
+  // formUrl optional — defaults to `{PUBLIC_BASE_URL}/forms/{exposeId}`
   // body?: 'optional custom SMS text'
 }
 ```
+
+Set `PUBLIC_BASE_URL` (ngrok/public HTTPS origin) so the texted link is reachable. Override with an explicit `formUrl` when the fill page lives elsewhere.
 
 ## Events
 

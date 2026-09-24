@@ -6,6 +6,8 @@ Clone once. Framework code lives at the repo root; your bots live in **`projects
 
 Routing and business logic live in typed **agent steps** and a small `flow.yaml` path file. A **Brain** adapter may interpret caller speech at listen boundaries — it does not own the graph.
 
+The runtime is **event-driven**: Studio emits structured events on an in-process bus. Attach custom listeners (`onStudioEvent`, Nest `eventListeners`) to implement your own logic — exporters, metrics, integrations. Guidify AI companion tools plug into the same hooks; the OSS package does not limit what you build there. See [Extending events](../guides/extending-events.md).
+
 ## Current scope
 
 **Deterministic agent orchestration only.** Explicit paths, portals, extracts, and forensics. Broader autonomous-agent patterns are future work.

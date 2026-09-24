@@ -3,7 +3,6 @@ import { NavLink, Outlet } from 'react-router-dom';
 const links = [
   { to: '/flow', label: 'Flow' },
   { to: '/conversations', label: 'Conversations' },
-  { to: '/analytics', label: 'Analytics' },
 ] as const;
 
 export function StudioLayout() {

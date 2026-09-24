@@ -32,7 +32,24 @@ A person name is letters (and limited punctuation), not digits, not “hello”,
 
 ## Email
 
-Prefer a real extract + spelled-email parser. Do not hardcode demo emails in production paths; PoC mocks belong behind clearly named constants and mock-only branches.
+Boxed helpers — prefer the dedicated path:
+
+```ts
+import {
+  EMAIL_EXTRACT_DESCRIPTION,
+  collectedEmail,
+  parseSpelledEmail,
+} from '@guidify-ai/vapi-studio/identity';
+// also: from '@guidify-ai/vapi-studio'
+```
+
+| Export | Role |
+| --- | --- |
+| `EMAIL_EXTRACT_DESCRIPTION` | `extract.fields[].description` so Brain GOT knows spelled ASR (`at` / `dot` / letter-by-letter) |
+| `collectedEmail(extracted, spoken)` | Prefer Brain extract, then spoken; `null` on fail |
+| `parseSpelledEmail(raw)` | Direct `name@domain` **or** spelled forms |
+
+Fail closed → re-ask the same CTA. Prefer a read-back confirm before sending mail (“I heard … Is that correct?”). Do not hardcode demo emails in production paths; PoC mocks belong behind clearly named constants and mock-only branches.
 
 ## Forms
 

@@ -20,6 +20,8 @@ In a **vapi-studio** source checkout, the same files live at `docs/best-practice
 ## Hard rules (summary)
 
 - **One CTA per turn** — never stack unrelated questions; prefer more agent steps / `continueTo`.
+- **`before()` / `after()` for async** — JWT/API warm and teardown belong in lifecycle hooks; keep `run()` to speech + one terminal output (`docs/best-practices/nodes-and-listens.md`, `.cursor/rules/vapi-studio-agent-steps.mdc`).
+- **`ctx.tasks.dispatch` / `require`** — multi-second I/O via the conversation-scoped Task Queue (`async` in an early node, `require(dedupeKey)` in a later node = postponed debt; never speak `taskId`s) (`docs/reference/runtime-api.md` § Tasks).
 - **Conversations must end** — framework `limits.maxTurns` / `limits.maxDurationMs` always apply (defaults 40 / 20m); never ship unlimited calls (`docs/best-practices/conversation-design.md`).
 - **Fail closed** on constrained fields (e.g. NA phone = exactly 10 digits).
 - **Listen timeouts** match answer type (short for digits).
@@ -31,7 +33,7 @@ In a **vapi-studio** source checkout, the same files live at `docs/best-practice
 - **Silent handoffs** — `continueTo` / `handoff` must not speak filler that restates what just happened before the next real CTA or farewell (`conversation-design.md` § Copy hygiene).
 - **No prompt injection surface** — Brain JSON only; never speak raw `userText` or off-topic LLM output (`docs/best-practices/brain-and-prompt-injection.md`).
 - **Human-like UX** — never speak node/transition/intention names, event types, or graph state to the caller; product language only (`docs/best-practices/conversation-design.md` § Human-like UX).
-- **Logs/events must explain the call** — if you cannot answer “why this step / what was said / what memory changed” from daily logs + `conversation_events`, add structured fields in the same change (`docs/best-practices/debugging-and-observability.md`).
+- **Logs/events must explain the call** — if you cannot answer “why this step / what was said / what memory changed” from daily logs + structured events, add fields in the same change (`docs/best-practices/debugging-and-observability.md`). Studio is event-driven (`onStudioEvent` / Nest `eventListeners`); attach custom listeners for any sink. Guidify tools use the same hooks — OSS does not limit app-owned logic (`docs/guides/extending-events.md`).
 - **Analytics funnels** — code catalog (`AnalyticsFunnelDefinition[]`); stamp tags only (`persistAnalyticsTag` / `stampAnalyticsTag`). Catalog step bindings decide which chart a tag appears on — do not put `funnels[]` on the event.
 - **UI / API identity** — FE and external clients use `uuid` only (never internal `id`); durable rows are `id` + `uuid`; every UI DTO includes human `label` so the UI never prints UUIDs as titles (`docs/best-practices/ui-and-api-identity.md`).
 - **Update docs in the same change** — `docs/reference/runtime-api.md` for behavior; best-practices guides for doctrine; app README for northern stars only.

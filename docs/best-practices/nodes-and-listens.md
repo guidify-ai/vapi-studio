@@ -21,6 +21,20 @@ Start  →  Greeting (flow.start)  →  …
 
 Each Node should own a small slice: one ask, one verification, one side effect, or one lane step. If you need two sequential CTAs, use two Nodes (or `output.continueTo({ nodeId })`) — see [conversation-design.md](./conversation-design.md).
 
+## Prefer `before()` / `after()` for async work
+
+Do **not** overload `run()` with auth, CRM lookups, JWT warmups, or post-speak teardown. `run()` owns **speech + one terminal output** (`sayAndListen` / `continueTo` / `endCall` / …). Keep side effects on the lifecycle hooks:
+
+| Hook | Role | Async guidance |
+| --- | --- | --- |
+| **`before(ctx)`** | CAN gate + prepare | Authorize (`return false` to reject). **Prep / warm** integrations here. Prefer **spawn without awaiting** when the token is for *later* Nodes (do not block first SSE — target &lt; 1.5s). `await` only when the gate itself needs the result. |
+| **`listen(ctx)`** | Next listen binding | Register intentions / extract **before** speech; no I/O. |
+| **`run(ctx)`** | Speak + terminal action | Copy and routing only. Do not nest “fetch then greet” unless the speak **cannot** proceed without the result. |
+| **`after(ctx, result)`** | Teardown | Fire-and-forget analytics stamps that are not on the critical path, release handles, log completion. Must not speak. |
+| **`catch(ctx, error)`** | Recovery | Only when overridden. |
+
+Detached promises from `before()` should land in a Nest service / `Map<conversationId, Promise<…>>` (or similar), not assume late `ctx.memory` writes persist after the turn. Later Nodes `await` that shared promise when they need the value.
+
 ## `listen()` must match the ask
 
 Whatever you just asked for, `listen()` should advertise:
@@ -43,7 +57,7 @@ Do not leave a broad “collect name” listen active while you are asking for S
 
 > North American mobile: exactly 10 digits. Prefer the first 10 digit characters; ignore trailing words. Fail if fewer than 10.
 
-Local parsers and GOT must agree. Prefer shared helpers in the app (`collectedPhone`, `collectedPersonName`, …) called from `onExtracted`.
+Local parsers and GOT must agree. Prefer framework boxed helpers from `@guidify-ai/vapi-studio/identity` (`collectedEmail`, `EMAIL_EXTRACT_DESCRIPTION`); app helpers (`collectedPhone`, `collectedPersonName`, …) for the rest — called from `onExtracted`.
 
 ## Memory writes are guarded
 
