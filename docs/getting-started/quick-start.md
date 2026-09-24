@@ -1,23 +1,15 @@
 # Quick start
 
-## App from npm (recommended)
-
 ```bash
 mkdir my-voice-app && cd my-voice-app
 yarn init -y
-yarn add @guidify-ai/vapi-studio @nestjs/common @nestjs/core @nestjs/typeorm \
+yarn add @guidify-ai/vapi-studio@0.1.0 @nestjs/common @nestjs/core @nestjs/typeorm \
   reflect-metadata rxjs typeorm
 ```
 
-Or copy the tracked sample from the [GitHub repo](https://github.com/guidify-ai/vapi-studio/tree/main/projects/sample-landing-llm) and change the dependency to:
+Or clone the public sample and study its layout:
 
-```json
-{
-  "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.0"
-  }
-}
-```
+- [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm)
 
 ## Minimal Nest wiring
 
@@ -33,7 +25,6 @@ import { MyEntry } from './conversation/entry';
       entryPoint: MyEntry,
       brainAdapter: ChatGptBrainAdapter,
       brain: { model: 'gpt-4.1-mini', confidenceThreshold: 0.4 },
-      // limits always on (defaults 40 turns / 20m); override only within ceilings
       nodes: [{ className: 'GreetNode', useClass: GreetNode }],
     }),
   ],
@@ -45,24 +36,10 @@ Add `config/flow.yaml` with `start: greet` and Vapi HTTP routes — see [Creatin
 
 ## Run and wire Vapi
 
-Install **[ngrok](https://ngrok.com/download)** if you have not already. Local dev tunnels Docker to HTTPS — Vapi cannot call localhost directly.
-
 ```bash
-yarn install
-yarn start   # Docker + ngrok; keeps tunnel open until Ctrl+C
+yarn start   # Docker + ngrok (see the sample’s scripts/start.sh)
 ```
 
-Paste the printed **Webhook** and **Conversation** URLs into your Vapi assistant. Keep the process running while you test calls.
+Paste the printed **Webhook** and **Conversation** URLs into your Vapi assistant.
 
-## Framework contributors only
-
-```bash
-git clone git@github.com:guidify-ai/vapi-studio.git
-cd vapi-studio
-yarn install && yarn build && yarn test
-cd projects/sample-landing-llm && yarn start
-```
-
-In-repo apps may use `"@guidify-ai/vapi-studio": "file:../.."`. Production / private apps should pin the published package.
-
-Full install notes: [Installation](./installation.md).
+Framework contributors: `git clone` this repo, `yarn build`, `yarn test`. Full notes: [Installation](./installation.md).

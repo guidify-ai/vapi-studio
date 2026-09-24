@@ -16,14 +16,14 @@ Vapi Studio is not a no-code builder and not an open-ended LLM agent. Behavior i
 - **Entry index:** [README.md](../../README.md)
 - **Documentation site:** [`docs/README.md`](../README.md)
 - **Best practices:** [`docs/best-practices/`](../best-practices/) · [`agent/AGENTS.md`](../../agent/AGENTS.md)
-- **Example applications:** [`docs/building-apps/example-apps.md`](../building-apps/example-apps.md) · [`projects/`](../../projects/README.md)
+- **Example applications:** [`docs/building-apps/example-apps.md`](../building-apps/example-apps.md)
 
 Application-specific agent steps, copy, and flows do **not** belong in this repository.
 
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:../.."
+    "@guidify-ai/vapi-studio": "0.1.0"
   }
 }
 ```
@@ -237,7 +237,7 @@ I/O counterpart to the speech phrase pool ([`CallTurnQueue`](../../src/conversat
 ```ts
 // Node A — start work, keep talking
 await ctx.tasks.dispatch({
-  kind: 'roofr.appointment.availability',
+  kind: 'crm.slots.lookup',
   mode: 'async',
   dedupeKey: `availability:${ctx.conversation.id}`,
   run: () => fetchAppointmentAvailability(dayHint),
@@ -681,7 +681,7 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` search path |
 | `STUDIO_CONSOLE_DEBUG_ALL` | off | Verbose console (all events) |
 
-Apps add their own env (database URL, public base URL, transfer destination). Document in the app’s `.env.example` and `projects/<app>/README.md`.
+Apps add their own env (database URL, public base URL, transfer destination). Document in the app’s `.env.example` and README.
 
 ## Best practices (for humans and agents)
 

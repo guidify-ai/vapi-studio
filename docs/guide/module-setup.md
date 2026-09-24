@@ -7,19 +7,13 @@ Wire Vapi Studio into a NestJS application.
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "file:../.."
+    "@guidify-ai/vapi-studio": "0.1.0"
   }
 }
 ```
 
-From `projects/<your-app>/`, `file:../..` is the framework at the repository root.
-
-Build the framework before typechecking the project:
-
 ```bash
-# repo root
-yarn build
-cd projects/my-app && yarn install
+yarn add @guidify-ai/vapi-studio@0.1.0
 ```
 
 ## `VapiStudioModule.forRoot` options

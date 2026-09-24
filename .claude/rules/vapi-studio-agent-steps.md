@@ -2,8 +2,8 @@
 paths:
   - "**/conversation/nodes/**/*.ts"
   - "src/node/**/*.ts"
-  - "projects/**/config/flow.yaml"
-  - "projects/**/config/poc/*.brain.yml"
+  - "**/config/flow.yaml"
+  - "**/config/poc/*.brain.yml"
 ---
 
 # Vapi Studio agent-step conventions

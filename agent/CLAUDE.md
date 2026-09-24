@@ -7,7 +7,7 @@ Canonical agent handbook (shared with Cursor / other agents):
 ## Framework checkout
 
 - Package source: `src/` → build with `yarn build` (output `dist/`, gitignored).
-- Apps: `projects/<name>/` with `@guidify-ai/vapi-studio` via `file:../..`.
+- Consumer apps: separate NestJS repos depending on `@guidify-ai/vapi-studio` (npm).
 - Contracts: `docs/reference/runtime-api.md` (update in the same change as behavior).
 - Doctrine: `docs/best-practices/`.
 - Always-on / path rules: `.claude/rules/` (mirrors `.cursor/rules/`).

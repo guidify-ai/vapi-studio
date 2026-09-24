@@ -46,4 +46,4 @@ Ended calls should persist **`CONVERSATION_PATH`** (node signature) and **`CALL_
 - Skipping flags like `introSpoken` from memory snapshots
 - Relying on assistant speech (“I only caught 9 digits”) as the sole record of a failed extract
 - Shipping a routing fix without a `ROUTE_DECISION`-visible rejection reason
-- Shipping conversation/routing changes without unit tests that lock the behavior (framework `test/*.test.mjs`, app `projects/*/test/*.test.mjs`)
+- Shipping conversation/routing changes without unit tests that lock the behavior (framework `test/*.test.mjs`, app `test/*.test.mjs`)

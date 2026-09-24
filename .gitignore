@@ -25,22 +25,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Application projects (other than the tracked sample) — never commit private bots here
-projects/*
-!projects/README.md
-!projects/.gitignore
-# Public sample shipped with the OSS repo (port 9998)
-!projects/sample-landing-llm/
-!projects/sample-landing-llm/**
-
 # Local-only leftovers (legacy PoCs / SpecKit dumps) — never track
 archive/
 
 # uv / SpecKit local tool shims (machine-absolute symlinks)
 .uv-bin/
 .uv-tools/
-node_modules
 
-# Local make orchestration (promote from Makefile.stub) — OSS sample only
+# Local make orchestration (promote from Makefile.stub)
 Makefile
 !Makefile.stub

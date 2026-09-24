@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Vapi Studio best practices
 
-When editing Vapi Studio or a project under `projects/`:
+When editing Vapi Studio or a NestJS app that depends on `@guidify-ai/vapi-studio`:
 
 1. Read `docs/best-practices/README.md` and the matching guide.
 2. Also `agent/AGENTS.md`.

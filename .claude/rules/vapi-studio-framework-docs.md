@@ -15,6 +15,6 @@ When you change the framework, update `runtime-api.md` in the **same** change.
 
 Update root `README.md` only when **product framing** changes (tools table, diagram, install path).
 
-Application code belongs under `projects/<name>/` — not in `src/`.
+Application code belongs in **consumer NestJS apps** that depend on this package — not in `src/`.
 
 Conversation-design **doctrine** lives in `docs/best-practices/`. Agent entry: `agent/AGENTS.md` · `agent/CLAUDE.md` · `agent/cursor/` · `agent/claude/`.

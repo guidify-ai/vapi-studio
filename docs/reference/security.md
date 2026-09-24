@@ -10,7 +10,7 @@ This repo should contain **no secrets**:
 
 ## Consuming applications
 
-Your NestJS project under `projects/<name>/` should:
+Your NestJS application should:
 
 - Keep secrets in `.env` — **gitignored**
 - Ship `.env.example` with empty values only

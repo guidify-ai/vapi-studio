@@ -1,8 +1,0 @@
-*
-!.gitignore
-!README.md
-!sample-landing-llm/
-!sample-landing-llm/**
-
-# Private apps and ecosystem packages live as siblings under ~/work/
-# (roofr-poc, vapi-studio-ecosystem-*, guidify-lab) — never under this folder.

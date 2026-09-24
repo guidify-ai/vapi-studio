@@ -18,7 +18,7 @@ A NestJS module that provides:
 
 - A no-code bot builder
 - A hosted SaaS
-- A place for customer-specific logic — that belongs in **applications** under `projects/`
+- A place for customer-specific logic — that belongs in **your application** (separate from this package)
 
 ## How apps use it
 

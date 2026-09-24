@@ -65,7 +65,7 @@ Stamp funnel milestones with `persistAnalyticsTag` (type `ANALYTICS_TAG`,
 Without any listener beyond console + daily logs, the app still runs — hooks are
 additive, not mandatory.
 
-Local Guidify lab uses a **shared** Redis + Postgres (sibling `guidify-lab` infra compose) while app containers stay on separate Docker networks and connect via `host.docker.internal`.
+Local multi-host setups typically use a **shared** Redis + Postgres on the host while app containers stay on separate Docker networks and connect via `host.docker.internal`.
 
 ## Operator UI
 

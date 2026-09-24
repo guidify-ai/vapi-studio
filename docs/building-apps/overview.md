@@ -1,45 +1,22 @@
 # Building applications — overview
 
-Vapi Studio is a **toolkit** in the repo root. Your bot is a **NestJS application** under **`projects/`** in the same clone.
-
-## Layout
+Vapi Studio is an **npm library**. Your bot is a **NestJS application** in its own repo (or folder) that depends on `@guidify-ai/vapi-studio`.
 
 ```text
-vapi-studio/                    ← one git clone
-├── src/                        ← framework package (@guidify-ai/vapi-studio)
-├── docs/
-└── projects/
-    └── my-voice-app/           ← your bot
-        ├── package.json        ← "file:../.." → repo root
-        ├── config/flow.yaml
-        ├── docker-compose.stub.yaml
-        └── src/
-            ├── conversation/   agent steps, copy
-            └── vapi/           webhooks, Custom LLM
+my-voice-app/                 ← your app (private or public)
+├── package.json              ← "@guidify-ai/vapi-studio": "0.1.0"
+├── src/
+├── config/flow.yaml
+└── docker-compose.stub.yaml
 ```
 
-No second folder beside the clone. No dedicated app repository required.
-
-## Separation
-
-| Repo root (framework) | `projects/<your-app>/` |
+| Package | App |
 | --- | --- |
-| `VapiStudioModule`, supervisor, adapters | `flow.yaml`, agent steps, copy |
-| Standard intentions, forms API | Domain intentions, CRM, forms UI |
-| Vapi SSE compiler | `POST /{projectUuid}/vapi/webhook`, Custom LLM routes |
-| Event driver, persistence entities | `.env`, Docker, Vapi dashboard config |
-| Best-practice doctrine | Project `README.md` (northern stars) |
+| `@guidify-ai/vapi-studio` (this repo / npm) | Your NestJS voice bot |
+| Types, Supervisor, Brain adapters, Studio UI assets | Nodes, flow.yaml, Vapi routes, secrets |
 
-Do not add customer-specific agent steps or copy under `src/` — only under `projects/`.
+Do not add customer-specific agent steps under the framework `src/` — only in your app.
 
-## Dependency
+Public showcase: [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm).
 
-```json
-"@guidify-ai/vapi-studio": "file:../.."
-```
-
-Path is **two levels up** from `projects/<name>/` to the framework root (`projects/<name>` → `projects/` → repo root).
-
-## Next
-
-[Creating an app](./creating-an-app.md) · [Example apps](./example-apps.md) · [`projects/README.md`](../../projects/README.md)
+[Creating an app](./creating-an-app.md) · [Example apps](./example-apps.md)

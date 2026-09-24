@@ -26,7 +26,7 @@ export function collectedEmail(
 
 /**
  * Parse ASR / spelled-out emails into a normal address.
- * e.g. "m a r k at r o o f r dot com" → mark@roofr.com
+ * e.g. "m a r k at e x a m p l e dot com" → mark@example.com
  * Also tolerates digit “0” for letter “o” when spelling letter-by-letter.
  */
 export function parseSpelledEmail(raw: string): string | null {

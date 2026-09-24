@@ -1,6 +1,6 @@
 ---
 description: Vapi Studio agent-step conventions — intention names and lifecycle method order
-globs: "**/conversation/nodes/**/*.ts,src/node/**/*.ts,projects/**/config/flow.yaml,projects/**/config/poc/*.brain.yml"
+globs: "**/conversation/nodes/**/*.ts,src/node/**/*.ts,**/config/flow.yaml,**/config/poc/*.brain.yml"
 alwaysApply: false
 ---
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * Interactive: yarn new-project
- * Creates projects/<slug>/ with a stable config/project.identity.json
- * (UUID generated once here — never at app runtime).
+ * Creates ./<slug>/ in the current working directory with
+ * config/project.identity.json (UUID generated once — never at app runtime).
+ * Depends on published @guidify-ai/vapi-studio.
  */
 'use strict';
 
@@ -12,7 +13,8 @@ const readline = require('readline');
 const crypto = require('crypto');
 
 const ROOT = path.resolve(__dirname, '..');
-const PROJECTS = path.join(ROOT, 'projects');
+/** Destination parent = process.cwd() (not a projects/ folder in the framework). */
+const PROJECTS = process.cwd();
 
 const SLUG_RE = /^[a-z][a-z0-9-]{1,62}$/;
 
@@ -41,25 +43,18 @@ function write(filePath, contents) {
 }
 
 function copyEnsureDocker(destDir) {
-  const src = path.join(PROJECTS, 'sample-landing-llm', 'scripts', 'ensure-docker.sh');
   const dest = path.join(destDir, 'scripts', 'ensure-docker.sh');
-  if (fs.existsSync(src)) {
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    fs.copyFileSync(src, dest);
-    fs.chmodSync(dest, 0o755);
-  } else {
-    write(
-      dest,
-      `#!/usr/bin/env bash\nset -euo pipefail\ndocker info >/dev/null 2>&1 || { echo "Docker required" >&2; exit 1; }\n`,
-    );
-    fs.chmodSync(dest, 0o755);
-  }
+  write(
+    dest,
+    `#!/usr/bin/env bash\nset -euo pipefail\ndocker info >/dev/null 2>&1 || { echo "Docker required" >&2; exit 1; }\n`,
+  );
+  fs.chmodSync(dest, 0o755);
 }
 
 function renderFiles({ slug, name, uuid }) {
   const dir = path.join(PROJECTS, slug);
   if (fs.existsSync(dir)) {
-    throw new Error(`projects/${slug} already exists`);
+    throw new Error(`${slug} already exists in ${PROJECTS}`);
   }
 
   write(
@@ -83,7 +78,7 @@ function renderFiles({ slug, name, uuid }) {
           clean: 'rm -rf dist',
         },
         dependencies: {
-          '@guidify-ai/vapi-studio': 'file:../..',
+          '@guidify-ai/vapi-studio': '0.1.0',
           '@nestjs/common': '^11.0.12',
           '@nestjs/core': '^11.0.12',
           '@nestjs/platform-express': '^11.0.12',
@@ -562,7 +557,7 @@ FROM node:24-bookworm-slim AS build
 
 RUN corepack enable && corepack prepare yarn@1.22.22 --activate
 
-WORKDIR /workspace/guidify-ai/packages/vapi-studio
+WORKDIR /pkg/vapi-studio
 COPY --from=vapi-studio package.json tsconfig.json ./
 COPY --from=vapi-studio src ./src
 COPY --from=vapi-studio test ./test
@@ -573,7 +568,7 @@ RUN yarn install && yarn build
 RUN mkdir -p /pkg/vapi-studio && cp package.json /pkg/vapi-studio/ && cp -R dist /pkg/vapi-studio/dist && cp -R test /pkg/vapi-studio/test && cp -R scripts /pkg/vapi-studio/scripts && cp -R docs /pkg/vapi-studio/docs && cp -R agent /pkg/vapi-studio/agent
 RUN rm -rf node_modules
 
-WORKDIR /workspace/guidify-ai/projects/${slug}
+WORKDIR /app
 COPY package.json tsconfig.json ./
 COPY src ./src
 COPY config ./config
@@ -582,13 +577,13 @@ RUN node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync('package
 
 FROM node:24-bookworm-slim AS runtime
 WORKDIR /workspace
-COPY --from=build /pkg/vapi-studio /workspace/guidify-ai/packages/vapi-studio
-COPY --from=build /workspace/guidify-ai/projects/${slug} /workspace/guidify-ai/projects/${slug}
-RUN mkdir -p /pkg && ln -sfn /workspace/guidify-ai/packages/vapi-studio /pkg/vapi-studio
+COPY --from=build /pkg/vapi-studio /pkg/vapi-studio
+COPY --from=build /app /app
+RUN mkdir -p /pkg && ln -sfn /pkg/vapi-studio /pkg/vapi-studio
 ENV NODE_ENV=production
-ENV CONFIG_DIR=/workspace/guidify-ai/projects/${slug}/config
+ENV CONFIG_DIR=/app/config
 ENV PORT=9999
-WORKDIR /workspace/guidify-ai/projects/${slug}
+WORKDIR /app
 RUN mkdir -p logs
 EXPOSE 9999
 CMD ["node", "dist/main.js"]
@@ -623,7 +618,7 @@ services:
       context: .
       dockerfile: Dockerfile
       additional_contexts:
-        vapi-studio: ../..
+        vapi-studio: ${VAPI_STUDIO_CONTEXT:-../guidify-ai}
     ports:
       - "9999:9999"
     env_file:
@@ -633,13 +628,13 @@ services:
       PORT: 9999
       PUBLIC_BASE_URL: \${PUBLIC_BASE_URL:-http://localhost:9999}
       PROJECT_UUID: \${PROJECT_UUID:-${uuid}}
-      LOG_DIR: \${LOG_DIR:-/workspace/guidify-ai/projects/${slug}/logs}
+      LOG_DIR: \${LOG_DIR:-/app/logs}
       FORCE_COLOR: "1"
       OPENAI_API_KEY: \${OPENAI_API_KEY:-}
-      CONFIG_DIR: /workspace/guidify-ai/projects/${slug}/config
+      CONFIG_DIR: /app/config
     volumes:
-      - ./logs:/workspace/guidify-ai/projects/${slug}/logs
-      - ./config:/workspace/guidify-ai/projects/${slug}/config
+      - ./logs:/app/logs
+      - ./config:/app/config
     depends_on:
       postgres:
         condition: service_healthy
@@ -847,7 +842,7 @@ async function main() {
       input: process.stdin,
       output: process.stdout,
     });
-    console.log('Vapi Studio — new project under projects/\n');
+    console.log('Vapi Studio — new project in current directory\n');
     name = await ask(rl, 'Project display name', 'My Voice App');
     if (!name) throw new Error('Name is required');
     const defaultSlug = slugify(name) || 'my-voice-app';
@@ -865,14 +860,14 @@ async function main() {
       );
     }
     if (fs.existsSync(path.join(PROJECTS, slug))) {
-      throw new Error('projects/' + slug + ' already exists');
+      throw new Error(slug + ' already exists in ' + PROJECTS);
     }
 
     // Generate UUID once at scaffold time; stored statically in project.identity.json.
     const uuid = crypto.randomUUID();
 
     console.log('\nWill create:');
-    console.log('  path:  projects/' + slug);
+    console.log('  path:  ' + path.join(PROJECTS, slug));
     console.log('  name:  ' + name);
     console.log('  slug:  ' + slug);
     console.log('  uuid:  ' + uuid + '  (written to config/project.identity.json)');
@@ -894,7 +889,7 @@ async function main() {
     const dir = renderFiles({ slug, name, uuid });
     console.log('\nCreated ' + dir);
     console.log('\nNext:');
-    console.log('  cd projects/' + slug);
+    console.log('  cd ' + slug);
     console.log('  yarn install');
     console.log('  yarn start   # upserts UUID into DB; prints Vapi URLs');
     console.log('\nDo not change config/project.identity.json id after wiring Vapi.');
