@@ -17,6 +17,16 @@ yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 
 `yarn install` pulls `@guidify-ai/vapi-studio@0.1.0` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG` (name + slug only).
 
+### Live voice prerequisites
+
+| Need | Detail |
+| --- | --- |
+| **Vapi** | Client has Vapi org access. `VAPI_API_KEY=` in `.env.example` is **required** (leave empty in the example; fill in `.env`). |
+| **Twilio only (for now)** | Vapi supports other carriers; this stack currently assumes **Twilio**. Put `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` in the app `.env`. |
+| **Trust Hub / +1** | Twilio Trust Hub + voice geo must allow outbound to **+1**. Trial / blocked geo → `Account not allowed to call +1…`. |
+| **Balance** | Recommend ~**$30** with auto-recharge to $30 when balance hits ~$10. |
+| **Same account** | `VAPI_PHONE_NUMBER_ID` must be a number imported in Vapi from **that** Twilio account. |
+
 ## 2. Wire Vapi
 
 Paste the printed URLs into your Vapi assistant:
