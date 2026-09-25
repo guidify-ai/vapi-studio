@@ -142,7 +142,8 @@ export function pickSmsFormUrl(
 
 /**
  * Absolute form URL for SMS: prefer `disposeContext.formUrl`, else
- * `{PUBLIC_BASE_URL}/forms/{exposeId}` (same path apps serve for HTML fill).
+ * `{PUBLIC_BASE_URL}/{PROJECT_UUID}/forms/{exposeId}` when PROJECT_UUID is set
+ * (ngrok-helper routes by UUID), else `{PUBLIC_BASE_URL}/forms/{exposeId}`.
  */
 export function resolveSmsFormUrl(
   ctx: Record<string, unknown> | undefined,
@@ -155,6 +156,10 @@ export function resolveSmsFormUrl(
   if (!id) return null;
   const base = (env.PUBLIC_BASE_URL ?? '').trim().replace(/\/$/, '');
   if (!base) return null;
+  const projectUuid = (env.PROJECT_UUID ?? '').trim().toLowerCase();
+  if (projectUuid) {
+    return `${base}/${projectUuid}/forms/${id}`;
+  }
   return `${base}/forms/${id}`;
 }
 

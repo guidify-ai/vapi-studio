@@ -29,12 +29,29 @@ describe('renderFormHtml', () => {
       },
       { title: 'Your details' },
     );
-    assert.match(html, /<form method="post" action="\/forms\/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"/);
+    // Default action is "" so POST stays on the UUID-prefixed public URL
+    // (ngrok-helper / multi-tenant hosts) instead of absolute `/forms/...`.
+    assert.match(html, /<form method="post" action="" novalidate>/);
     assert.match(html, /name="firstName"/);
     assert.match(html, /type="email"/);
     assert.match(html, /<textarea name="address"/);
     assert.match(html, /placeholder="Street"/);
     assert.match(html, /Your details/);
+  });
+
+  it('honors an explicit action path when provided', () => {
+    const html = renderFormHtml(
+      {
+        exposeId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+        formId: 1,
+        fields: [{ name: 'n', label: 'N', type: 'string' }],
+      },
+      { action: '/forms/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee' },
+    );
+    assert.match(
+      html,
+      /<form method="post" action="\/forms\/aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"/,
+    );
   });
 
   it('escapes untrusted labels', () => {

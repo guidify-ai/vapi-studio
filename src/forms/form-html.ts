@@ -56,7 +56,9 @@ export function renderFormHtml(
   handle: Pick<FormExposeHandle, 'exposeId' | 'formId' | 'fields'>,
   options: RenderFormHtmlOptions = {},
 ): string {
-  const action = escapeHtml(options.action ?? `/forms/${handle.exposeId}`);
+  const action = escapeHtml(
+    options.action !== undefined ? options.action : '',
+  );
   const title = escapeHtml(options.title ?? 'Your details');
   const subtitle = escapeHtml(
     options.subtitle ?? 'Fill this out and submit — we are waiting on the line.',
