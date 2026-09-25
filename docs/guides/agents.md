@@ -78,7 +78,7 @@ Sources: `agent/cursor/` and `agent/claude/rules/` inside the package. Does not 
 
 ## SpecKit
 
-Greenfield features: [SpecKit guide](./speckit.md) (`.specify/` in this repo).
+Greenfield features: [SpecKit guide](./speckit.md) (`.specify/` in this repo) + [ARDs](../ards/README.md) for architectural PRs.
 
 ## Related
 

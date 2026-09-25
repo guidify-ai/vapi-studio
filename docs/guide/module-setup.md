@@ -7,7 +7,7 @@ The [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) sta
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.0"
+    "@guidify-ai/vapi-studio": "0.1.1"
   }
 }
 ```

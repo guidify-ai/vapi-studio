@@ -8,7 +8,7 @@ You do **not** install the framework into an empty folder by hand. Clone the sta
 git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
 cd my-bot
 cp .env.example .env
-yarn install   # installs @guidify-ai/vapi-studio@0.1.0 + stamps agent rules
+yarn install   # installs @guidify-ai/vapi-studio@0.1.1 + stamps agent rules
 yarn start
 ```
 

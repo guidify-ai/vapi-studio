@@ -6,30 +6,33 @@ Do not put production secrets or customer flows in the framework repository.
 
 ## 1. Clone the starter
 
+Follow the credential checklist in [Quick start](../getting-started/quick-start.md) — live voice needs Vapi; Twilio and an LLM key are mode-dependent.
+
 ```bash
 git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
 cd my-bot
 cp .env.example .env
-# Edit PROJECT_NAME=…  (PROJECT_SLUG optional — defaults from the name)
+# PROJECT_NAME=…
+# VAPI_API_KEY + POC_ASSISTANT_ID + VAPI_PHONE_NUMBER_ID   # live voice
+# TWILIO_* only if SMS live / Twilio-imported number
+# OPENAI_API_KEY (or Claude/Gemini/Grok) only if leaving MockBrain
 yarn install
 yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 ```
 
-`yarn install` pulls `@guidify-ai/vapi-studio@0.1.0` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG` (name + slug only).
+`yarn install` pulls `@guidify-ai/vapi-studio@0.1.1` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG`.
 
-### Live voice prerequisites
+### Credentials at a glance
 
 | Need | Detail |
 | --- | --- |
-| **Vapi** | Client has Vapi org access. `VAPI_API_KEY=` in `.env.example` is **required** (leave empty in the example; fill in `.env`). **Vapi is paid** — budget for Vapi usage/plan charges as well as Twilio. |
-| **Twilio only (for now)** | Vapi supports other carriers; this stack currently assumes **Twilio**. Put `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` in the app `.env`. |
-| **Trust Hub / +1** | Twilio Trust Hub + voice geo must allow outbound to **+1**. Trial / blocked geo → `Account not allowed to call +1…`. |
-| **Balance** | Recommend ~**$30** with auto-recharge to $30 when balance hits ~$10. |
-| **Same account** | `VAPI_PHONE_NUMBER_ID` must be a number imported in Vapi from **that** Twilio account. |
+| **Vapi** (required for live voice) | `VAPI_API_KEY`, `POC_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`. Phone may be **Vapi-managed** or Twilio-imported. Vapi is paid. |
+| **Twilio** (optional) | Live SMS forms and/or BYOK imported numbers: `TWILIO_*`. Keep `TWILIO_SMS_DRY_RUN=1` until ready. |
+| **Brain / LLM** (optional) | Starter uses **MockBrain**. ChatGPT / Claude / Gemini / Grok need the matching API key + adapter switch. |
 
 ## 2. Wire Vapi
 
-Paste the printed URLs into your Vapi assistant:
+Paste the printed URLs into your Vapi assistant (or use the starter configure script):
 
 | Setting | Endpoint |
 | --- | --- |

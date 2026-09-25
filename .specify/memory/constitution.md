@@ -1,123 +1,90 @@
-# Guidify AI / Vapi Studio Constitution
+# Vapi Studio Constitution
+
+Public principles for the **`@guidify-ai/vapi-studio` framework** only.
+Consumer bots and commercial product roadmaps are **out of scope** here —
+document those in the app repo, not in this package.
+
+Use SpecKit (`.specify/`) + **Architecture Decision Records (ARDs)** under
+`docs/ards/` when changing framework architecture. See [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ## Core Principles
 
 ### I. Framework-First Separation
-Vapi Studio (`@guidify-ai/vapi-studio`) MUST remain free of customer/use-case behavior.
-Use-case applications MUST consume the framework only through
-its public package API. Provider wire protocols (Vapi HTTP, SSE, tool-calls,
-call IDs) MUST stay inside adapters. Application Nodes MUST express business
-conversation behavior without knowing those protocols.
+The framework MUST remain free of customer / use-case conversation behavior.
+Apps consume Studio only through the **public package API**. Provider wire
+protocols (Vapi HTTP, SSE, tool-calls, call IDs) MUST stay inside adapters.
+Application Nodes express business conversation without knowing those protocols.
 
-**Rationale:** The framework is reusable infrastructure; bots are installable
-NestJS applications built on top of it.
+**Rationale:** Reusable infrastructure; bots are separate NestJS applications.
 
 ### II. Code-First Conversation Runtime
-Conversation orchestration MUST be owned by typed NestJS application code,
-YAML flow paths, and Supervisor routing—not a single mega-prompt.
-LLMs are injectable tools for classification, extraction, and generation.
-Every user turn MUST pass through intention scanning before normal Node
-execution. Routing semantics are Brain WANT → schema MAY → Node.before() CAN →
-Node.listen() → Node.run() DO → Node.after(). Nodes MUST terminate a turn explicitly
-(`sayAndListen`, `endCall`, transfer, or an equivalently defined terminal action).
+Orchestration MUST be owned by typed NestJS code, YAML flow paths, and
+Supervisor routing—not a single mega-prompt. LLMs are injectable tools for
+classification, extraction, and generation. Every user turn MUST pass through
+intention scanning before normal Node execution. Routing semantics:
+
+`Brain WANT → schema MAY → Node.before() CAN → Node.listen() → Node.run() DO → Node.after()`
+
+Nodes MUST terminate a turn explicitly (`sayAndListen`, `endCall`, transfer,
+handoff / continueTo, or an equivalently defined terminal action).
 
 **Rationale:** Deterministic code owns rules, transitions, side effects, and
 safety; AI fills narrow interpretation gaps.
 
-### III. NestJS Dependency Injection Is the Model
-Vapi Studio MUST embrace NestJS DI rather than invent a parallel container.
-Nodes, Brain, memory, persistence, and adapters MUST be injectable Nest
-providers/classes. Prefer explicit, readable TypeScript over clever
-abstractions.
+### III. NestJS Dependency Injection
+Studio MUST use NestJS DI. Nodes, Brain, memory, persistence, and adapters are
+injectable providers. Prefer explicit TypeScript over clever abstractions.
 
-**Rationale:** Developer experience should feel like a conventional NestJS app
-with opinionated Studio conventions.
+**Rationale:** Conventional NestJS DX with Studio conventions on top.
 
-### IV. Smallest Proven Slice (YAGNI)
-Implement only what the current product MVP needs.
-Do NOT implement crash recovery, distributed Supervisor registries, failover,
-replay-after-restart, multi-process scaling, or speculative framework features.
-Happy-path active-call lifecycle only: `assistant-request` → in-memory
-supervised Conversation → Custom LLM turns → `status-update: ended` cleanup.
+### IV. Smallest Justified Change
+Ship the smallest framework change that meets a stated need (tests + docs +
+ARD when architectural). Do not add speculative platform features “just in case.”
 
-**Rationale:** Prove Vapi/runtime assumptions with evidence,
-not finish a production platform prematurely.
+**Rationale:** Framework surface area is a permanent maintenance cost for every
+consumer app.
 
 ### V. Observability Over Cleverness
-Call behavior MUST be visible through structured logs sufficient to answer
-experiment questions (correlation IDs, runtimeInstanceId,
-intention ranks, portal state, interruption, endCall/transferCall).
-Durable PostgreSQL identity/history and in-memory active-call state MUST remain
-distinct responsibilities.
+Call behavior MUST be visible through structured events/logs sufficient to
+answer: why this step, what was said, what memory changed. Durable persistence
+and in-memory active-call state remain distinct responsibilities.
 
-**Rationale:** Success is measured by observable real-call evidence, not by
-hidden internal elegance.
+**Rationale:** Debuggability is part of the public contract.
 
-### VI. Live Conversation Must Be Fast
-An inbound call is a **live conversation**. Dead air while the runtime or the Brain
-thinks is a product failure. Custom LLM turns MUST start Brain scan immediately
-on the received user text. The live ChatGPT path MUST NOT debounce, sleep, or
-hold the HTTP response to "catch more ASR" before scanning. Target: first
-assistant speech on the SSE stream in **under 1.5s** (p95) after Custom LLM
-request receipt, excluding TTS and process cold start. Brain HTTP MUST abort
-by **3s** and fall back (unknown / re-ask) rather than stall the caller.
+### VI. Live Conversation Latency
+An inbound call is a live conversation. Custom LLM turns MUST start Brain work
+promptly on received user text. The ChatGPT live path MUST NOT debounce or hold
+the HTTP response to coalesce ASR before scanning. Prefer fail-closed / re-ask
+over stalling the caller when Brain times out.
 
-**Rationale:** Callers hang up or repeat themselves when the bot is silent;
-Vapi then retries and the conversation desyncs.
+**Rationale:** Silence feels like failure; channel retries desync the call.
 
-### VII. Shit In, Shit Out
-Stay fast so the channel is less likely to retry. Do **not** special-case
-provider artifacts as conversation meaning. Duplicate / stale Custom LLM
-posts (Vapi replaying the last utterance while the runtime is already working) are a
-**Vapi** issue, not a Brain or Node problem. Garbage ASR, empty crumbs, and
-weird callers WILL happen. The framework MUST NOT grow scan-prompt rules or Node
-recovery paths for every odd input. Unknown / re-ask on the happy-path
-question is enough. A bad extract from bad input is acceptable. Not
-everything has to be handled.
+### VII. Fail Closed on Bad Input
+Do not expand the framework with special cases for every provider artifact or
+ASR crumb. Unknown / re-ask on the current question is the default recovery.
+Constrained fields (e.g. digit lengths) fail closed rather than inventing data.
 
-**Rationale:** Over-handling Vapi retries and weird people makes the bot
-slower and more brittle; the PoC proves the happy path, not a perfect
-interpreter of garbage.
+**Rationale:** Over-handling odd input slows the bot and couples Nodes to
+provider quirks.
 
-## Workspace & Runtime Constraints
+## Framework Constraints
 
-- Layout: repo root is the `@guidify-ai/vapi-studio` framework package.
-  Consumer apps are separate NestJS projects that depend on the published package.
-- Package manager: Yarn.
-- Persistence ORM: TypeORM.
-- Runtime: Node.js LTS in Docker only (`node:24-bookworm-slim` preferred).
-  Host-machine Node/Yarn installs for the application MUST NOT be required.
-- Local development: Docker Compose for app + PostgreSQL; ngrok is operator-owned.
-- Vapi account wiring and OpenAI keys are operator-owned; the codebase MUST
-  document required endpoints and env vars without embedding secrets.
-
-## Delivery Scope
-
-MVP acceptance is defined by real Vapi test scenarios proving:
-
-1. Durable Conversation identity in PostgreSQL plus one long-lived in-memory
-   supervised runtime reused across Custom LLM turns.
-2. Mock Brain ranked intentions including both app intentions and standard
-   package intentions (`studio.isGoodbye`, `studio.isTransferToHuman`, `studio.isPause`, `studio.isMad`, `studio.isUnknownTransition`, `studio.isPositive`, `studio.isNegative`).
-3. Node `before()` rejection continuing to the next eligible candidate.
-4. Multi-`say`, interruption observation, goodbye, `endCall`.
-5. Transfer portal re-engagement in memory, then real `transferCall`.
-6. Terminal `status-update: ended` finalize/persist/remove.
-
-Anything beyond these requirements is out of scope unless required to make the
-happy path work.
+- This repository is the **`@guidify-ai/vapi-studio` package**, not a bot.
+- Package manager: Yarn. Persistence: TypeORM. Runtime: Node in Docker for apps.
+- Document required env vars and endpoints; never embed secrets in the repo.
+- Host-scoped Vapi ingress: `/vapi/webhook`, `/vapi/chat/completions` (each app
+  deploy has its own `PUBLIC_BASE_URL`).
 
 ## Governance
 
-This constitution supersedes ad-hoc implementation habits for Guidify AI / Vapi Studio
-work in this repository. Amendments MUST update this file with a semantic
-version bump (MAJOR for incompatible principle changes, MINOR for new
-principles/constraints, PATCH for clarifications), ratification/amendment
-dates, and a Sync Impact Report comment.
+1. This constitution applies to framework contributions in this repository.
+2. Architectural changes MUST add or update an **ARD** under `docs/ards/`
+   (see `.specify/templates/ard-template.md`).
+3. SpecKit plans/tasks for framework features MUST be checked against these
+   principles before merge.
+4. Prefer shipped `docs/` and `docs/reference/runtime-api.md` over historical
+   SpecKit dumps.
+5. Amendments bump the constitution version (MAJOR / MINOR / PATCH) with dates.
 
-Compliance review: SpecKit plans, tasks, and implementation MUST be checked
-against these principles before merge. Complexity and new abstractions MUST be
-justified against Principle IV. Prefer current `docs/` and `docs/reference/runtime-api.md`
-over any archived historical specs.
-
-**Version**: 1.3.0 | **Ratified**: 2026-08-11 | **Last Amended**: 2026-09-03
+**Version**: 2.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-25  
+*(2.0.0 — public framework constitution; Guidify product IP removed.)*

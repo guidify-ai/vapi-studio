@@ -12,7 +12,7 @@ Your bot is a **separate NestJS app**. Start from **[vapi-studio-project](https:
 
 ## What you build
 
-A fork of [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) that depends on `@guidify-ai/vapi-studio@0.1.0`, with Vapi Custom LLM + webhook at `/vapi/...` on your host.
+A fork of [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) that depends on `@guidify-ai/vapi-studio@0.1.1`, with Vapi Custom LLM + webhook at `/vapi/...` on your host.
 
 ## What this is not
 

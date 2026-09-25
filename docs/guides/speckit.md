@@ -1,8 +1,10 @@
 # SpecKit
 
-Workspace tooling for specify → plan → tasks → implement workflows under `specs/`.
+Workspace tooling for **specify → plan → tasks → implement** on **framework**
+changes. Config lives under **`.specify/`**.
 
-Config, templates, and scripts live under **`.specify/`** (not under framework-local `.cursor/` — that tree was removed from this package).
+Consumer bots: do not dump product strategy into this repo’s SpecKit tree.
+Architectural outcomes MUST land as **ARDs** under [`docs/ards/`](../ards/README.md).
 
 ## Workflows
 
@@ -16,10 +18,12 @@ Config, templates, and scripts live under **`.specify/`** (not under framework-l
 | checklist | Custom checklist from requirements |
 | implement | Execute tasks from `tasks.md` |
 | converge | Find unbuilt work → append tasks |
-| constitution | Update constitution |
+| constitution | Update [constitution](../../.specify/memory/constitution.md) |
 | taskstoissues | Convert tasks to GitHub issues |
 
-Invoke via SpecKit / Specify CLI against `.specify/` (see `.specify/workflows/`, `.specify/templates/`). IDE skills (`.cursor/skills/speckit-*`, `.claude/skills/speckit-*`) are **not** shipped in this framework package — SpecKit here is `.specify/` only. Reinstall SpecKit skills into a local checkout if you need IDE skill discovery.
+Invoke via SpecKit / Specify CLI against `.specify/`. IDE skills
+(`.cursor/skills/speckit-*`, …) are **not** shipped in the npm package — reinstall
+locally if you need IDE skill discovery.
 
 ## Artifact layout
 
@@ -34,23 +38,35 @@ specs/<feature-id>/
 └── contracts/
 ```
 
-Templates: `.specify/templates/`
+Templates: `.specify/templates/` (includes **`ard-template.md`** for ARDs).
+
+## ARDs (Architecture Decision Records)
+
+| Rule | Detail |
+| --- | --- |
+| **Required** | PRs that change framework architecture / public contracts |
+| **Location** | `docs/ards/ARD-XXXX-*.md` |
+| **Template** | `.specify/templates/ard-template.md` |
+| **Index** | [docs/ards/README.md](../ards/README.md) |
+
+SpecKit produces working artifacts; the **ARD** is the durable, reviewable
+decision for OSS history. Link SpecKit folders from the ARD when both exist.
 
 ## When to use SpecKit vs best practices
 
 | Work | Start here |
 | --- | --- |
-| Day-to-day bot nodes / copy | [Best practices](../best-practices/README.md) + [Agents](./agents.md) |
-| Greenfield framework feature | SpecKit specify → plan → tasks |
-| Compliance check | SpecKit analyze after tasks |
+| Day-to-day bot nodes (in an **app** repo) | App best practices + package `docs/best-practices/` |
+| Greenfield **framework** feature | SpecKit specify → plan → tasks → **ARD** |
+| Compliance check | SpecKit analyze + constitution |
 
-## Historical artifacts
+## Authority
 
-Older SpecKit PoC dumps may exist under a local `archive/` folder (gitignored — not in the repo). Prefer current `docs/` and `docs/reference/runtime-api.md`.
-
-**Authority:** root `README.md` and `docs/` over SpecKit contracts.
+1. [Constitution](../../.specify/memory/constitution.md)  
+2. Shipped [`docs/`](../README.md) + [`docs/reference/runtime-api.md`](../reference/runtime-api.md)  
+3. SpecKit feature folders (ephemeral relative to the above)
 
 ## Related
 
-- [Constitution](../reference/principles.md)
-- [Documentation layers](./documentation.md)
+- [CONTRIBUTING.md](../../CONTRIBUTING.md)
+- [Documentation map](./documentation.md)

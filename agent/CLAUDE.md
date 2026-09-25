@@ -13,3 +13,5 @@ Canonical agent handbook (shared with Cursor / other agents):
 - Cursor rule templates (copied into **apps** on postinstall): `agent/cursor/`.
 - Claude rule templates (copied into **apps** on postinstall): `agent/claude/rules/`.
 - SpecKit config / templates: `.specify/` (see `docs/guides/speckit.md`).
+- Architecture decisions: `docs/ards/` (required for architectural PRs — `CONTRIBUTING.md`).
+- Constitution (framework only): `.specify/memory/constitution.md`.

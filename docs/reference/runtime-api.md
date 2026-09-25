@@ -23,7 +23,7 @@ Application-specific agent steps, copy, and flows do **not** belong in this repo
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.0"
+    "@guidify-ai/vapi-studio": "0.1.1"
   }
 }
 ```
@@ -675,9 +675,9 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 | `LOG_DAYS` | `14` | Retention |
 | `STUDIO_FORM_ACK_MS` | `15000` | Form deliver ACK window (tests may lower) |
 | `VAPI_END_CALL_TOOL_NAME` | `end_call_tool` | End-call tool (must match the Vapi tool name) |
-| `VAPI_TRANSFER_CALL_TOOL_NAME` | `transferCall` | Transfer tool |
+| `VAPI_TRANSFER_CALL_TOOL_NAME` | `transfer_call` | Transfer tool (`.env.example` snake_case; live may keep `transferCall`) |
 | `VAPI_HANDOFF_TOOL_NAME` | `handoff` | Squad module handoff tool |
-| `VAPI_TRANSFER_DESTINATION` | — | E.164 for `transferCall` destination |
+| `VAPI_TRANSFER_DESTINATION` | — | E.164 for transfer destination |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` search path |
 | `STUDIO_CONSOLE_DEBUG_ALL` | off | Verbose console (all events) |
 

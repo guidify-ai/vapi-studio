@@ -36,7 +36,7 @@ See [Creating an app](../building-apps/creating-an-app.md) for route patterns in
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `VAPI_END_CALL_TOOL_NAME` | `end_call_tool` | Farewell `endCall` |
-| `VAPI_TRANSFER_CALL_TOOL_NAME` | `transferCall` | Human transfer |
+| `VAPI_TRANSFER_CALL_TOOL_NAME` | `transfer_call` | Human transfer (`.env.example` snake_case; live may keep `transferCall`) |
 | `VAPI_HANDOFF_TOOL_NAME` | `handoff` | Squad module handoff |
 | `VAPI_TRANSFER_DESTINATION` | — | E.164 for transfer tool |
 

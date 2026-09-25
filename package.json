@@ -1,8 +1,23 @@
 {
   "name": "@guidify-ai/vapi-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Vapi Studio — deterministic voice agents for Vapi (NestJS)",
   "license": "MIT",
+  "keywords": [
+    "chat",
+    "chat-application",
+    "chatbot",
+    "chatbots",
+    "vapi",
+    "vapi-ai",
+    "vapi-alternative",
+    "vapi-tools",
+    "voice-agent",
+    "voice-ai",
+    "voice-assistant",
+    "voice-chat",
+    "voip"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/guidify-ai/vapi-studio.git"
@@ -46,17 +61,17 @@
     "install-agent-refs": "node scripts/install-agent-refs.cjs"
   },
   "dependencies": {
-    "uuid": "^11.1.0",
-    "yaml": "^2.7.0"
+    "uuid": "11.1.1",
+    "yaml": "2.9.0"
   },
   "peerDependencies": {
-    "@nestjs/common": "^11.0.0",
-    "@nestjs/core": "^11.0.0",
-    "@nestjs/typeorm": "^11.0.0",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1",
-    "typeorm": "^0.3.21",
-    "twilio": "^5.0.0"
+    "@nestjs/common": "11.1.29",
+    "@nestjs/core": "11.1.29",
+    "@nestjs/typeorm": "11.0.3",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "typeorm": "0.3.31",
+    "twilio": "5.4.5"
   },
   "peerDependenciesMeta": {
     "twilio": {
@@ -64,18 +79,18 @@
     }
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@nestjs/common": "^11.0.12",
-    "@nestjs/core": "^11.0.12",
-    "@nestjs/typeorm": "^11.0.0",
-    "@types/node": "^22.13.10",
-    "@types/uuid": "^10.0.0",
-    "eslint": "^10.9.1",
-    "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2",
-    "ts-morph": "^28.0.0",
-    "typeorm": "^0.3.21",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.69.0"
+    "@eslint/js": "10.0.1",
+    "@nestjs/common": "11.1.29",
+    "@nestjs/core": "11.1.29",
+    "@nestjs/typeorm": "11.0.3",
+    "@types/node": "22.13.10",
+    "@types/uuid": "10.0.0",
+    "eslint": "10.9.1",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "ts-morph": "28.0.0",
+    "typeorm": "0.3.31",
+    "typescript": "5.8.2",
+    "typescript-eslint": "8.69.0"
   }
 }

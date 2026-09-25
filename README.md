@@ -2,7 +2,7 @@
 
 **[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** — a **code-driven toolkit for [Vapi](https://vapi.ai)**.
 
-**Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca)
+**Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) — *coming soon*
 
 This repo is the **framework** (npm package). Your bot is a separate NestJS app — start from the public starter below.
 
@@ -10,13 +10,18 @@ This repo is the **framework** (npm package). Your bot is a separate NestJS app 
 
 ## Create a new project
 
+`yarn start` alone is not a full setup — fill credentials for **your** path first.
+Full checklist: [Quick start](./docs/getting-started/quick-start.md).
+
 ```bash
 git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
 cd my-bot
 cp .env.example .env
-# Edit PROJECT_NAME=…  (PROJECT_SLUG optional)
+# Required for live voice: VAPI_API_KEY, POC_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID
+# Optional: TWILIO_* (SMS / Twilio-imported number), OPENAI_API_KEY|ANTHROPIC_… (leave MockBrain otherwise)
+# Always: PROJECT_NAME=…  (PROJECT_SLUG optional)
 yarn install
-yarn start   # Docker + Postgres + ngrok
+yarn start   # Docker + Postgres + ngrok → prints URLs (fails closed without Vapi trio)
 ```
 
 Wire Vapi to the printed URLs:
@@ -30,7 +35,7 @@ Wire Vapi to the printed URLs:
 - Walkthrough: [Creating an app](./docs/building-apps/creating-an-app.md)
 - Quick start: [docs/getting-started/quick-start.md](./docs/getting-started/quick-start.md)
 
-**Requirements:** Node 22+, Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a Vapi account.
+**Requirements:** Node 22+, Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a **Vapi** account for live calls. Twilio and an LLM key only when you leave dry-run SMS / MockBrain.
 
 **Showcase (not a blank starter):** [vapi-studio-landing-page-sample-model](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model) — Planner LLM demo.
 
@@ -111,6 +116,8 @@ cd vapi-studio
 yarn install && yarn build && yarn test
 ```
 
+See **[CONTRIBUTING.md](./CONTRIBUTING.md)** — architectural PRs require an **ARD** under `docs/ards/` (SpecKit under `.specify/`).
+
 ---
 
 ## Documentation
@@ -122,6 +129,8 @@ yarn install && yarn build && yarn test
 | Doc site index | [`docs/README.md`](./docs/README.md) |
 | Runtime handbook | [`docs/reference/runtime-api.md`](./docs/reference/runtime-api.md) |
 | Best practices | [`docs/best-practices/`](./docs/best-practices/) |
+| ARDs | [`docs/ards/`](./docs/ards/) |
+| SpecKit | [`.specify/`](./.specify/) · [`docs/guides/speckit.md`](./docs/guides/speckit.md) |
 | Env presets | [`.env.example`](./.env.example) |
 
 ## License

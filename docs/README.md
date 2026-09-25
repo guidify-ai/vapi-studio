@@ -47,6 +47,8 @@
 | --- | --- |
 | [Documentation layers](./best-practices/documentation-layers.md) | What to update when |
 | [Agents & Cursor](./guides/agents.md) | AGENTS.md, rules |
+| [SpecKit](./guides/speckit.md) | Framework specify → plan → tasks |
+| [ARDs](./ards/README.md) | Architecture decision records (PR requirement) |
 | [Node conventions](./guides/node-conventions.md) | Naming, lifecycle, Brain SLOs |
 | [Extending events](./guides/extending-events.md) | Attach logic to the event bus (Nest + Redis samples) |
 | [Event samples](./samples/events/) | Copy-paste `onStudioEvent` / Nest listener examples |
@@ -63,6 +65,7 @@
 | [Runtime API](./reference/runtime-api.md) | Shipped contracts |
 | [Security](./reference/security.md) | Secrets policy |
 | [Testing](./reference/testing.md) | `yarn test` |
+| [Contributing](../CONTRIBUTING.md) | PR checklist + ARD rule |
 
 ## Handbook
 
