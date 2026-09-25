@@ -48,7 +48,7 @@ App identity: **`config/project.identity.json`** (`slug` / `name`). App boot ups
 | `DATABASE_URL` | App Postgres |
 | `PUBLIC_BASE_URL` / `PORT` | Public host + listen port (ngrok) |
 | `PROJECT_NAME` / `PROJECT_SLUG` | Human identity → `project.identity.json` |
-| `VAPI_API_KEY` / `VAPI_PHONE_NUMBER_ID` / `POC_ASSISTANT_ID` | Outbound dial / telephony — **required** empty slots in app `.env.example` (client must have Vapi access) |
+| `VAPI_API_KEY` / `VAPI_PHONE_NUMBER_ID` / `POC_ASSISTANT_ID` | Outbound dial / telephony — **required** empty slots in app `.env.example` (client must have Vapi access; **Vapi is paid**) |
 | `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` | **Twilio only for now**; same account that owns the Vapi-imported FROM number. Trust Hub must allow +1; keep ~$30 balance (auto-recharge near $10 recommended). Other carriers later. |
 | `STUDIO_EVENTS_REDIS_URL` / `STUDIO_EVENTS_REDIS_STREAM` | Optional event broker for `onStudioEvent` fan-out |
 | `EVENT_STORE_DATABASE_URL` | Optional durable store for your event consumer |

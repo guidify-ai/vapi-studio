@@ -21,7 +21,7 @@ yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 
 | Need | Detail |
 | --- | --- |
-| **Vapi** | Client has Vapi org access. `VAPI_API_KEY=` in `.env.example` is **required** (leave empty in the example; fill in `.env`). |
+| **Vapi** | Client has Vapi org access. `VAPI_API_KEY=` in `.env.example` is **required** (leave empty in the example; fill in `.env`). **Vapi is paid** — budget for Vapi usage/plan charges as well as Twilio. |
 | **Twilio only (for now)** | Vapi supports other carriers; this stack currently assumes **Twilio**. Put `TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER` in the app `.env`. |
 | **Trust Hub / +1** | Twilio Trust Hub + voice geo must allow outbound to **+1**. Trial / blocked geo → `Account not allowed to call +1…`. |
 | **Balance** | Recommend ~**$30** with auto-recharge to $30 when balance hits ~$10. |
