@@ -1,17 +1,23 @@
 # Example applications
 
-Examples are **separate NestJS apps** that depend on **`@guidify-ai/vapi-studio`**.
+## Starter (start here)
 
-| Example | Role | Port | Location |
-| --- | --- | --- | --- |
-| **sample-landing-llm** | Public Planner LLM showcase | **9998** | [guidify-ai/vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm) |
+**[vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)** — blank Nest shell for a new bot.
 
-```json
-{
-  "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.0"
-  }
-}
+```bash
+git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
+cd my-bot && cp .env.example .env
+# Edit PROJECT_NAME=…
+yarn install && yarn start
 ```
 
-The sample exposes the operator **React SPA**: `/flow`, `/conversations`, plus `/{PROJECT_UUID}/vapi/...`.
+Surface after `yarn start`:
+
+- Operator SPA: `/flow`, `/conversations`
+- Ingress: `/vapi/webhook`, `/vapi/chat/completions` (host-scoped)
+
+Step-by-step: [Creating an app](./creating-an-app.md).
+
+## Showcase (reference implementation)
+
+**[vapi-studio-landing-page-sample-model](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model)** — Planner LLM demo (not a blank starter). Depends on `@guidify-ai/vapi-studio@0.1.0` (or `file:../vapi-studio` while developing the next package version). Use it to see richer Vapi strategies, funnels, and multi-node flows.

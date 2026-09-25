@@ -2,7 +2,7 @@
 
 **Vapi Studio** (`@guidify-ai/vapi-studio`) is a NestJS toolkit for **deterministic voice agents** on [Vapi](https://vapi.ai).
 
-Install the package into **your** application. The framework does not ship your bot — you own nodes, `flow.yaml`, secrets, and Docker.
+Your bot is a **separate NestJS app**. Start from **[vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)** — clone it, set `PROJECT_NAME`, then own nodes, `flow.yaml`, secrets, and Docker.
 
 ## What you get
 
@@ -12,13 +12,12 @@ Install the package into **your** application. The framework does not ship your 
 
 ## What you build
 
-A NestJS app that depends on `@guidify-ai/vapi-studio@0.1.0`, with Vapi Custom LLM + webhook routes.
-
-Public showcase: [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm).
+A fork of [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) that depends on `@guidify-ai/vapi-studio@0.1.0`, with Vapi Custom LLM + webhook at `/vapi/...` on your host.
 
 ## What this is not
 
 - A no-code builder or open-ended LLM agent platform
 - A Guidify-hosted runtime (you self-host)
+- A monorepo of customer bots (each bot is its own starter fork)
 
-Next: [Installation](./installation.md) · [Concepts](../guide/concepts.md)
+Next: [Installation](./installation.md) · [Quick start](./quick-start.md) · [Concepts](../guide/concepts.md)

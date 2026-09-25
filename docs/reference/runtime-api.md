@@ -323,7 +323,7 @@ modules:
 - `WorkflowLoader` — load / resolve module id ↔ Vapi `assistantName`
 - `WorkflowHandoffService.applyHandoffs` — enrich actions with `assistantName`, set `metadata.activeModuleId`, load the next Vapi Studio flow, emit `WORKFLOW_HANDOFF`, checkpoint; **never** `finalizeEnded`
 - After handoff, `metadata.moduleNeedsEntrySpeak` — Supervisor speaks the destination entry Node on the next empty/module-entry turn (Studio may do this in-process; Vapi after Squad switch)
-- One deployment can serve all Vapi Studio members via `POST /{projectUuid}/vapi/:moduleId/chat/completions` or header `X-Vapi-Studio-Module`
+- One deployment can serve Squad members via `POST /vapi/:moduleId/chat/completions` or header `X-Vapi-Studio-Module`
 
 Native Vapi members use `kind: vapi` (no flow file) — Vapi Studio only emits the handoff tool; Vapi owns that assistant.
 
@@ -546,7 +546,7 @@ Vapi treats the app as an OpenAI-compatible Custom LLM.
 - Custom LLM: `POST …/chat/completions` — **one request per turn**, SSE stream, then close. `VapiSseCompiler` writes chunks and terminal tool calls (`endCall`, `transferCall`, Squad `handoff`, plus `invokeAdvertisedTool` → internal `toolCall` action). Mock Brain may hold `listenTimeoutSeconds` to coalesce ASR crumbs; ChatGPT must not — scan starts immediately.
 - Each Custom LLM turn may stash `body.tools` → `ctx.tools` (optional ads), `role:tool` → `ctx.toolResult(s)`, and call metadata → `ctx.vapi`. Tool-result-only turns (no new user speech) **re-enter the Node** that emitted `invokeAdvertisedTool` without a Brain scan of empty text. Idle / still-there uses `Supervisor.handleTurn({ forceIntention: 'studio.isStillThere' })` (Studio timer or server tool from Vapi speech-timeout hooks) — **not** `listenTimeoutSeconds`.
 - **LLM-requested tools** (Custom LLM SSE `tool_calls`) vs **server-dispatched tools** (webhook `message.type === 'tool-calls'`) are different paths; apps implement the latter in a webhook strategy.
-- Workflow modules: prefer one app with per-member URLs (`/{projectUuid}/vapi/:moduleId/chat/completions`) or `X-Vapi-Studio-Module` so the same Conversation + `activeModuleId` serve the Squad. Squad handoff *rules* live on each Vapi assistant (`model.tools` type `handoff`); Vapi Studio only emits the matching tool call when a Node returns `output.handoff`.
+- Workflow modules: prefer one app with per-member URLs (`/vapi/:moduleId/chat/completions`) or `X-Vapi-Studio-Module` so the same Conversation + `activeModuleId` serve the Squad. Squad handoff *rules* live on each Vapi assistant (`model.tools` type `handoff`); Vapi Studio only emits the matching tool call when a Node returns `output.handoff`.
 - Helpers: `buildVapiHandoffToolArgs`, `hasAdvertisedHandoffTool`, `resolveHandoffToolName(tools, assistantName)`.
 - Correlation: call id from body/headers. Missing call id is an error, not a silent new Conversation.
 
@@ -627,13 +627,13 @@ Disable file logs with `STUDIO_FILE_LOG=0`. Tests skip files unless `LOG_DIR` is
 
 TypeORM + PostgreSQL (Studio / app DB):
 
-- `projects` — durable project identity; public ingress UUID for `/{projectUuid}/vapi/...`
+- `projects` — durable project identity (name/slug); internal row id for DB FKs — not a public URL segment
 - `conversations` — durable identity (`project_id` + `provider_call_id` unique), status, metadata, final snapshot
 - `provider_ingress` — raw webhook / Custom LLM bodies for operator inspection (`project_id` when scoped)
 
 Event history is not a Studio TypeORM table. See [Extending events](../guides/extending-events.md).
 
-Vapi HTTP routes are **app-owned** and must be mounted under `/{projectUuid}/vapi/...`. Apps seed a stable `PROJECT_UUID` on boot. Vapi `assistantId` is forensics only — not used for project routing.
+Vapi HTTP routes are **app-owned** and host-scoped: `/vapi/webhook` and `/vapi/chat/completions` (optional `/vapi/:moduleId/chat/completions`). Each fork of the starter is a separate deploy with its own `PUBLIC_BASE_URL` / port — no project UUID in the path. Vapi `assistantId` is forensics only — not used for project routing.
 
 Active-call state (portal counters, listen registration, turn queue) stays **in memory**.
 

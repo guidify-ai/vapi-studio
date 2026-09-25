@@ -4,7 +4,7 @@
 
 ### I. Framework-First Separation
 Vapi Studio (`@guidify-ai/vapi-studio`) MUST remain free of customer/use-case behavior.
-Use-case applications (starting with `the public sample app (vapi-studio-sample-landing-llm)`) MUST consume the framework only through
+Use-case applications MUST consume the framework only through
 its public package API. Provider wire protocols (Vapi HTTP, SSE, tool-calls,
 call IDs) MUST stay inside adapters. Application Nodes MUST express business
 conversation behavior without knowing those protocols.
@@ -31,7 +31,7 @@ providers/classes. Prefer explicit, readable TypeScript over clever
 abstractions.
 
 **Rationale:** Developer experience should feel like a conventional NestJS app
-with opinionated Studio conventions (Laravel-like structure, NestJS power).
+with opinionated Studio conventions.
 
 ### IV. Smallest Proven Slice (YAGNI)
 Implement only what the current product MVP needs.
@@ -82,8 +82,7 @@ interpreter of garbage.
 ## Workspace & Runtime Constraints
 
 - Layout: repo root is the `@guidify-ai/vapi-studio` framework package.
-  `the public sample app (vapi-studio-sample-landing-llm)` is the application skeleton
-  (prepared NestJS + Studio wiring), not a generic NestJS sample.
+  Consumer apps are separate NestJS projects that depend on the published package.
 - Package manager: Yarn.
 - Persistence ORM: TypeORM.
 - Runtime: Node.js LTS in Docker only (`node:24-bookworm-slim` preferred).

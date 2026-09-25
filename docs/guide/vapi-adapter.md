@@ -8,13 +8,13 @@ Typical PoC routes:
 
 | Method | Path | Vapi assistant field |
 | --- | --- | --- |
-| `POST` | `/{projectUuid}/vapi/webhook` | **Webhook** — assistant-request, status-update, tool-calls |
-| `POST` | `/{projectUuid}/vapi/chat/completions` | **Conversation** (Custom LLM SSE, single assistant) |
-| `POST` | `/{projectUuid}/vapi/:moduleId/chat/completions` | **Conversation** per Squad module when workflow loaded |
+| `POST` | `/vapi/webhook` | **Webhook** — assistant-request, status-update, tool-calls |
+| `POST` | `/vapi/chat/completions` | **Conversation** (Custom LLM SSE, single assistant) |
+| `POST` | `/vapi/:moduleId/chat/completions` | **Conversation** per Squad module when workflow loaded |
 
 See [Creating an app](../building-apps/creating-an-app.md) for route patterns in your NestJS app.
 
-**Project routing:** the leading `{projectUuid}` is the app’s durable project id (DB `projects.id`, env `PROJECT_UUID`). Unknown UUIDs return **404**. Vapi `assistantId` is forensics only — not used to pick the project.
+**Routing:** each starter fork is its own deploy (`PUBLIC_BASE_URL` / port). Paths are host-scoped — no project UUID segment. Vapi `assistantId` is forensics only — not used to pick the project.
 
 ## Correlation
 

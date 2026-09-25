@@ -1,22 +1,27 @@
 # Building applications — overview
 
-Vapi Studio is an **npm library**. Your bot is a **NestJS application** in its own repo (or folder) that depends on `@guidify-ai/vapi-studio`.
+**[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** is an npm library. Your bot is a NestJS app that depends on it.
+
+**Start every new bot by cloning [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)** — then rename, set `PROJECT_NAME`, and extend nodes / `flow.yaml`.
 
 ```text
-my-voice-app/                 ← your app (private or public)
-├── package.json              ← "@guidify-ai/vapi-studio": "0.1.0"
+my-bot/                         ← clone of vapi-studio-project
+├── package.json                ← "@guidify-ai/vapi-studio": "0.1.0"
+├── config/
+│   ├── project.identity.json   ← name + slug (from .env)
+│   └── flow.yaml
 ├── src/
-├── config/flow.yaml
-└── docker-compose.stub.yaml
+│   ├── conversation/           ← your agent steps
+│   └── vapi/                   ← /vapi/webhook + /vapi/chat/completions
+└── docker-compose.yaml
 ```
 
-| Package | App |
+| Repo | Role |
 | --- | --- |
-| `@guidify-ai/vapi-studio` (this repo / npm) | Your NestJS voice bot |
-| Types, Supervisor, Brain adapters, Studio UI assets | Nodes, flow.yaml, Vapi routes, secrets |
+| [vapi-studio](https://github.com/guidify-ai/vapi-studio) | Framework → npm `@guidify-ai/vapi-studio` |
+| [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) | **Starter** — fork this to ship a bot |
+| [vapi-studio-landing-page-sample-model](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model) | Showcase (Planner LLM) — study patterns, not a blank template |
 
-Do not add customer-specific agent steps under the framework `src/` — only in your app.
-
-Public showcase: [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm).
+Do not add customer-specific agent steps under the framework `src/` — only in your starter fork.
 
 [Creating an app](./creating-an-app.md) · [Example apps](./example-apps.md)

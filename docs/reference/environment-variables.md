@@ -1,8 +1,18 @@
 # Environment variables
 
-Variables the **framework** reads at runtime. Application-specific vars (database URL, `PUBLIC_BASE_URL`, `PROJECT_UUID`, feature flags) belong in **your app** — document them in your app's `.env.example`.
+Variables the **framework** reads at runtime. Application-specific vars (database URL, `PUBLIC_BASE_URL`, Vapi outbound ids) belong in **your app** — start from the package [`.env.example`](../../.env.example) (presets for Brain providers, Twilio, Vapi tools, optional event broker).
 
-App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJECT_UUID` in `.env` is a mirror for operators/compose. App boot upserts the identity into the `projects` table. Never regenerate `id` at runtime.
+App identity: **`config/project.identity.json`** (`slug` / `name`). App boot upserts a local `projects` row for DB FKs. Vapi ingress is host-scoped (`/vapi/...`) — each fork has its own `PUBLIC_BASE_URL` / port.
+
+**Brain adapter class** is selected in `VapiStudioModule.forRoot({ brainAdapter })` (or your app’s `brain.config.ts`). Secrets stay in env:
+
+| Provider | Adapter | Env |
+| --- | --- | --- |
+| ChatGPT | `ChatGptBrainAdapter` | `OPENAI_API_KEY` |
+| Claude | `ClaudeBrainAdapter` | `ANTHROPIC_API_KEY` |
+| Gemini | `GeminiBrainAdapter` | `GOOGLE_API_KEY` (alias `GEMINI_API_KEY`) |
+| Grok | `GrokBrainAdapter` | `XAI_API_KEY` |
+| Mock | `MockBrainAdapter` / `Mock*BrainAdapter` | none |
 
 **Brain model and confidence** are set in `VapiStudioModule.forRoot({ brain })` — not env.
 
@@ -31,8 +41,19 @@ App identity: **`config/project.identity.json`** (`id` / `slug` / `name`). `PROJ
 | `VAPI_DASHBOARD_CALL_URL` | `https://dashboard.vapi.ai/call/{callId}` | Debug UI link to Vapi call (`{callId}` = `provider_call_id`) |
 | `CONFIG_DIR` | app `config/` | Flow + `workflow.yaml` root |
 
-Event export / remote sinks are application-owned — not framework env.
-See [Extending events](../guides/extending-events.md).
+### App-owned (documented in `.env.example`, not read by the framework core)
+
+| Variable | Purpose |
+| --- | --- |
+| `DATABASE_URL` | App Postgres |
+| `PUBLIC_BASE_URL` / `PORT` | Public host + listen port (ngrok) |
+| `PROJECT_NAME` / `PROJECT_SLUG` | Human identity → `project.identity.json` |
+| `VAPI_API_KEY` / `VAPI_PHONE_NUMBER_ID` / `POC_ASSISTANT_ID` | Outbound dial / telephony (Twilio number imported in Vapi) |
+| `STUDIO_EVENTS_REDIS_URL` / `STUDIO_EVENTS_REDIS_STREAM` | Optional event broker for `onStudioEvent` fan-out |
+| `EVENT_STORE_DATABASE_URL` | Optional durable store for your event consumer |
+
+Event export / remote sinks are application-owned — not framework wiring.
+See [Extending events](../guides/extending-events.md) · [Events & logging](./events-and-logging.md).
 
 - [Runtime API](./runtime-api.md)
 - [Security](./security.md)

@@ -32,5 +32,9 @@ archive/
 .uv-bin/
 .uv-tools/
 
-# Local make (if any) — not part of the published package
+# Local make / platform orchestration (never publish)
 Makefile
+.platform-sync-vapi-env.py
+.platform-ngrok.pid
+.platform-ngrok.log
+.platform-public-url

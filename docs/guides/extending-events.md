@@ -1,80 +1,155 @@
 # Extending Studio events
 
-Vapi Studio is **event-driven**. Every meaningful turn of a call emits structured
-events on an in-process Node bus. The OSS package does **not** lock you into a
-single sink — you attach your own listeners and implement whatever logic you need.
+Vapi Studio is **event-driven**. Every meaningful turn can emit structured events
+on an in-process Node bus. The OSS package does **not** lock you into a single
+sink — you attach your own listeners (the same way you attach Postgres).
 
-Guidify AI builds its own companion tools the same way: they subscribe to these
-hooks. Your app can too.
+Guidify companion tools (e.g. analytics) subscribe the same way: listen in-process,
+optionally publish to a broker + store. Your app can too.
+
+## Mental model
+
+```text
+Node / Supervisor / Forms / Integrations
+        │
+        ▼
+  EventService.emit / persist / persistAnalyticsTag
+        │
+        ├── console + daily file logs
+        ├── onStudioEvent(...)          ← process-wide Node EventEmitter
+        └── Nest eventListeners[]       ← DI / StudioEventListener
+                │
+                ▼ (your code)
+        Redis Streams / queue / HTTP / warehouse / CRM
+```
+
+**Postgres** = durable conversations. **Event bus** = explainability + side effects.
+Neither is Guidify-hosted — both run on your infra.
+
+`EventService.log(...)` is **console/file only** — it does **not** hit `onStudioEvent`.
+Use `persist` / `emit` / `persistAnalyticsTag` for anything listeners must see.
 
 ## Two listener styles
 
 ### 1. `onStudioEvent` (any process code)
 
 ```ts
-import { onStudioEvent } from '@guidify-ai/vapi-studio';
+// main.ts — register BEFORE app.listen
+import { onStudioEvent, STUDIO_EVENTS } from '@guidify-ai/vapi-studio';
 
 onStudioEvent(async (event) => {
-  // metrics, audit trail, queue publish, CRM sync, …
+  if (event.type === 'ROUTE_DECISION') {
+    // why this node ran
+  }
+  if (event.type === STUDIO_EVENTS.OUTBOUND_NOTIFICATION) {
+    // SMS / outbound channel
+  }
+  if (event.type === 'ANALYTICS_TAG') {
+    // funnel milestone — payload.tag
+  }
 });
 ```
-
-Register early (e.g. from `main.ts` before `app.listen`). Handlers run for every
-`EventService.emit` / `persist` / `persistAnalyticsTag` in this process.
 
 ### 2. Nest `eventListeners`
 
 ```ts
+import { Injectable } from '@nestjs/common';
+import {
+  VapiStudioModule,
+  type StudioEvent,
+  type StudioEventListener,
+} from '@guidify-ai/vapi-studio';
+
+@Injectable()
+export class AuditEventListener implements StudioEventListener {
+  async handle(event: StudioEvent): Promise<void> {
+    // DI-friendly: inject repos, queues, …
+  }
+}
+
 VapiStudioModule.forRoot({
-  eventListeners: [MyStudioEventListener],
+  // …
+  eventListeners: [AuditEventListener],
 });
 ```
 
-Implement `StudioEventListener.handle(event)`. Use this when you want DI,
-scoped services, or to share the Nest module graph (e.g. Studio UI’s in-memory
-buffer).
+Both styles are first-class.
 
-Both styles are first-class. OSS does not require a broker, cloud account, or
-Guidify-hosted service to add behavior.
+## Sample: Redis Streams broker (like analytics)
 
-## What the framework emits
+Framework does **not** open Redis for you. Your app bridges the bus — same
+optional infra pattern as a second Postgres database for an event store.
 
-`EventService.emit` / `persist` / `persistAnalyticsTag` always:
+Compose stub: [`docker-compose.events.stub.yaml`](./docker-compose.events.stub.yaml)
 
-1. Console / daily file logs  
-2. Node `EventEmitter` (`onStudioEvent`)  
-3. Nest `eventListeners` (when registered)
+```ts
+// src/events/redis-event-bridge.ts — register from main.ts
+import { onStudioEvent, type StudioEvent } from '@guidify-ai/vapi-studio';
+import Redis from 'ioredis'; // your dependency
 
-The framework does **not** ship a durable event database or remote event API.
-Durability, fan-out, and product UIs are application-owned — attach them to the
-hooks above.
+const url = process.env.STUDIO_EVENTS_REDIS_URL?.trim();
+const stream = process.env.STUDIO_EVENTS_REDIS_STREAM?.trim() || 'studio:events';
 
-Stamp funnel milestones with `persistAnalyticsTag` (type `ANALYTICS_TAG`,
-`payload.tag`). Do **not** put funnel membership on the event (`payload.funnels`).
+export function registerRedisEventBridge(): void {
+  if (!url) {
+    console.warn('[events] STUDIO_EVENTS_REDIS_URL unset — bus stays in-process only');
+    return;
+  }
+  const redis = new Redis(url);
+  onStudioEvent(async (event: StudioEvent) => {
+    await redis.xadd(
+      stream,
+      '*',
+      'type', event.type,
+      'ts', event.ts,
+      'conversationId', event.conversationId ?? '',
+      'providerCallId', event.providerCallId ?? '',
+      'payload', JSON.stringify(event.payload ?? {}),
+    );
+  });
+}
+```
 
-## Patterns apps use
+```ts
+// main.ts
+import { registerRedisEventBridge } from './events/redis-event-bridge';
 
-| Pattern | How |
+registerRedisEventBridge();
+// … NestFactory.create / listen
+```
+
+A separate **consumer** process (analytics, warehouse loader, …) reads the stream
+and writes Postgres / ClickHouse / whatever you own. Env presets:
+
+| Variable | Purpose |
 | --- | --- |
-| In-process side effects | Nest `eventListeners` or `onStudioEvent` |
-| Export to your infra | `onStudioEvent` → Redis / queue / HTTP / warehouse |
-| Optional private modules | `src/shadows/register.ts` try/require private files (sample pattern) |
-| Custom domain events | `ctx.events.persist(conversationId, 'MY_APP_EVENT', { … })` |
-| Task lifecycle | `ctx.tasks.dispatch` / `require` → `TASK_ENQUEUED` / `STARTED` / `COMPLETED` / `FAILED` / `DEDUPED` / `AWAITED` |
+| `STUDIO_EVENTS_REDIS_URL` | Broker URL (app-owned) |
+| `STUDIO_EVENTS_REDIS_STREAM` | Stream name (default `studio:events`) |
+| `EVENT_STORE_DATABASE_URL` | Optional durable store for the consumer |
 
-Without any listener beyond console + daily logs, the app still runs — hooks are
-additive, not mandatory.
+## Sample: emit your own domain events
 
-Local multi-host setups typically use a **shared** Redis + Postgres on the host while app containers stay on separate Docker networks and connect via `host.docker.internal`.
+```ts
+// inside a Node
+await ctx.events.persist(ctx.conversationId, 'LEAD_QUALIFIED', {
+  companyName: ctx.memory.companyName,
+});
 
-## Operator UI
+// funnel milestone (payload.tag only — never payload.funnels)
+await ctx.events.persistAnalyticsTag(ctx.conversationId, 'quote_requested');
+```
 
-Studio SPA routes: `/flow`, `/conversations`. Conversation forensics there are
-chat / memory / path. Richer dashboards belong in tools you (or Guidify) build
-on the same event hooks.
+## What events exist?
+
+Canonical catalog: [Events & logging — Event catalog](../reference/events-and-logging.md#event-catalog).
+
+Typed constants exported as `STUDIO_EVENTS` (integrations, outbound, tasks). Many
+forensic types are string names (`ROUTE_DECISION`, `FORM_SENDOUT`, …) — filter on
+`event.type`.
 
 ## Related
 
 - [Events & logging](../reference/events-and-logging.md)
-- [Data model](../reference/data-model.md)
+- [Environment variables](../reference/environment-variables.md) · [`.env.example`](../../.env.example)
 - [Debugging and observability](../best-practices/debugging-and-observability.md)
+- [Data model](../reference/data-model.md)

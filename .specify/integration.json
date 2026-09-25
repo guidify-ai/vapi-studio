@@ -1,9 +1,7 @@
 {
   "version": "0.16.2",
   "integration_state_schema": 1,
-  "installed_integrations": [
-    "cursor-agent"
-  ],
+  "installed_integrations": [],
   "integration_settings": {
     "cursor-agent": {
       "script": "sh",

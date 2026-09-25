@@ -7,6 +7,9 @@ or any tool that listens on the same bus.
 Call forensics: every turn should be explainable from daily logs + structured
 events (and any durable sink your app attaches).
 
+**How to attach your logic:** [Extending events](../guides/extending-events.md)
+(Redis / Nest / custom types). Env presets: [`.env.example`](../../.env.example).
+
 ## Event-driven hooks (OSS is open)
 
 | Hook | When to use |
@@ -14,85 +17,121 @@ events (and any durable sink your app attaches).
 | `onStudioEvent(handler)` | Process-wide subscribe — any sink you own |
 | Nest `eventListeners` | DI / Nest services implementing `StudioEventListener` |
 | `EventService.persist` / `emit` | Emit framework or **app-defined** event types |
+| `EventService.persistAnalyticsTag` | Funnel milestone → type `ANALYTICS_TAG` |
 
 The framework does **not** ship a durable event store or dashboard. That is
-intentional: attach your own listeners. Guidify AI companion tools integrate
-through these same hooks; your projects are not limited by the OSS package.
-
-Full guide: [Extending events](../guides/extending-events.md).
-
-## EventService
-
-| Method | Purpose |
-| --- | --- |
-| `emit({ type, conversationId, payload })` | Console + **Node EventEmitter** (`onStudioEvent`) + Nest `StudioEventListener`s |
-| `persist(conversationId, type, payload)` | Conversation-scoped `emit` (not an automatic Postgres write) |
-| `persistAnalyticsTag(conversationId, tag, payload?)` | Funnel milestone — type `ANALYTICS_TAG`, `payload.tag` |
-| `log(...)` | Structured console / daily file only (no listeners / bus) |
+intentional: attach your own listeners (same ownership model as Postgres).
+Guidify AI companion tools integrate through these same hooks.
 
 ```ts
-import { onStudioEvent } from '@guidify-ai/vapi-studio';
+import { onStudioEvent, STUDIO_EVENTS } from '@guidify-ai/vapi-studio';
 
 onStudioEvent((event) => {
-  /* your listener — metrics, queue, warehouse, … */
+  /* metrics, Redis, warehouse, … */
 });
 
 VapiStudioModule.forRoot({
-  eventListeners: [StudioEventBuffer], // Nest DI listeners
+  eventListeners: [MyNestListener],
 });
 ```
 
-## Console driver
+## EventService
+
+| Method | Hits bus? | Purpose |
+| --- | --- | --- |
+| `emit({ type, conversationId, payload })` | **Yes** | Console + `onStudioEvent` + Nest listeners |
+| `persist(conversationId, type, payload)` | **Yes** | Conversation-scoped `emit` (not an automatic Postgres write) |
+| `persistAnalyticsTag(conversationId, tag, payload?)` | **Yes** | `ANALYTICS_TAG` with `payload.tag` |
+| `log(...)` | **No** | Structured console / daily file only |
+
+## Event catalog
+
+Types below appear on the bus when emitted via `emit` / `persist` /
+`persistAnalyticsTag` (or framework helpers that call them). Filter with
+`event.type`. App code may emit additional string types.
+
+### Routing & flow
+
+| Event | Answers |
+| --- | --- |
+| `ROUTE_DECISION` | Why this node ran (`resolvedVia`, intention, boosts) |
+| `ROUTE_FAILED` | `before()` refusal, catch, unknown transition |
+| `ROUTE_FALLBACK_UNKNOWN` | Fell through to unknown handling |
+| `UNKNOWN_ORIGIN_CONSUME` | Unknown portal accepted restatement vs origin listen |
+| `CONDITION_TRANSITION` | YAML/code force jump |
+| `CONDITION_TRANSITION_MISSED` | Condition jump did not apply |
+| `FLOW_CONTINUE` | `continueTo` target + reason |
+| `WORKFLOW_HANDOFF` | Squad module switch |
+
+### Conversation lifecycle
+
+| Event | Answers |
+| --- | --- |
+| `BOOTSTRAP` / `FINALIZE` | Runtime create / tear-down |
+| `CONVERSATION_BEFORE_EACH` / `CONVERSATION_AFTER_EACH` | Entry hooks |
+| `CONVERSATION_ENTRY_POINT` | Entry seeding |
+| `CONVERSATION_RESUMED` | Resume after pause / form |
+| `CONVERSATION_LIMIT_EXCEEDED` | Turn or wall-clock cap → fail-closed `endCall` |
+| `DISASTER_RESTORED` | Disaster recovery restore |
+
+### Brain
+
+| Event | Answers |
+| --- | --- |
+| `BRAIN_SCAN_START` / `BRAIN_SCAN_RESULT` | Intention / extract scan |
+| `BRAIN_JUDGE_START` / `BRAIN_JUDGE_RESULT` | Judge pass |
+| `BRAIN_CLARIFY_START` / `BRAIN_CLARIFY_RESULT` | Clarify pass |
+| `BRAIN_USAGE` / `BRAIN_COST_SUMMARY` | Tokens / cost (live adapters) |
+| `BRAIN_SERVICE` | Adapter selection / errors |
+
+### Forms & outbound
+
+| Event | Answers |
+| --- | --- |
+| `FORM_EXPOSE` / `FORM_SENDOUT` / `FORM_RESEND` / `FORM_RESENT` | Form lane |
+| `FORM_LINK_READY` / `FORM_DELIVERED` / `FORM_DELIVER_TIMEOUT` | Delivery |
+| `FORM_SUBMITTED` / `FORM_FILLOUT_TIMEOUT` | User fill |
+| `FORM_CHANNEL_UNAVAILABLE` / `FORM_DISPOSE_ADAPTER` | Channel wiring |
+| `OUTBOUND_NOTIFICATION` | SMS (Twilio) / future channels — `channel`, `status`, `to`, `sid` |
+| `OUTBOUND_NOTIFICATION_ERROR` | Outbound send failed |
+
+Typed aliases: `STUDIO_EVENTS.OUTBOUND_NOTIFICATION` (+ `_ERROR`).
+
+### Integrations & tasks
+
+| Event | Constant | Answers |
+| --- | --- | --- |
+| `INTEGRATION_REQUEST` / `RESPONSE` / `ERROR` | `STUDIO_EVENTS.INTEGRATION_*` | Outbound HTTP + JWT |
+| `TASK_ENQUEUED` / `STARTED` / `COMPLETED` / `FAILED` / `DEDUPED` / `AWAITED` | `STUDIO_EVENTS.TASK_*` | Studio Task Queue |
+
+### Analytics
+
+| Event | Answers |
+| --- | --- |
+| `ANALYTICS_TAG` | Funnel milestone — **`payload.tag` only** (never `payload.funnels`) |
+
+### Ingress / speech (often app-emitted or adapter path)
+
+| Event | Answers |
+| --- | --- |
+| `WEBHOOK_RECEIVED` / `ASSISTANT_REQUEST` | Vapi webhook |
+| `CUSTOM_LLM_*` | Custom LLM turn queue / abort / errors |
+| `SAY` | Spoken text |
+| `EVENT_BUS_ERROR` / `EVENT_LISTENER_ERROR` | Listener failures |
+
+Full doctrine: [Debugging and observability](../best-practices/debugging-and-observability.md).
+
+## Console & daily files
 
 | Env | Effect |
 | --- | --- |
 | `STUDIO_CONSOLE_DEBUG` | Pretty colored turn forensics |
 | `STUDIO_CONSOLE_DEBUG_ALL` | Verbose (all event types) |
+| `LOG_DIR` / `LOG_DAYS` / `STUDIO_FILE_LOG` | Daily `logs/dailyYYYYMMDD.log` |
 
-Tags include **FORM**, **ROUTE**, **BRAIN**, **INTEGRATION**, **NOTIFY**.
+## Broker + database (app-owned)
 
-## Daily file logs
-
-| Env | Default |
-| --- | --- |
-| `LOG_DIR` | `logs/` |
-| `LOG_DAYS` | `14` |
-| `STUDIO_FILE_LOG` | on |
-
-Files: `logs/dailyYYYYMMDD.log`
-
-## Key forensic events
-
-| Event | Answers |
-| --- | --- |
-| `ROUTE_DECISION` | Why this node ran (`resolvedVia`, intention, boosts) |
-| `UNKNOWN_ORIGIN_CONSUME` | Unknown portal accepted the restatement against the origin listen (`unknown_origin_consume`) |
-| `ROUTE_FAILED` | `before()` refusal, catch, unknown transition |
-| `CONDITION_TRANSITION` | YAML/code force jump |
-| `FLOW_CONTINUE` | `continueTo` target + reason |
-| `FORM_SENDOUT` / `FORM_RESEND` | Which form lane, delivery branch |
-| `FORM_SUBMITTED` | Form keys received |
-| `WORKFLOW_HANDOFF` | Squad module switch |
-| `INTEGRATION_*` | Outbound HTTP + JWT |
-| `OUTBOUND_NOTIFICATION` | SMS (Twilio) / future channels — `channel`, `status`, `to`, `sid` |
-| `OUTBOUND_NOTIFICATION_ERROR` | Outbound send failed before/during provider call |
-| `BRAIN_COST_SUMMARY` | Token/cost estimate (ChatGPT path) |
-| `CONVERSATION_LIMIT_EXCEEDED` | Turn or wall-clock cap hit → fail-closed `endCall` |
-
-Full doctrine: [Debugging and observability](../best-practices/debugging-and-observability.md)
-
-## Analytics tags
-
-Stamp milestones with `persistAnalyticsTag` / `stampAnalyticsTag`:
-
-| Piece | Role |
-| --- | --- |
-| `ANALYTICS_TAG` | Milestone (`payload.tag`) |
-| App tag catalog | Stable `snake_case` ids used by your tooling |
-
-Do **not** put funnel membership on the event (`payload.funnels`).
-
-## App events
-
-Applications may emit custom events via `EventService.persist` — name and
-document them in the app repo.
+Treat Redis (or another broker) like Postgres: optional compose service, env URL,
+your consumer. Framework stays in-process. See
+[Extending events](../guides/extending-events.md) and
+[`docker-compose.events.stub.yaml`](../guides/docker-compose.events.stub.yaml).

@@ -10,6 +10,6 @@ Canonical agent handbook (shared with Cursor / other agents):
 - Consumer apps: separate NestJS repos depending on `@guidify-ai/vapi-studio` (npm).
 - Contracts: `docs/reference/runtime-api.md` (update in the same change as behavior).
 - Doctrine: `docs/best-practices/`.
-- Always-on / path rules: `.claude/rules/` (mirrors `.cursor/rules/`).
-- SpecKit skills: `.claude/skills/speckit-*` (symlinks to `.cursor/skills/`).
-- Cursor rule templates: `agent/cursor/` · Claude rule templates: `agent/claude/`.
+- Cursor rule templates (copied into **apps** on postinstall): `agent/cursor/`.
+- Claude rule templates (copied into **apps** on postinstall): `agent/claude/rules/`.
+- SpecKit config / templates: `.specify/` (see `docs/guides/speckit.md`).

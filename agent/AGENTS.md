@@ -20,7 +20,7 @@ In a **vapi-studio** source checkout, the same files live at `docs/best-practice
 ## Hard rules (summary)
 
 - **One CTA per turn** — never stack unrelated questions; prefer more agent steps / `continueTo`.
-- **`before()` / `after()` for async** — JWT/API warm and teardown belong in lifecycle hooks; keep `run()` to speech + one terminal output (`docs/best-practices/nodes-and-listens.md`, `.cursor/rules/vapi-studio-agent-steps.mdc`).
+- **`before()` / `after()` for async** — JWT/API warm and teardown belong in lifecycle hooks; keep `run()` to speech + one terminal output (`docs/best-practices/nodes-and-listens.md`, `docs/guides/node-conventions.md`).
 - **`ctx.tasks.dispatch` / `require`** — multi-second I/O via the conversation-scoped Task Queue (`async` in an early node, `require(dedupeKey)` in a later node = postponed debt; never speak `taskId`s) (`docs/reference/runtime-api.md` § Tasks).
 - **Conversations must end** — framework `limits.maxTurns` / `limits.maxDurationMs` always apply (defaults 40 / 20m); never ship unlimited calls (`docs/best-practices/conversation-design.md`).
 - **Fail closed** on constrained fields (e.g. NA phone = exactly 10 digits).

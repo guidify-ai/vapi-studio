@@ -8,19 +8,19 @@ Postgres persistence + in-memory runtime for Vapi Studio.
 
 | Column | Purpose |
 | --- | --- |
-| `id` | Public ingress UUID — path segment in `/{projectUuid}/vapi/...` |
-| `slug` | Stable short name (unique), e.g. `sample-landing-llm` |
+| `id` | Internal UUID PK for DB FKs (not a public URL segment) |
+| `slug` | Stable short name (unique), e.g. `my-voice-app` |
 | `name` | Display name |
 | `created_at` | Audit |
 
-Apps store a **fixed** UUID in `config/project.identity.json` and upsert it on every boot (`yarn start`) so local/dev Vapi URLs stay stable across re-seeds.
+Apps keep **name/slug** in `config/project.identity.json` (synced from `.env`) and upsert a local `projects` row on boot. Vapi routes are host-scoped (`/vapi/...`) — each starter fork has its own deploy URL.
 
 ### `conversations`
 
 | Column | Purpose |
 | --- | --- |
 | `id` | Framework conversation UUID |
-| `project_id` | Owning project (ingress UUID) |
+| `project_id` | Owning project (internal FK) |
 | `status` | `ACTIVE`, `ENDED`, … |
 | `metadata` | Channel, module, provider ids |
 | `runtime_state` | Checkpoint JSON for crash recovery |

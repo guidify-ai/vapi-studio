@@ -5,7 +5,7 @@ alwaysApply: true
 
 # UI and API identity
 
-This file is **managed by** `@guidify-ai/vapi-studio` (keep in sync with repo `.cursor/rules/ui-and-api-identity.mdc`). App-specific rules go in a separate `.mdc`.
+This file is **managed by** `@guidify-ai/vapi-studio` (canonical template: `agent/cursor/ui-and-api-identity.mdc`; doctrine: `docs/best-practices/ui-and-api-identity.md`). App-specific rules go in a separate `.mdc`.
 
 When editing Nest APIs, persistence entities, Studio UI, or app FE that talks to Studio:
 

@@ -12,6 +12,8 @@ Guidify AI is built to be **agent-friendly**: one handbook, stamped refs, and al
 
 Claude Code does **not** auto-read `AGENTS.md`. Keep the handbook under `agent/` (`AGENTS.md` + `CLAUDE.md`); put a one-line root `CLAUDE.md` that `@agent/CLAUDE.md` so Claude Code discovers it (Anthropic’s documented pattern).
 
+This framework package does **not** keep always-on rules under `.cursor/` or `.claude/` in-repo. Edit templates under `agent/`; postinstall copies them into **consumer apps**.
+
 ## Cursor
 
 | Resource | Purpose |
@@ -25,30 +27,17 @@ Claude Code does **not** auto-read `AGENTS.md`. Keep the handbook under `agent/`
 | Resource | Purpose |
 | --- | --- |
 | Repo [`agent/CLAUDE.md`](../../agent/CLAUDE.md) | Framework Claude notes (`@AGENTS.md`); root `CLAUDE.md` is discovery-only |
-| `.claude/rules/` | Mirrors framework `.cursor/rules/` (docs layers, runtime-api hard rule, agent steps, identity, best practices) |
-| `.claude/skills/speckit-*` | Symlinks to `.cursor/skills/speckit-*` (same SpecKit workflows) |
 | `agent/claude/rules/*.md` | Templates copied into **app** `.claude/rules/` on postinstall |
+| App `.claude/rules/vapi-studio-best-practices.md` | Always-on conversation rules |
+| App `.claude/rules/ui-and-api-identity.md` | UUID / label identity |
 | App `CLAUDE.md` | Stamped import of package `agent/AGENTS.md` |
 
-| Cursor rule (`.cursor/rules/`) | Claude rule (`.claude/rules/`) |
+| Cursor template (`agent/cursor/`) | Claude template (`agent/claude/rules/`) |
 | --- | --- |
-| `documentation-layers.mdc` | `documentation-layers.md` |
-| `vapi-studio-framework-docs.mdc` | `vapi-studio-framework-docs.md` |
-| `vapi-studio-agent-steps.mdc` | `vapi-studio-agent-steps.md` |
 | `vapi-studio-best-practices.mdc` | `vapi-studio-best-practices.md` |
 | `ui-and-api-identity.mdc` | `ui-and-api-identity.md` |
 
-## Workspace Cursor rules (framework repo)
-
-| Rule | Scope | Enforces |
-| --- | --- | --- |
-| `documentation-layers.mdc` | always | Update correct README / doc layer |
-| `vapi-studio-framework-docs.mdc` | framework | Handbook + best practices in sync |
-| `vapi-studio-best-practices.mdc` | apps (postinstall) | One CTA, PII, forensics |
-| `ui-and-api-identity.mdc` | always | External `uuid`, BE `id`+`uuid`, DTO `label` |
-| `vapi-studio-agent-steps.mdc` | agent steps, flow.yaml | Intention naming, Brain SLOs, lifecycle order |
-
-See [Node conventions](./node-conventions.md) for a human summary of agent-step rules.
+See [Node conventions](./node-conventions.md) for agent-step naming and lifecycle order (doctrine in [nodes-and-listens.md](../best-practices/nodes-and-listens.md)).
 
 ## Recommended workflow
 
@@ -79,17 +68,17 @@ See [Node conventions](./node-conventions.md) for a human summary of agent-step 
 INIT_CWD=$PWD node node_modules/@guidify-ai/vapi-studio/scripts/install-agent-refs.cjs
 ```
 
-Refreshes:
+Refreshes **in the consumer app**:
 
 - `.cursor/rules/vapi-studio-best-practices.mdc` + `ui-and-api-identity.mdc`
 - `.claude/rules/vapi-studio-best-practices.md` + `ui-and-api-identity.md`
 - stamped blocks in app `AGENTS.md` and `CLAUDE.md`
 
-Does not wipe custom sections outside the stamped markers.
+Sources: `agent/cursor/` and `agent/claude/rules/` inside the package. Does not wipe custom sections outside the stamped markers.
 
 ## SpecKit
 
-Greenfield features: [SpecKit guide](./speckit.md).
+Greenfield features: [SpecKit guide](./speckit.md) (`.specify/` in this repo).
 
 ## Related
 

@@ -2,20 +2,24 @@
 
 Workspace tooling for specify → plan → tasks → implement workflows under `specs/`.
 
-## Skills (`.cursor/skills/`)
+Config, templates, and scripts live under **`.specify/`** (not under framework-local `.cursor/` — that tree was removed from this package).
 
-| Skill | Use |
+## Workflows
+
+| Workflow | Use |
 | --- | --- |
-| `speckit-specify` | Create/update feature spec from description |
-| `speckit-clarify` | Targeted clarification questions → spec |
-| `speckit-plan` | Generate plan from spec template |
-| `speckit-tasks` | Generate `tasks.md` from plan |
-| `speckit-analyze` | Cross-artifact consistency check |
-| `speckit-checklist` | Custom checklist from requirements |
-| `speckit-implement` | Execute tasks from `tasks.md` |
-| `speckit-converge` | Find unbuilt work → append tasks |
-| `speckit-constitution` | Update constitution |
-| `speckit-taskstoissues` | Convert tasks to GitHub issues |
+| specify | Create/update feature spec from description |
+| clarify | Targeted clarification questions → spec |
+| plan | Generate plan from spec template |
+| tasks | Generate `tasks.md` from plan |
+| analyze | Cross-artifact consistency check |
+| checklist | Custom checklist from requirements |
+| implement | Execute tasks from `tasks.md` |
+| converge | Find unbuilt work → append tasks |
+| constitution | Update constitution |
+| taskstoissues | Convert tasks to GitHub issues |
+
+Invoke via SpecKit / Specify CLI against `.specify/` (see `.specify/workflows/`, `.specify/templates/`). IDE skills (`.cursor/skills/speckit-*`, `.claude/skills/speckit-*`) are **not** shipped in this framework package — SpecKit here is `.specify/` only. Reinstall SpecKit skills into a local checkout if you need IDE skill discovery.
 
 ## Artifact layout
 
@@ -38,7 +42,7 @@ Templates: `.specify/templates/`
 | --- | --- |
 | Day-to-day bot nodes / copy | [Best practices](../best-practices/README.md) + [Agents](./agents.md) |
 | Greenfield framework feature | SpecKit specify → plan → tasks |
-| Compliance check | `speckit-analyze` after tasks |
+| Compliance check | SpecKit analyze after tasks |
 
 ## Historical artifacts
 

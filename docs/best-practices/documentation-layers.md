@@ -8,9 +8,9 @@ Where truth lives. Agents must update the matching layer in the **same** change 
 | Repository README | `README.md` (package root) | Clone URL, fast start, framework scope |
 | Framework handbook | `docs/reference/runtime-api.md` | Any shipped Vapi Studio behavior / export / env change |
 | Best practices | `docs/best-practices/` | Doctrine for conversation design / nodes / PII / forensics |
-| Agent entry | `agent/AGENTS.md` + consumer `AGENTS.md` / `.cursor/rules` | Install pointer text or guide index changes |
-| Building apps | `docs/building-apps/` | How to scaffold NestJS apps that depend on the package |
-| Example apps | `docs/building-apps/example-apps.md` | Links to external sample repos |
+| Agent entry | `agent/AGENTS.md` + `agent/cursor/` / `agent/claude/rules/` (stamped into consumer apps) | Install pointer text or guide index changes |
+| Building apps | `docs/building-apps/` | How to clone [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) and extend it |
+| Example apps | `docs/building-apps/example-apps.md` | Starter + showcase repo links |
 
 Application northern stars live in **your app’s README** — not in framework `src/`.
 

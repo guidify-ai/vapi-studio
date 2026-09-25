@@ -1,45 +1,23 @@
 # Quick start
 
-```bash
-mkdir my-voice-app && cd my-voice-app
-yarn init -y
-yarn add @guidify-ai/vapi-studio@0.1.0 @nestjs/common @nestjs/core @nestjs/typeorm \
-  reflect-metadata rxjs typeorm
-```
-
-Or clone the public sample and study its layout:
-
-- [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm)
-
-## Minimal Nest wiring
-
-```typescript
-import { Module } from '@nestjs/common';
-import { VapiStudioModule, ChatGptBrainAdapter } from '@guidify-ai/vapi-studio';
-import { GreetNode } from './conversation/nodes/greet.node';
-import { MyEntry } from './conversation/entry';
-
-@Module({
-  imports: [
-    VapiStudioModule.forRoot({
-      entryPoint: MyEntry,
-      brainAdapter: ChatGptBrainAdapter,
-      brain: { model: 'gpt-4.1-mini', confidenceThreshold: 0.4 },
-      nodes: [{ className: 'GreetNode', useClass: GreetNode }],
-    }),
-  ],
-})
-export class AppModule {}
-```
-
-Add `config/flow.yaml` with `start: greet` and Vapi HTTP routes — see [Creating an app](../building-apps/creating-an-app.md).
-
-## Run and wire Vapi
+Clone the public starter, name the project, run it.
 
 ```bash
-yarn start   # Docker + ngrok (see the sample’s scripts/start.sh)
+git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
+cd my-bot
+cp .env.example .env
+# Edit PROJECT_NAME=…  (PROJECT_SLUG optional)
+yarn install
+yarn start   # Docker + Postgres + ngrok → prints Vapi URLs
 ```
 
-Paste the printed **Webhook** and **Conversation** URLs into your Vapi assistant.
+Paste into your Vapi assistant:
 
-Framework contributors: `git clone` this repo, `yarn build`, `yarn test`. Full notes: [Installation](./installation.md).
+| Setting | URL |
+| --- | --- |
+| Webhook | `{PUBLIC_BASE_URL}/vapi/webhook` |
+| Custom LLM | `{PUBLIC_BASE_URL}/vapi/chat/completions` |
+
+Then extend `src/conversation/` and `config/flow.yaml`. Full walkthrough: [Creating an app](../building-apps/creating-an-app.md).
+
+Framework contributors (changing the library, not starting a bot): clone [vapi-studio](https://github.com/guidify-ai/vapi-studio), `yarn build`, `yarn test` — see [Installation](./installation.md).

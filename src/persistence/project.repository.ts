@@ -19,7 +19,7 @@ export class ProjectRepository {
   }
 
   /**
-   * Idempotent seed for local/dev — always the same UUID so Vapi URLs stay stable.
+   * Idempotent seed for local/dev — stable internal id for DB FKs.
    */
   public async upsert(input: {
     id: string;

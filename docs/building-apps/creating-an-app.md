@@ -1,52 +1,49 @@
 # Creating an application
 
-Install **[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** into **your** NestJS app. Study the public sample [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm) — do not put production secrets in the framework repo.
+Start from the public starter **[vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)**. That repo is the Nest shell for your bot: `flow.yaml`, Vapi routes, Docker, agent rules. This package (`@guidify-ai/vapi-studio`) is the framework it depends on — not an app template.
 
-## 1. Depend on the package
+Do not put production secrets or customer flows in the framework repository.
 
-```bash
-yarn add @guidify-ai/vapi-studio@0.1.0
-```
-
-```json
-{
-  "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.0"
-  }
-}
-```
-
-## 2. Scaffold
-
-Copy from the [sample](https://github.com/guidify-ai/vapi-studio-sample-landing-llm) or run `yarn new-project` from a framework clone (creates `./<slug>/` in the current working directory).
-
-Minimum: `app.module.ts` (including `StudioUiModule.forRoot()`), `main.ts` (`mountStudioUiAssets`), `config/project.identity.json`, `config/flow.yaml`, `src/conversation/`, `src/vapi/`, `Dockerfile`, `docker-compose.stub.yaml`, `.env.example`.
-
-Operator UI is the **framework React SPA** (`/flow`, `/conversations`).
-
-## 3. Register agent steps
-
-1. `@Injectable()` extending `AgentNode<YourSchema>`
-2. Listed in `VapiStudioModule.forRoot({ nodes: [{ className, useClass }] })`
-3. Referenced in `flow.yaml`
-
-## 4. Vapi HTTP layer (your code)
-
-Bootstrap from webhooks, stream Custom LLM SSE via the supervisor, map `extractVapiCallId` → runtime. See [Vapi adapter](../guide/vapi-adapter.md).
-
-## 5. Run
+## 1. Clone the starter
 
 ```bash
-yarn start   # Docker + ngrok
+git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
+cd my-bot
+cp .env.example .env
+# Edit PROJECT_NAME=…  (PROJECT_SLUG optional — defaults from the name)
+yarn install
+yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 ```
 
-| Vapi assistant setting | Endpoint |
+`yarn install` pulls `@guidify-ai/vapi-studio@0.1.0` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG` (name + slug only).
+
+## 2. Wire Vapi
+
+Paste the printed URLs into your Vapi assistant:
+
+| Setting | Endpoint |
 | --- | --- |
-| **Webhook** | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/webhook` |
-| **Conversation** (Custom LLM) | `{PUBLIC_BASE_URL}/{PROJECT_UUID}/vapi/chat/completions` |
+| **Webhook** | `{PUBLIC_BASE_URL}/vapi/webhook` |
+| **Custom LLM** | `{PUBLIC_BASE_URL}/vapi/chat/completions` |
 
-Keep a stable UUID in **`config/project.identity.json`**.
+Each starter fork is its own deploy (own host / port / ngrok URL). Paths are host-scoped — no project UUID in the URL.
 
-## Contributors
+## 3. Build your conversation
 
-Clone [vapi-studio](https://github.com/guidify-ai/vapi-studio) to change the framework itself.
+1. Add `@Injectable()` classes extending `AgentNode<YourSchema>` under `src/conversation/`
+2. Register them in `VapiStudioModule.forRoot({ nodes: [...] })` in `app.module.ts`
+3. Reference them from `config/flow.yaml`
+4. Grow `src/vapi/` as needed (webhook strategies, tools) — see the [showcase](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model) for a full Planner PoC
+
+Operator UI (`/flow`, `/conversations`) comes from the framework SPA mounted by the starter.
+
+## 4. Keep going
+
+- [Vapi adapter](../guide/vapi-adapter.md) — Custom LLM SSE + webhooks
+- [Module setup](../guide/module-setup.md) — `VapiStudioModule.forRoot`
+- [Best practices](../best-practices/README.md) — conversation design doctrine
+- [Runtime API](../reference/runtime-api.md) — shipped contracts
+
+## Framework contributors
+
+Clone [vapi-studio](https://github.com/guidify-ai/vapi-studio) only when changing the library itself (`yarn build`, `yarn test`). Apps always start from [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project).

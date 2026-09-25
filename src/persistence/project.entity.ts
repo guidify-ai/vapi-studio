@@ -7,12 +7,12 @@ import {
 } from 'typeorm';
 
 /**
- * Durable project identity — public ingress UUID for Vapi URLs
- * (`/{projectUuid}/vapi/...`). Apps seed a stable id for local/dev.
+ * Durable project identity for DB FKs (conversations, ingress).
+ * Public Vapi routes are host-scoped (`/vapi/...`) on each app fork — `id` is not a URL segment.
  */
 @Entity({ name: 'projects' })
 export class ProjectEntity {
-  /** Public ingress UUID (path segment). */
+  /** Internal UUID primary key (not used in public paths). */
   @PrimaryColumn({ type: 'uuid' })
   public id!: string;
 

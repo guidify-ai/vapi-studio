@@ -43,8 +43,7 @@
     "lint:fix": "eslint src --fix",
     "test": "yarn lint && yarn build && node --test test/*.test.mjs",
     "postinstall": "node -e \"const fs=require('fs');const p=require('path');const s=p.join(__dirname,'scripts','install-agent-refs.cjs');if(fs.existsSync(s)) require('child_process').execFileSync(process.execPath,[s],{stdio:'inherit',env:process.env});\"",
-    "install-agent-refs": "node scripts/install-agent-refs.cjs",
-    "new-project": "node scripts/new-project.cjs"
+    "install-agent-refs": "node scripts/install-agent-refs.cjs"
   },
   "dependencies": {
     "uuid": "^11.1.0",

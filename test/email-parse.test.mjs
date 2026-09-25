@@ -13,10 +13,10 @@ test('EMAIL_EXTRACT_DESCRIPTION teaches spelled ASR', () => {
 });
 
 test('parseSpelledEmail: direct address', () => {
-  assert.equal(parseSpelledEmail('mark@roofr.com'), 'mark@roofr.com');
+  assert.equal(parseSpelledEmail('jane@example.com'), 'jane@example.com');
   assert.equal(
-    parseSpelledEmail('Email is Mark.Pyskunov@Example.COM thanks'),
-    'mark.pyskunov@example.com',
+    parseSpelledEmail('Email is Jane.Doe@Example.COM thanks'),
+    'jane.doe@example.com',
   );
   assert.equal(parseSpelledEmail('hello'), null);
   assert.equal(parseSpelledEmail(''), null);
@@ -24,34 +24,34 @@ test('parseSpelledEmail: direct address', () => {
 
 test('parseSpelledEmail: spelled at / dot', () => {
   assert.equal(
-    parseSpelledEmail('mark at roofr dot com'),
-    'mark@roofr.com',
+    parseSpelledEmail('jane at example dot com'),
+    'jane@example.com',
   );
   assert.equal(
-    parseSpelledEmail('m a r k at r o o f r dot com'),
-    'mark@roofr.com',
+    parseSpelledEmail('j a n e at e x a m p l e dot com'),
+    'jane@example.com',
   );
   assert.equal(
-    parseSpelledEmail('mark at the rate example period com'),
-    'mark@example.com',
+    parseSpelledEmail('jane at the rate example period com'),
+    'jane@example.com',
   );
 });
 
 test('parseSpelledEmail: letter O as digit zero', () => {
   assert.equal(
-    parseSpelledEmail('r o 0 f r at example dot com'),
-    'roofr@example.com',
+    parseSpelledEmail('f 0 0 at example dot com'),
+    'foo@example.com',
   );
 });
 
 test('collectedEmail prefers extract over spoken', () => {
   assert.equal(
-    collectedEmail('mark@roofr.com', 'sure'),
-    'mark@roofr.com',
+    collectedEmail('jane@example.com', 'sure'),
+    'jane@example.com',
   );
   assert.equal(
-    collectedEmail(undefined, 'mark at roofr dot com'),
-    'mark@roofr.com',
+    collectedEmail(undefined, 'jane at example dot com'),
+    'jane@example.com',
   );
   assert.equal(collectedEmail('nope', 'still no'), null);
 });

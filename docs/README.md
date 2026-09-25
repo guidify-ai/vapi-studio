@@ -4,7 +4,7 @@
 
 **Current scope:** deterministic agent orchestration — explicit paths, typed agent steps, optional Brain at listen boundaries. Not a general LLM agent platform.
 
-Install the package into your NestJS app. A public usage sample lives in a **separate** repo: [vapi-studio-sample-landing-llm](https://github.com/guidify-ai/vapi-studio-sample-landing-llm).
+**New bot?** Clone **[vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)** — do not scaffold from this framework repo.
 
 ---
 
@@ -13,8 +13,8 @@ Install the package into your NestJS app. A public usage sample lives in a **sep
 | Page | Description |
 | --- | --- |
 | [Introduction](./getting-started/introduction.md) | What Vapi Studio is |
-| [Installation](./getting-started/installation.md) | npm install |
-| [Quick start](./getting-started/quick-start.md) | Minimal Nest wiring |
+| [Installation](./getting-started/installation.md) | Clone starter → `yarn install` |
+| [Quick start](./getting-started/quick-start.md) | Clone, name, `yarn start`, wire Vapi |
 
 ## Guide
 
@@ -31,9 +31,9 @@ Install the package into your NestJS app. A public usage sample lives in a **sep
 
 | Page | Description |
 | --- | --- |
-| [Overview](./building-apps/overview.md) | Framework package vs your app |
-| [Creating an app](./building-apps/creating-an-app.md) | Scaffold and depend on npm |
-| [Example apps](./building-apps/example-apps.md) | Public sample link |
+| [Overview](./building-apps/overview.md) | Framework vs starter vs showcase |
+| [Creating an app](./building-apps/creating-an-app.md) | Clone [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) and extend |
+| [Example apps](./building-apps/example-apps.md) | Starter + Planner showcase |
 
 ## Best practices
 
@@ -48,16 +48,17 @@ Install the package into your NestJS app. A public usage sample lives in a **sep
 | [Documentation layers](./best-practices/documentation-layers.md) | What to update when |
 | [Agents & Cursor](./guides/agents.md) | AGENTS.md, rules |
 | [Node conventions](./guides/node-conventions.md) | Naming, lifecycle, Brain SLOs |
-| [Extending events](./guides/extending-events.md) | Event-driven hooks |
+| [Extending events](./guides/extending-events.md) | Attach logic to the event bus (Nest + Redis samples) |
+| [Event samples](./samples/events/) | Copy-paste `onStudioEvent` / Nest listener examples |
 
 ## Reference
 
 | Page | Description |
 | --- | --- |
-| [Environment variables](./reference/environment-variables.md) | Framework env |
+| [Environment variables](./reference/environment-variables.md) | Framework env · [`.env.example`](../.env.example) |
 | [Flow schema](./reference/flow-schema.md) | `flow.yaml` |
 | [Data model](./reference/data-model.md) | Persistence |
-| [Events & logging](./reference/events-and-logging.md) | Event bus, forensics |
+| [Events & logging](./reference/events-and-logging.md) | Event catalog, bus, forensics |
 | [Standard intentions](./reference/standard-intentions.md) | `STANDARD_INTENTIONS` |
 | [Runtime API](./reference/runtime-api.md) | Shipped contracts |
 | [Security](./reference/security.md) | Secrets policy |

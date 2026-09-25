@@ -1,8 +1,8 @@
 # Module setup
 
-Wire Vapi Studio into a NestJS application.
+The [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) starter already depends on `@guidify-ai/vapi-studio` and wires `VapiStudioModule.forRoot`. Use this page when extending that module options block.
 
-## Dependency
+## Dependency (already in the starter)
 
 ```json
 {
@@ -10,10 +10,6 @@ Wire Vapi Studio into a NestJS application.
     "@guidify-ai/vapi-studio": "0.1.0"
   }
 }
-```
-
-```bash
-yarn add @guidify-ai/vapi-studio@0.1.0
 ```
 
 ## `VapiStudioModule.forRoot` options

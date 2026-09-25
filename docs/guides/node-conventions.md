@@ -1,6 +1,6 @@
 # Node conventions
 
-Human-readable summary of `.cursor/rules/vapi-studio-agent-steps.mdc`. Agents should follow the rule file in the repo.
+Human-readable summary of agent-step conventions. Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md).
 
 ## Intention naming
 
