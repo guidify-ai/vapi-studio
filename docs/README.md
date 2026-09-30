@@ -6,6 +6,8 @@
 
 **New bot?** Clone **[vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project)** — do not scaffold from this framework repo.
 
+**Official team:** Guidify can forward engineers onto your solution (competitive rates; full professional services) — [README](../README.md#need-the-official-team).
+
 ---
 
 ## Getting started
@@ -14,7 +16,8 @@
 | --- | --- |
 | [Introduction](./getting-started/introduction.md) | What Vapi Studio is |
 | [Installation](./getting-started/installation.md) | Clone starter → `yarn install` |
-| [Quick start](./getting-started/quick-start.md) | Clone, name, `yarn start`, wire Vapi |
+| [Quick start](./getting-started/quick-start.md) | Clone, credentials, `yarn start`, wire Vapi |
+| [Vapi account & plans](./getting-started/vapi-account.md) | Free vs Core; Vapi phones vs Twilio BYOK |
 
 ## Guide
 

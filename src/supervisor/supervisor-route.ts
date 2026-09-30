@@ -84,7 +84,16 @@ export async function routeIntentions(this: SupervisorEngine, input: {
   for (const scored of ranked) {
     const intentionName = scored.name;
     const nodeCandidates = this.flowLoader.nodesForIntention(intentionName);
-    for (const candidate of nodeCandidates) {
+    // Prefer the node we're already on when an intention is listed on multiple
+    // nodes (alphabetical id order otherwise steals the turn — e.g. contactMethod
+    // before salesConsent for sales_consent_yes).
+    const ordered = [...nodeCandidates].sort((a, b) => {
+      const cur = runtime.currentNodeId;
+      if (cur && a.id === cur && b.id !== cur) return -1;
+      if (cur && b.id === cur && a.id !== cur) return 1;
+      return 0;
+    });
+    for (const candidate of ordered) {
       const node = this.nodes.get(candidate.class);
       if (!node) {
         rejected.push({
