@@ -1,0 +1,36 @@
+# Tags may only point at commits on master; any other tag (and its release) is removed.
+name: Tags on master
+
+on:
+  push:
+    tags: ['**']
+
+permissions:
+  contents: write
+
+jobs:
+  tag-on-master:
+    name: tag-on-master
+    if: github.event.deleted != true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Remove the tag unless it points at a commit on master
+        env:
+          TAG: ${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          COMMIT=$(git rev-parse "refs/tags/$TAG^{commit}")
+          if git merge-base --is-ancestor "$COMMIT" origin/master; then
+            echo "$TAG points at $COMMIT on master, OK."
+            exit 0
+          fi
+          echo "::error::Tags must point at a commit on master; removing $TAG ($COMMIT)."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release delete "$TAG" --yes --cleanup-tag
+          else
+            git push origin --delete "refs/tags/$TAG"
+          fi
+          exit 1
