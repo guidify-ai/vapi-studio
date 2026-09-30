@@ -31,6 +31,10 @@ export async function executeModuleEntryTurn(this: SupervisorEngine, input: {
   }
 
   const output = new BufferedConversationOutput(onSay);
+  // Never use intentions[0] here — that is often an *answer* intention
+  // (e.g. explorer_consent_yes, contact_phone). Same-flow continueTo would
+  // then auto-grant consent / fail phone parse. Entry speak is a fresh ask.
+  const entryIntention = 'studio.moduleEntry';
   const ctx = nodeContextFromRuntime({
     runtime,
     userText,
@@ -39,7 +43,7 @@ export async function executeModuleEntryTurn(this: SupervisorEngine, input: {
     brain: this.brain,
     integrations: this.integrations,
     forms: this.forms,
-    intention: candidate.intentions[0] ?? 'studio.moduleEntry',
+    intention: entryIntention,
   });
 
   this.events.log('info', 'MODULE_ENTRY_TURN', {
@@ -71,7 +75,7 @@ export async function executeModuleEntryTurn(this: SupervisorEngine, input: {
     output,
     node,
     candidate,
-    intentionName: candidate.intentions[0] ?? 'studio.moduleEntry',
+    intentionName: entryIntention,
     ctx,
     restarts: 0,
     forceHop: 0,

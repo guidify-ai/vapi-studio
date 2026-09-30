@@ -15,9 +15,9 @@ You cannot place live calls with an empty `.env`. Fill what your mode needs:
 
 | | Always for **live voice** | Optional / mode-dependent |
 | --- | --- | --- |
-| **[Vapi](https://vapi.ai)** (paid) | `VAPI_API_KEY`, `POC_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID` | `VAPI_PHONE_NUMBER` (E.164), tool-name overrides |
-| **Phone** | A number **in Vapi** linked to that assistant | **Vapi-managed** number *or* **Twilio-imported** BYOK |
-| **Twilio** | — | Required for **live SMS forms** and recommended if the Vapi number is Twilio-imported (`TWILIO_ACCOUNT_SID` / `TWILIO_AUTH_TOKEN` / `TWILIO_FROM_NUMBER`). Leave `TWILIO_SMS_DRY_RUN=1` until ready. |
+| **[Vapi](https://vapi.ai)** | `VAPI_API_KEY`, `POC_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID` | `VAPI_PHONE_NUMBER` (E.164), tool-name overrides. **Prefer [Core](./vapi-account.md)** (~$29/mo, 10 concurrent) for a first project; free/usage-only (4 concurrent) is OK for a slow start — upgrade later. See [Vapi account & plans](./vapi-account.md). |
+| **Phone** | A number **in Vapi** linked to that assistant | **Prefer a Vapi-managed number** for starters (no Twilio signup). **Twilio-imported BYOK** when you scale / need your own carrier — [phones](./vapi-account.md#phones) |
+| **Twilio** | — | Only for **larger** voice BYOK and/or **live SMS** forms (`TWILIO_*`). Starters: skip Twilio and keep `TWILIO_SMS_DRY_RUN=1`. |
 | **Brain / LLM** | — | Starter defaults to **MockBrain** (no key). For ChatGPT / Claude / Gemini / Grok set the matching key and switch the adapter in code — see [`.env.example`](../../.env.example) (`OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `XAI_API_KEY`). |
 
 **Minimum to dial:** Vapi key + assistant id + phone number id.  
@@ -36,7 +36,7 @@ Edit `.env`:
 
 1. `PROJECT_NAME=…` (`PROJECT_SLUG` optional)  
 2. **Vapi** block — required for `yarn start` claim / configure  
-3. **Twilio** — only if you use BYOK voice import and/or live SMS  
+3. **Twilio** — skip for simple Vapi-phone projects; add later for BYOK voice and/or live SMS  
 4. **Brain key** — only if you leave MockBrain  
 
 ```bash

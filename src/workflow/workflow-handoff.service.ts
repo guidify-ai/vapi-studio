@@ -115,6 +115,8 @@ export class WorkflowHandoffService {
     const fromNode = runtime.currentNodeId;
     runtime.enterNormalNode(nodeId);
     runtime.listenExpectation = null;
+    // Same-flow continueTo: destination is spoken via module entry turn, but
+    // that turn must NOT inherit answer intentions (see executeModuleEntryTurn).
     runtime.metadata.moduleNeedsEntrySpeak = true;
     runtime.metadata.lastContinueTo = {
       from: fromNode,
