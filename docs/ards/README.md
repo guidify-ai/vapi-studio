@@ -32,6 +32,7 @@ not change behavior — unless reviewers ask for one.
 | ARD | Title | Status |
 | --- | --- | --- |
 | [ARD-0001](./ARD-0001-host-scoped-vapi-ingress.md) | Host-scoped Vapi ingress (no project UUID in path) | Accepted |
+| [ARD-0002](./ARD-0002-vapi-only-north-star.md) | Vapi-only North Star (not channel-agnostic) | Accepted |
 
 Constitution: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)  
 Contributing: [CONTRIBUTING.md](../../CONTRIBUTING.md)
