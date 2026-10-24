@@ -1,6 +1,9 @@
 {
   "name": "@guidify-ai/vapi-studio-ui",
   "version": "0.0.1",
+  "engines": {
+    "node": "^22.23.4 || ^24.22.1 || >=26.12.1"
+  },
   "private": true,
   "type": "module",
   "scripts": {

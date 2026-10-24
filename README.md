@@ -37,7 +37,7 @@ Wire Vapi to the printed URLs:
 - Walkthrough: [Creating an app](./docs/building-apps/creating-an-app.md)
 - Quick start: [docs/getting-started/quick-start.md](./docs/getting-started/quick-start.md)
 
-**Requirements:** Node 22+, Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a **Vapi** account for live calls ([Core recommended](./docs/getting-started/vapi-account.md); free tier OK for a slow start). Twilio and an LLM key only when you leave dry-run SMS / MockBrain.
+**Requirements:** Node 22.23.4+ or 24.22.1+ (October 2026 security release), Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a **Vapi** account for live calls ([Core recommended](./docs/getting-started/vapi-account.md); free tier OK for a slow start). Twilio and an LLM key only when you leave dry-run SMS / MockBrain.
 
 **Showcase (not a blank starter):** [vapi-studio-landing-page-sample-model](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model) — Planner LLM demo.
 

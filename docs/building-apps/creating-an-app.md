@@ -20,7 +20,7 @@ yarn install
 yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 ```
 
-`yarn install` pulls `@guidify-ai/vapi-studio@0.1.1` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG`.
+`yarn install` pulls `@guidify-ai/vapi-studio@0.1.2` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG`.
 
 ### Credentials at a glance
 
