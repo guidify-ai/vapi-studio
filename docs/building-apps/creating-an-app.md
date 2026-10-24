@@ -14,20 +14,20 @@ cd my-bot
 cp .env.example .env
 # PROJECT_NAME=…
 # VAPI_API_KEY + POC_ASSISTANT_ID + VAPI_PHONE_NUMBER_ID   # live voice
-# TWILIO_* only if SMS live / Twilio-imported number
+# TWILIO_* — skip for Vapi-phone starters; add for BYOK / live SMS
 # OPENAI_API_KEY (or Claude/Gemini/Grok) only if leaving MockBrain
 yarn install
 yarn start   # Docker Postgres + app + ngrok → prints Vapi URLs
 ```
 
-`yarn install` pulls `@guidify-ai/vapi-studio@0.1.1` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG`.
+`yarn install` pulls `@guidify-ai/vapi-studio@0.1.2` and stamps Cursor/Claude rules + `AGENTS.md`. Postinstall syncs `config/project.identity.json` from `PROJECT_NAME` / `PROJECT_SLUG`.
 
 ### Credentials at a glance
 
 | Need | Detail |
 | --- | --- |
-| **Vapi** (required for live voice) | `VAPI_API_KEY`, `POC_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`. Phone may be **Vapi-managed** or Twilio-imported. Vapi is paid. |
-| **Twilio** (optional) | Live SMS forms and/or BYOK imported numbers: `TWILIO_*`. Keep `TWILIO_SMS_DRY_RUN=1` until ready. |
+| **Vapi** (required for live voice) | `VAPI_API_KEY`, `POC_ASSISTANT_ID`, `VAPI_PHONE_NUMBER_ID`. **Prefer a Vapi-managed phone** for starters; Twilio BYOK for larger projects. **Prefer Core** (~$29/mo, 10 concurrent) for a first project; free/usage-only (4 concurrent) for a quiet start — [details](../getting-started/vapi-account.md). |
+| **Twilio** (optional) | Skip for simple Vapi-phone starters. Add for **BYOK** voice and/or **live SMS** forms (`TWILIO_*`). Keep `TWILIO_SMS_DRY_RUN=1` until ready. |
 | **Brain / LLM** (optional) | Starter uses **MockBrain**. ChatGPT / Claude / Gemini / Grok need the matching API key + adapter switch. |
 
 ## 2. Wire Vapi

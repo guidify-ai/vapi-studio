@@ -8,7 +8,7 @@ You do **not** install the framework into an empty folder by hand. Clone the sta
 git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
 cd my-bot
 cp .env.example .env
-yarn install   # installs @guidify-ai/vapi-studio@0.1.1 + stamps agent rules
+yarn install   # installs @guidify-ai/vapi-studio@0.1.2 + stamps agent rules
 yarn start
 ```
 
@@ -19,7 +19,7 @@ Vapi Studio apps are **self-hosted** and **Dockerized**. There is no Guidify-hos
 
 ## Requirements
 
-- **Node.js 22+**
+- **Node.js 22.23.4+ or 24.22.1+** (October 2026 security release; older 22.x/24.x and Node 20 are vulnerable)
 - **Yarn 1.x** or npm
 - **Docker** + Compose
 - **[ngrok](https://ngrok.com/download)** for local HTTPS to Vapi
