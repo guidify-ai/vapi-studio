@@ -4,6 +4,8 @@
 
 **Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) — *coming soon*
 
+**Need help shipping?** The **official Guidify team** builds with Vapi Studio — we can forward engineers onto your project at competitive rates, and cover professional services of any kind you need (design, integration, production hardening). See [Need the official team?](#need-the-official-team) below.
+
 This repo is the **framework** (npm package). Your bot is a separate NestJS app — start from the public starter below.
 
 ---
@@ -18,7 +20,7 @@ git clone git@github.com:guidify-ai/vapi-studio-project.git my-bot
 cd my-bot
 cp .env.example .env
 # Required for live voice: VAPI_API_KEY, POC_ASSISTANT_ID, VAPI_PHONE_NUMBER_ID
-# Optional: TWILIO_* (SMS / Twilio-imported number), OPENAI_API_KEY|ANTHROPIC_… (leave MockBrain otherwise)
+# Optional: TWILIO_* (larger BYOK / live SMS — skip for Vapi-phone starters), OPENAI_API_KEY|… (leave MockBrain otherwise)
 # Always: PROJECT_NAME=…  (PROJECT_SLUG optional)
 yarn install
 yarn start   # Docker + Postgres + ngrok → prints URLs (fails closed without Vapi trio)
@@ -35,7 +37,7 @@ Wire Vapi to the printed URLs:
 - Walkthrough: [Creating an app](./docs/building-apps/creating-an-app.md)
 - Quick start: [docs/getting-started/quick-start.md](./docs/getting-started/quick-start.md)
 
-**Requirements:** Node 22+, Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a **Vapi** account for live calls. Twilio and an LLM key only when you leave dry-run SMS / MockBrain.
+**Requirements:** Node 22+, Yarn or npm, Docker Compose, [ngrok](https://ngrok.com/download), a **Vapi** account for live calls ([Core recommended](./docs/getting-started/vapi-account.md); free tier OK for a slow start). Twilio and an LLM key only when you leave dry-run SMS / MockBrain.
 
 **Showcase (not a blank starter):** [vapi-studio-landing-page-sample-model](https://github.com/guidify-ai/vapi-studio-landing-page-sample-model) — Planner LLM demo.
 
@@ -132,6 +134,17 @@ See **[CONTRIBUTING.md](./CONTRIBUTING.md)** — architectural PRs require an **
 | ARDs | [`docs/ards/`](./docs/ards/) |
 | SpecKit | [`.specify/`](./.specify/) · [`docs/guides/speckit.md`](./docs/guides/speckit.md) |
 | Env presets | [`.env.example`](./.env.example) |
+
+## Need the official team?
+
+Open source and self-hosted is the default. When you want a partner on the build:
+
+- **Official Guidify engineers** — the team behind Vapi Studio, not a generic agency bench  
+- **Forwarded onto your solution** — dedicated help to design, implement, and ship your voice agent  
+- **Competitive rates** — strong value for production-grade delivery  
+- **Professional services of any kind** — conversation design, Nest/Vapi integration, Twilio/BYOK, CRM hooks, hardening, and more  
+
+Website (coming soon): [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) · contact via [Guidify](https://guidify.ca) / open a GitHub Discussion on this repo.
 
 ## License
 
