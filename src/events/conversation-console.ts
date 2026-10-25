@@ -525,45 +525,41 @@ export function printConversationConsole(
           ANSI.dim,
           `in=${payload.promptTokens ?? 0} out=${payload.completionTokens ?? 0}`,
         ),
-        paint(ANSI.yellow + ANSI.bold, String(payload.money ?? '')),
         payload.durationMs != null
           ? paint(ANSI.dim, `${payload.durationMs}ms`)
           : '',
       ]);
       return;
 
-    case 'BRAIN_COST_SUMMARY': {
+    case 'BRAIN_USAGE_SUMMARY': {
       blank();
       line([
         paint(ANSI.dim, '════════'),
-        paint(ANSI.bold + ANSI.yellow, 'CALL COST'),
+        paint(ANSI.bold + ANSI.yellow, 'BRAIN TOKENS'),
         paint(ANSI.dim, '════════'),
       ]);
       line([
-        roleTag(ANSI.bgYellow, ANSI.white, ' $$$ '),
+        roleTag(ANSI.bgYellow, ANSI.white, 'TOKENS'),
         paint(
           ANSI.yellow + ANSI.bold,
-          String(payload.money ?? `$${payload.estimatedUsd ?? 0}`),
-        ),
-        paint(
-          ANSI.dim,
-          `tokens=${payload.totalTokens ?? 0} (in ${payload.promptTokens ?? 0} / out ${payload.completionTokens ?? 0})`,
+          `${payload.totalTokens ?? 0} (in ${payload.promptTokens ?? 0} / out ${payload.completionTokens ?? 0})`,
         ),
         paint(ANSI.dim, `calls=${payload.calls ?? 0}`),
       ]);
       if (payload.byModel && typeof payload.byModel === 'object') {
         for (const [model, row] of Object.entries(
-          payload.byModel as Record<string, { estimatedUsd?: number; calls?: number }>,
+          payload.byModel as Record<
+            string,
+            { calls?: number; promptTokens?: number; completionTokens?: number }
+          >,
         )) {
           line([
             paint(ANSI.dim, '       '),
             paint(ANSI.cyan, model),
             paint(ANSI.dim, `×${row.calls ?? 0}`),
             paint(
-              ANSI.yellow,
-              typeof row.estimatedUsd === 'number'
-                ? `$${row.estimatedUsd.toFixed(6)}`
-                : '',
+              ANSI.dim,
+              `in ${row.promptTokens ?? 0} / out ${row.completionTokens ?? 0}`,
             ),
           ]);
         }

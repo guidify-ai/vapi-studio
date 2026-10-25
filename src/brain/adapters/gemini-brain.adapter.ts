@@ -5,7 +5,7 @@ import {
   STUDIO_BRAIN_CONFIG,
   type StudioBrainConfig,
 } from '../brain-config';
-import type { TokenUsage } from '../llm-model-pricing';
+import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
   JSON_LLM_BRAIN_TIMEOUT_MS,

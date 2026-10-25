@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { estimateUsdCost } from '../dist/brain/llm-model-pricing.js';
 import { mergeProviderOptions } from '../dist/brain/brain-config.js';
 import {
   ChatGptBrainAdapter,
@@ -103,19 +102,6 @@ test('mergeProviderOptions replaces scalars and merges objects one level', () =>
   assert.deepEqual(mergeProviderOptions({ a: 1 }), { a: 1 });
 });
 
-test('estimateUsdCost uses app pricing; none → 0', () => {
-  const usd = estimateUsdCost({
-    pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
-    promptTokens: 1_000_000,
-    completionTokens: 1_000_000,
-  });
-  assert.equal(usd, 0.1 + 0.5);
-  assert.equal(
-    estimateUsdCost({ promptTokens: 1_000_000, completionTokens: 1_000_000 }),
-    0,
-  );
-});
-
 test('detectUserSpeechSeries parses coalesced queue prompt', () => {
   const combined = coalesceUserUtterances(['tomorrow', 'around 10']);
   const series = detectUserSpeechSeries(combined);
@@ -123,14 +109,13 @@ test('detectUserSpeechSeries parses coalesced queue prompt', () => {
   assert.deepEqual(series.parts, ['tomorrow', 'around 10']);
 });
 
-test('BrainUsageTracker aggregates $$$ for a call', () => {
+test('BrainUsageTracker aggregates tokens per call and model', () => {
   const tracker = new BrainUsageTracker();
   tracker.record({
     providerCallId: 'call-1',
     conversationId: 'c1',
     kind: 'scan',
     model: 'gpt-6-luna',
-    pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
     promptTokens: 1000,
     completionTokens: 100,
   });
@@ -138,7 +123,6 @@ test('BrainUsageTracker aggregates $$$ for a call', () => {
     providerCallId: 'call-1',
     kind: 'clarify',
     model: 'gpt-6-luna',
-    pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
     promptTokens: 500,
     completionTokens: 50,
   });
@@ -146,7 +130,6 @@ test('BrainUsageTracker aggregates $$$ for a call', () => {
     providerCallId: 'call-1',
     kind: 'judge',
     model: 'gpt-6-luna',
-    pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
     promptTokens: 200,
     completionTokens: 40,
   });
@@ -155,6 +138,6 @@ test('BrainUsageTracker aggregates $$$ for a call', () => {
   assert.equal(summary.calls, 3);
   assert.equal(summary.promptTokens, 1700);
   assert.equal(summary.completionTokens, 190);
-  assert.ok(summary.estimatedUsd > 0);
-  assert.match(tracker.formatMoney(summary.estimatedUsd), /^\$/);
+  assert.equal(summary.byModel['gpt-6-luna'].calls, 3);
+  assert.equal('estimatedUsd' in summary, false);
 });

@@ -2,19 +2,14 @@
  * Application-supplied Brain settings (code layer, not .env).
  * Secrets (OPENAI_API_KEY / ANTHROPIC_API_KEY / GOOGLE_API_KEY / XAI_API_KEY) stay in the environment.
  *
- * Studio is model-agnostic: it ships no model list, default model, or price
- * table. Provider models come and go; the app picks one and owns its settings.
+ * Studio is model-agnostic: it ships no model list, default model, or prices.
+ * Provider models come and go; the app picks one and owns its settings. Studio
+ * reports token usage; cost is whatever the provider bills.
  */
 
 import { DEFAULT_BRAIN_CONFIDENCE_THRESHOLD } from './brain-ranking';
 
 export const STUDIO_BRAIN_CONFIG = Symbol('STUDIO_BRAIN_CONFIG');
-
-/** USD per 1M tokens, used only for the per-call $$$ estimate. */
-export interface BrainModelPricing {
-  inputPerMillion: number;
-  outputPerMillion: number;
-}
 
 export interface StudioBrainConfig {
   /**
@@ -31,15 +26,12 @@ export interface StudioBrainConfig {
    * `{ temperature: 0 }`. Studio sends no sampling settings on its own.
    */
   providerOptions?: Record<string, unknown>;
-  /** Optional price for usage estimates. Omit → tokens tracked, USD reported as 0. */
-  pricing?: BrainModelPricing;
 }
 
 export type ResolvedStudioBrainConfig = {
   model?: string;
   confidenceThreshold: number;
   providerOptions?: Record<string, unknown>;
-  pricing?: BrainModelPricing;
 };
 
 export function resolveStudioBrainConfig(
@@ -53,7 +45,6 @@ export function resolveStudioBrainConfig(
         ? input.confidenceThreshold
         : DEFAULT_BRAIN_CONFIDENCE_THRESHOLD,
     providerOptions: input?.providerOptions,
-    pricing: input?.pricing,
   };
 }
 

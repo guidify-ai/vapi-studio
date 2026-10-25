@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { BrainModelPricing } from './brain-config';
-import { estimateUsdCost } from './llm-model-pricing';
 
 export type BrainCallKind = 'scan' | 'clarify' | 'judge';
 
@@ -10,7 +8,6 @@ export interface BrainUsageRecord {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
-  estimatedUsd: number;
   at: string;
 }
 
@@ -21,15 +18,12 @@ export interface BrainUsageSummary {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
-  /** Approximate USD from app `brain.pricing` (0 when not configured). */
-  estimatedUsd: number;
   byModel: Record<
     string,
     {
       calls: number;
       promptTokens: number;
       completionTokens: number;
-      estimatedUsd: number;
     }
   >;
   records: BrainUsageRecord[];
@@ -43,7 +37,7 @@ interface UsageBucket {
 
 /**
  * Per-call LLM usage ledger for stock Brain adapters (ChatGPT / Claude / Gemini / Grok).
- * Printed as $$$ at end of call (finalize).
+ * Token counts only — cost is whatever the provider bills. Summarized at end of call.
  */
 @Injectable()
 export class BrainUsageTracker {
@@ -70,7 +64,6 @@ export class BrainUsageTracker {
     model: string;
     promptTokens: number;
     completionTokens: number;
-    pricing?: BrainModelPricing;
   }): BrainUsageRecord {
     this.beginCall(input.providerCallId, input.conversationId);
     const bucket = this.byCall.get(input.providerCallId)!;
@@ -85,11 +78,6 @@ export class BrainUsageTracker {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
-      estimatedUsd: estimateUsdCost({
-        pricing: input.pricing,
-        promptTokens,
-        completionTokens,
-      }),
       at: new Date().toISOString(),
     };
     bucket.records.push(record);
@@ -102,21 +90,17 @@ export class BrainUsageTracker {
     const byModel: BrainUsageSummary['byModel'] = {};
     let promptTokens = 0;
     let completionTokens = 0;
-    let estimatedUsd = 0;
     for (const r of bucket.records) {
       promptTokens += r.promptTokens;
       completionTokens += r.completionTokens;
-      estimatedUsd += r.estimatedUsd;
       const row = byModel[r.model] ?? {
         calls: 0,
         promptTokens: 0,
         completionTokens: 0,
-        estimatedUsd: 0,
       };
       row.calls += 1;
       row.promptTokens += r.promptTokens;
       row.completionTokens += r.completionTokens;
-      row.estimatedUsd += r.estimatedUsd;
       byModel[r.model] = row;
     }
     return {
@@ -126,18 +110,11 @@ export class BrainUsageTracker {
       promptTokens,
       completionTokens,
       totalTokens: promptTokens + completionTokens,
-      estimatedUsd,
       byModel,
       records: [...bucket.records],
     };
   }
 
-  /** Format a short money line for console / logs. */
-  public formatMoney(usd: number): string {
-    if (usd <= 0) return '$0.000000';
-    if (usd < 0.01) return `$${usd.toFixed(6)}`;
-    return `$${usd.toFixed(4)}`;
-  }
 
   public clear(providerCallId: string): void {
     this.byCall.delete(providerCallId);

@@ -8,7 +8,7 @@
 
 The stock JSON-LLM Brain adapters (OpenAI, Anthropic, Google, xAI) each shipped a
 hardcoded "cheap whitelist" of model ids, a framework default model, a price
-table, and fixed request settings (`temperature: 0`). That tied every Studio
+table for cost estimates, and fixed request settings (`temperature: 0`). That tied every Studio
 release to one provider's model catalogue:
 
 - OpenAI retired `gpt-4.1-nano`, the default, while it was still on the
@@ -31,8 +31,9 @@ Which model an app uses is an application decision, like its flow or copy.
    objects one level deep). Studio sends no sampling settings of its own;
    apps add `temperature`, `reasoning_effort`, etc. as their model allows.
    Adapters keep only protocol requirements (JSON mode, Anthropic `max_tokens`).
-4. **`brain.pricing`** (`inputPerMillion`, `outputPerMillion`) is optional and
-   used only for usage estimates. Omitted → USD reported as 0.
+4. **No prices or cost estimates.** Studio reports token counts it observes
+   (`BRAIN_USAGE`, `BRAIN_USAGE_SUMMARY` — renamed from `BRAIN_COST_SUMMARY`).
+   Prices belong to the provider; its billing is the source of truth.
 5. Provider choice stays an adapter (`brainAdapter`); model choice is config.
 
 ## Consequences
@@ -42,8 +43,10 @@ Which model an app uses is an application decision, like its flow or copy.
 - **Negative / trade-offs:** Breaking for apps that relied on the default model
   or imported whitelist helpers (`resolveCheap*Model`, `CHEAP_*_MODELS`,
   `DEFAULT_CHEAP_*_MODEL`, `lookupModelPricing`). Apps must set `brain.model`
-  and, if they want deterministic sampling, `providerOptions`. Cost
-  estimates need app-supplied pricing.
+  and, if they want deterministic sampling, `providerOptions`. Log consumers of
+  `estimatedUsd` / `money` / `BRAIN_COST_SUMMARY` must read provider billing
+  instead (removed: `estimateUsdCost`, `estimateUsdFromPricing`,
+  `BrainUsageTracker.formatMoney`, `LlmModelPricing` → `BrainModelRef`).
 - **Follow-ups:** `Cheap*ModelId` types remain as deprecated `string` aliases
   so existing app code compiles; remove in a later minor.
 
@@ -53,6 +56,7 @@ Which model an app uses is an application decision, like its flow or copy.
 | --- | --- |
 | Keep whitelist, add `gpt-6-luna` as default | Repeats the problem on the next deprecation; every model change needs a release |
 | Per-model request quirks table in the framework | Same coupling, just more of it |
+| App-supplied `brain.pricing` for USD estimates | A local copy of a remote price list; goes stale silently, and provider billing already has the real number |
 | Auto-retry without `temperature` on 400 | Guesswork on the live path; costs a round-trip inside the 3s budget |
 
 ## References

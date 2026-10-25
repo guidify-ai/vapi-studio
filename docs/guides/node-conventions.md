@@ -27,7 +27,7 @@ Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-b
 - Target first speech < 1.5s after request
 - Model in `VapiStudioModule.forRoot({ brain })` or `brain.config.ts` — not `.env`
 - `interruptible: false` — queue overlapping POSTs until 3s silence, then one scan
-- End of call: `BRAIN_COST_SUMMARY` when usage tracked
+- End of call: `BRAIN_USAGE_SUMMARY` (tokens) when usage tracked
 
 ## Listed choices
 

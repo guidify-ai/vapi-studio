@@ -429,18 +429,18 @@ Stock adapters:
 | --- | --- | --- |
 | `model` | yes | Provider model id, passed through as-is. Missing → adapter throws (scan → unknown). |
 | `providerOptions` | no | Merged into the provider request body (plain objects one level deep). Studio sends **no** sampling settings itself — add `temperature`, `reasoning_effort`, Gemini `generationConfig`, … here as your model allows. |
-| `pricing` | no | `{ inputPerMillion, outputPerMillion }` USD for `BRAIN_USAGE` / `BRAIN_COST_SUMMARY`. Omit → tokens tracked, USD `0`. |
 | `confidenceThreshold` | no | Scan floor, default `0.4`. |
 
 ```ts
 brain: {
   model: 'gpt-6-luna',
   providerOptions: { reasoning_effort: 'none' }, // keep live scans ~1s on reasoning models
-  pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
 },
 ```
 
 Pick a model your provider still serves and that answers within the 3s scan timeout. Provider deprecations are an app config change, not a Studio upgrade.
+
+Studio reports **token usage only** (`BRAIN_USAGE` per call, `BRAIN_USAGE_SUMMARY` at end of call, per model). It does not estimate cost — prices are the provider's, and its billing is the source of truth.
 
 **Mock (deterministic sequences / profiles; no provider network):**
 
@@ -479,7 +479,7 @@ See [identity-and-pii.md](../best-practices/identity-and-pii.md).
 
 Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
-Brain **model**, **provider options**, **pricing**, and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — any model id the selected adapter's provider accepts; no framework default. Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
+Brain **model**, **provider options**, and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — any model id the selected adapter's provider accepts; no framework default. Provider **API keys** belong in `.env`. End of call may log `BRAIN_USAGE_SUMMARY` (tokens) when a stock LLM adapter recorded usage.
 
 ## Studio UI (operator SPA)
 

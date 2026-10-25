@@ -166,11 +166,7 @@ export type {
   BrainUsageSummary,
   BrainCallKind,
 } from './brain/brain-usage.tracker';
-export {
-  estimateUsdCost,
-  estimateUsdFromPricing,
-} from './brain/llm-model-pricing';
-export type { LlmModelPricing, TokenUsage } from './brain/llm-model-pricing';
+export type { BrainModelRef, TokenUsage } from './brain/brain-model';
 export {
   STUDIO_BRAIN_CONFIG,
   resolveStudioBrainConfig,
@@ -179,7 +175,6 @@ export {
 export type {
   StudioBrainConfig,
   ResolvedStudioBrainConfig,
-  BrainModelPricing,
   CheapOpenAiModelId,
   CheapClaudeModelId,
   CheapGeminiModelId,

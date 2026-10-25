@@ -35,7 +35,7 @@ import {
   type BrainIntentionOption,
   type RankedIntentionScore,
 } from '../brain-ranking';
-import type { LlmModelPricing, TokenUsage } from '../llm-model-pricing';
+import type { BrainModelRef, TokenUsage } from '../brain-model';
 import { BrainUsageTracker } from '../brain-usage.tracker';
 import { mergeProviderOptions, type StudioBrainConfig } from '../brain-config';
 import {
@@ -54,7 +54,7 @@ const SCAN_HISTORY_NODES = 8;
 
 export type JsonLlmCompleteInput = {
   apiKey: string;
-  model: LlmModelPricing;
+  model: BrainModelRef;
   kind: 'scan' | 'clarify' | 'judge';
   providerCallId: string;
   conversationId?: string;
@@ -65,7 +65,7 @@ export type JsonLlmCompleteInput = {
 /**
  * Template for stock Brain adapters that call a JSON-capable LLM.
  * Subclasses supply the API key and the HTTP completion call; the model id,
- * request options, and pricing come from the app's `brain` config.
+ * and request options come from the app's `brain` config.
  */
 export abstract class JsonLlmBrainAdapter implements BrainAdapter {
   protected abstract readonly adapterId: string;
@@ -82,7 +82,7 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     input: JsonLlmCompleteInput,
   ): Promise<{ content: string; usage: TokenUsage }>;
 
-  protected resolveModel(override?: string | null): LlmModelPricing {
+  protected resolveModel(override?: string | null): BrainModelRef {
     const id = (override || this.brainConfig?.model)?.trim();
     if (!id) {
       throw new Error(
@@ -90,7 +90,7 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
           `VapiStudioModule.forRoot({ brain: { model } }).`,
       );
     }
-    return { id, pricing: this.brainConfig?.pricing };
+    return { id };
   }
 
   /** Provider request body with the app's `brain.providerOptions` merged in. */
@@ -489,7 +489,7 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     providerCallId: string;
     conversationId?: string;
     kind: 'scan' | 'clarify' | 'judge';
-    model: LlmModelPricing;
+    model: BrainModelRef;
     usage: TokenUsage;
     started: number;
   }): void {
@@ -500,7 +500,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       model: input.model.id,
       promptTokens: input.usage.prompt_tokens ?? 0,
       completionTokens: input.usage.completion_tokens ?? 0,
-      pricing: input.model.pricing,
     });
 
     this.events.log('info', 'BRAIN_USAGE', {
@@ -510,8 +509,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       model: input.model.id,
       promptTokens: record.promptTokens,
       completionTokens: record.completionTokens,
-      estimatedUsd: record.estimatedUsd,
-      money: this.usage.formatMoney(record.estimatedUsd),
       durationMs: Date.now() - input.started,
     });
   }
