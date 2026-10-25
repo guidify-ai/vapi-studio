@@ -44,7 +44,7 @@ Applies to `ChatGptBrainAdapter`, `ClaudeBrainAdapter`, `GeminiBrainAdapter`, an
 - **Pre-LLM gate:** injection-shaped ASR → scan returns `studio.isUnknownTransition` (`prompt_injection_blocked`); clarify throws `cannotAnswer` — no provider round-trip
 - Extracted / clarify string fields pass through `sanitizeExtractedFieldValue()`
 - Intention names filtered to the candidate allowlist; extract keys filtered to the listen schema
-- Cheap model whitelist + temperature `0` + 3s timeout — limits creative drift
+- JSON-only responses + 3s timeout — limits creative drift. Pick a small, fast model and set deterministic sampling (e.g. `temperature: 0`) via `brain.providerOptions` where your model supports it
 
 Exports: `@guidify-ai/vapi-studio` → `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 

@@ -1,6 +1,6 @@
 /**
  * Shared JSON-LLM Brain orchestration (scan / clarify / judge).
- * Provider adapters only implement auth, model whitelist, and completeJson().
+ * Provider adapters only implement auth and completeJson().
  */
 
 import { Logger } from '@nestjs/common';
@@ -35,9 +35,9 @@ import {
   type BrainIntentionOption,
   type RankedIntentionScore,
 } from '../brain-ranking';
-import type { LlmModelPricing, TokenUsage } from '../llm-model-pricing';
+import type { BrainModelRef, TokenUsage } from '../brain-model';
 import { BrainUsageTracker } from '../brain-usage.tracker';
-import type { StudioBrainConfig } from '../brain-config';
+import { mergeProviderOptions, type StudioBrainConfig } from '../brain-config';
 import {
   brainUntrustedInputRules,
   sanitizeExtractedFieldValue,
@@ -54,7 +54,7 @@ const SCAN_HISTORY_NODES = 8;
 
 export type JsonLlmCompleteInput = {
   apiKey: string;
-  model: LlmModelPricing;
+  model: BrainModelRef;
   kind: 'scan' | 'clarify' | 'judge';
   providerCallId: string;
   conversationId?: string;
@@ -64,7 +64,8 @@ export type JsonLlmCompleteInput = {
 
 /**
  * Template for stock Brain adapters that call a JSON-capable LLM.
- * Subclasses supply API key, model whitelist, and the HTTP completion call.
+ * Subclasses supply the API key and the HTTP completion call; the model id,
+ * and request options come from the app's `brain` config.
  */
 export abstract class JsonLlmBrainAdapter implements BrainAdapter {
   protected abstract readonly adapterId: string;
@@ -77,10 +78,27 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
   ) {}
 
   protected abstract requireApiKey(op: string): string;
-  protected abstract resolveModel(override?: string | null): LlmModelPricing;
   protected abstract completeJson(
     input: JsonLlmCompleteInput,
   ): Promise<{ content: string; usage: TokenUsage }>;
+
+  protected resolveModel(override?: string | null): BrainModelRef {
+    const id = (override || this.brainConfig?.model)?.trim();
+    if (!id) {
+      throw new Error(
+        `${this.adapterId} requires a model id. Set it in application code via ` +
+          `VapiStudioModule.forRoot({ brain: { model } }).`,
+      );
+    }
+    return { id };
+  }
+
+  /** Provider request body with the app's `brain.providerOptions` merged in. */
+  protected requestBody(body: Record<string, unknown>): string {
+    return JSON.stringify(
+      mergeProviderOptions(body, this.brainConfig?.providerOptions),
+    );
+  }
 
   public async scan(input: BrainScanInput): Promise<BrainScanResult> {
     const apiKey = this.requireApiKey('scan');
@@ -471,7 +489,7 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     providerCallId: string;
     conversationId?: string;
     kind: 'scan' | 'clarify' | 'judge';
-    model: LlmModelPricing;
+    model: BrainModelRef;
     usage: TokenUsage;
     started: number;
   }): void {
@@ -491,8 +509,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       model: input.model.id,
       promptTokens: record.promptTokens,
       completionTokens: record.completionTokens,
-      estimatedUsd: record.estimatedUsd,
-      money: this.usage.formatMoney(record.estimatedUsd),
       durationMs: Date.now() - input.started,
     });
   }

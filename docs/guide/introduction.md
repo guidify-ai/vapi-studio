@@ -33,7 +33,7 @@ VapiStudioModule.forRoot({
   intentions: [NeedSmsPhoneIntention],
   brainAdapter: ChatGptBrainAdapter,
   brain: {
-    model: 'gpt-4.1-mini',
+    model: 'gpt-6-luna',
     confidenceThreshold: 0.4,
   },
   formDisposeAdapter: LinkFormDisposeAdapter,

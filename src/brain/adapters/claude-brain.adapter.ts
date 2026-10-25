@@ -5,11 +5,7 @@ import {
   STUDIO_BRAIN_CONFIG,
   type StudioBrainConfig,
 } from '../brain-config';
-import {
-  resolveCheapClaudeModel,
-  type CheapClaudeModelPricing,
-} from '../claude-cheap-models';
-import type { TokenUsage } from '../llm-model-pricing';
+import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
   JSON_LLM_BRAIN_TIMEOUT_MS,
@@ -22,7 +18,7 @@ type AnthropicMessageResponse = {
 };
 
 /**
- * Vapi Studio Claude Brain — Anthropic Messages API on a **cheap Haiku whitelist**.
+ * Vapi Studio Claude Brain — Anthropic Messages API with the app's `brain.model`.
  *
  * Env: `ANTHROPIC_API_KEY`. Same scan/clarify/judge contracts as ChatGPT (3s timeout).
  */
@@ -52,10 +48,6 @@ export class ClaudeBrainAdapter extends JsonLlmBrainAdapter {
     return apiKey;
   }
 
-  protected resolveModel(override?: string | null): CheapClaudeModelPricing {
-    return resolveCheapClaudeModel(override || this.brainConfig?.model);
-  }
-
   protected async completeJson(
     input: JsonLlmCompleteInput,
   ): Promise<{ content: string; usage: TokenUsage }> {
@@ -68,10 +60,9 @@ export class ClaudeBrainAdapter extends JsonLlmBrainAdapter {
         'content-type': 'application/json',
       },
       signal: AbortSignal.timeout(JSON_LLM_BRAIN_TIMEOUT_MS),
-      body: JSON.stringify({
+      body: this.requestBody({
         model: input.model.id,
         max_tokens: 1024,
-        temperature: 0,
         system: input.system,
         messages: [{ role: 'user', content: input.user }],
       }),

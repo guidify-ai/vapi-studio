@@ -5,11 +5,7 @@ import {
   STUDIO_BRAIN_CONFIG,
   type StudioBrainConfig,
 } from '../brain-config';
-import {
-  resolveCheapOpenAiModel,
-  type CheapModelPricing,
-} from '../openai-cheap-models';
-import type { TokenUsage } from '../llm-model-pricing';
+import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
   JSON_LLM_BRAIN_TIMEOUT_MS,
@@ -25,7 +21,7 @@ type OpenAiChatResponse = {
 };
 
 /**
- * Vapi Studio ChatGPT Brain adapter — OpenAI Chat Completions on a **cheap model whitelist**.
+ * Vapi Studio ChatGPT Brain adapter — OpenAI Chat Completions with the app's `brain.model`.
  *
  * Implements scan / clarify / judge via {@link JsonLlmBrainAdapter}.
  *
@@ -57,10 +53,6 @@ export class ChatGptBrainAdapter extends JsonLlmBrainAdapter {
     return apiKey;
   }
 
-  protected resolveModel(override?: string | null): CheapModelPricing {
-    return resolveCheapOpenAiModel(override || this.brainConfig?.model);
-  }
-
   protected async completeJson(
     input: JsonLlmCompleteInput,
   ): Promise<{ content: string; usage: TokenUsage }> {
@@ -72,9 +64,8 @@ export class ChatGptBrainAdapter extends JsonLlmBrainAdapter {
         'content-type': 'application/json',
       },
       signal: AbortSignal.timeout(JSON_LLM_BRAIN_TIMEOUT_MS),
-      body: JSON.stringify({
+      body: this.requestBody({
         model: input.model.id,
-        temperature: 0,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: input.system },
