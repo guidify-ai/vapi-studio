@@ -20,7 +20,7 @@ Each user utterance (or silence timeout) triggers the **Supervisor** routing cas
 1. Force intentions (code + YAML transitions)
 2. Condition transitions (memory expressions)
 3. Match intentions on current node
-4. Listen resolve (extract / resolveIntention — may skip Brain)
+4. Listen resolve (resolveIntention — may skip Brain)
 5. Brain scan (portal + node intentions)
 6. Walk nodes (boot via before(), run)
 ```
@@ -33,15 +33,28 @@ Agent steps are NestJS injectable classes extending `AgentNode`:
 
 ```typescript
 export class AskNameNode extends AgentNode<MySchema> {
-  async before(ctx) { return true; }  // CAN gate
-  async listen(ctx) { /* register extract */ }
+  async listen(ctx) {
+    return { intentions: [{ name: 'isCollectedFirstName', boost: 20 }] };
+  }
   async run(ctx) {
-    return ctx.output.sayAndListen("What's your first name?", {
-      extract: { fields: [{ key: 'firstName', /* … */ }] },
-    });
+    return ctx.output.sayAndListen("What's your first name?");
   }
 }
+
+// The Node that handles isCollectedFirstName reads the answer itself.
+export class UseFirstNameNode extends AgentNode<MySchema> {
+  async before(ctx) {
+    const name = parseName(ctx.userText);          // code, regex or ctx.clarify
+    if (!name) throw new FlowUncertainError('no first name');
+    ctx.memory.firstName = name;
+    return true;
+  }
+  async catch() { return forceIntention('isRetryFirstName'); }
+  async run(ctx) { /* … */ }
+}
 ```
+
+Intentions say **where the call goes**; the receiving Node extracts the data ([ARD-0008](../ards/ARD-0008-pure-intentions.md)).
 
 Declare methods in **runtime order**: `before` → `listen` → `run` → `after` → `catch`.
 

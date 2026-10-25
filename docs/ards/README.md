@@ -36,6 +36,9 @@ not change behavior — unless reviewers ask for one.
 | [ARD-0003](./ARD-0003-model-agnostic-brain.md) | Model-agnostic Brain adapters (no model whitelist / default) | Accepted |
 | [ARD-0004](./ARD-0004-framework-decision-boundary.md) | Framework decision boundary (invariants vs app content vs remote facts) | Accepted |
 | [ARD-0005](./ARD-0005-release-flow.md) | Release flow — sign off on real apps before npm | Accepted |
+| [ARD-0006](./ARD-0006-decision-brain-drivers.md) | Decision-model Brain drivers (OpenAI Decisions, TypeSafe Jev) | Accepted |
+| [ARD-0007](./ARD-0007-release-articles.md) | Every release ships an article; every feature carries its reasoning | Accepted |
+| [ARD-0008](./ARD-0008-pure-intentions.md) | Pure intentions — the scan decides where to go, nodes extract data | Accepted |
 
 Constitution: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)  
 Contributing: [CONTRIBUTING.md](../../CONTRIBUTING.md)

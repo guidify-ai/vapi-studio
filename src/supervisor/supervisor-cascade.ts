@@ -2,7 +2,10 @@ import type { SupervisedConversation } from '../conversation/supervised-conversa
 import type { IntentionCandidate } from '../conversation/types';
 import { DEFAULT_INTENTION_PRIORITY } from '../conversation/conversation-history';
 import type { ListenExpectation } from '../conversation/listen-expectation';
-import { STANDARD_INTENTIONS } from '../intentions/standard-intentions';
+import {
+  STANDARD_INTENTIONS,
+  STANDARD_INTENTION_DESCRIPTIONS,
+} from '../intentions/standard-intentions';
 import {
   intentionContextFromRuntime,
   INTENTION_CASCADE_PHASE,
@@ -13,7 +16,11 @@ import {
 import {
   BufferedConversationOutput,
 } from '../output/conversation-output';
-import type { BrainIntentionOption } from '../brain/brain-ranking';
+import {
+  roundConfidence,
+  type BrainIntentionOption,
+} from '../brain/brain-ranking';
+import type { BrainLocalSignal } from '../brain/brain.port';
 import { conditionGotoIntention } from '../flow/flow-loader';
 import { snapshotUserMemory } from '../events/conversation-console';
 import type { SupervisorEngine } from './supervisor.types';
@@ -154,6 +161,8 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
   userText: string;
   onSay?: (text: string) => Promise<void>;
   confidenceThreshold: number;
+  /** Collects below-threshold match scores for the Brain scan. */
+  nearMisses?: BrainLocalSignal[];
 }): Promise<
   | { kind: 'routed'; result: TurnExecutionResult }
   | { kind: 'score'; name: string; confidence: number }
@@ -176,7 +185,16 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
     const matched = await intention.match(ctx);
     if (matched == null) continue;
     const confidence = Math.min(1, Math.max(0, matched));
-    if (confidence < input.confidenceThreshold) continue;
+    if (confidence < input.confidenceThreshold) {
+      if (confidence > 0) {
+        input.nearMisses?.push({
+          name: intention.name,
+          confidence: roundConfidence(confidence),
+          source: 'intention_match',
+        });
+      }
+      continue;
+    }
 
     const runResult = await intention.run(ctx);
     await intention.after(ctx);
@@ -275,6 +293,7 @@ export function buildBrainCandidates(this: SupervisorEngine,
     }
     byName.set(option.name, {
       ...existing,
+      description: existing.description || option.description,
       boost: Math.max(existing.boost ?? 0, option.boost ?? 0),
       priority: Math.max(
         existing.priority ?? DEFAULT_INTENTION_PRIORITY,
@@ -287,6 +306,7 @@ export function buildBrainCandidates(this: SupervisorEngine,
   for (const intent of listen?.intentions ?? []) {
     upsert({
       name: intent.name,
+      description: intent.description?.trim() || undefined,
       boost: intent.boost,
       priority: intent.priority,
       source: 'listen',
@@ -297,6 +317,7 @@ export function buildBrainCandidates(this: SupervisorEngine,
     if (intention.phase === INTENTION_CASCADE_PHASE.Force) continue;
     upsert({
       name: intention.name,
+      description: intention.description?.trim() || undefined,
       boost: intention.boost,
       priority: intention.priority,
       source: 'runtime',
@@ -330,6 +351,16 @@ export function buildBrainCandidates(this: SupervisorEngine,
     });
   }
 
-  return [...byName.values()];
+  const codeDescriptions = new Map(
+    this.intentionList().map((i) => [i.name, i.description?.trim() || undefined]),
+  );
+  return [...byName.values()].map((option) => ({
+    ...option,
+    description:
+      option.description ||
+      codeDescriptions.get(option.name) ||
+      this.flowLoader.intentionDescription?.(option.name) ||
+      (STANDARD_INTENTION_DESCRIPTIONS as Record<string, string>)[option.name],
+  }));
 }
 

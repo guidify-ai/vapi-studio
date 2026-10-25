@@ -1,10 +1,17 @@
 /**
  * Listen registration — opened before Node speech so interrupts still bind to it.
- * Guides Brain intention scan + optional field extraction + ASR/LLM hints.
+ * Guides the Brain intention scan + ASR/LLM hints. Listens never extract data:
+ * the Node that handles the answer reads `ctx.userText` itself (ARD-0008).
  */
 export interface ListenIntentionBoost {
   /** Intention name to prioritize (e.g. isAcknowledge, studio.isGoodbye). */
   name: string;
+  /**
+   * Short meaning of the intention for the scanner (one sentence). Wins over
+   * `CodeIntention.description` / flow.yaml `intentions`. Required by decision
+   * Brain drivers (from some source).
+   */
+  description?: string;
   /**
    * Extra weight for Brain scoring (hint only — does not change Supervisor walk order).
    * Higher = more preferred by the scanner. Default when listed: 10.
@@ -17,50 +24,11 @@ export interface ListenIntentionBoost {
   priority?: number;
 }
 
-/**
- * Field the Brain should pull from the next user utterance.
- * App writes memory itself via `onExtracted` — no framework auto-target.
- */
-export interface ListenExtractField {
-  /** Key in Brain JSON `extracted` object (e.g. "firstName"). */
-  key: string;
-  /** Helps LLM extraction. */
-  description?: string;
-  type?: 'string' | 'number' | 'boolean';
-  /** If true and missing, extraction is incomplete (logged; routing still proceeds). */
-  required?: boolean;
-}
-
-/** Context passed to the sayAndListen extract callback. */
-export interface ListenExtractApplyContext {
-  memory: Record<string, unknown>;
-  variables: Record<string, unknown>;
-  userText: string;
-}
-
-/**
- * App-owned handler: Brain returns `extracted`, you set memory/variables yourself.
- */
-export type ListenExtractHandler = (
-  extracted: Record<string, unknown>,
-  ctx: ListenExtractApplyContext,
-) => void | Promise<void>;
-
 /** Closed-set cheap match before Brain (listed options: pick N / neither). */
 export type ListenResolveIntention = (input: {
   userText: string;
   memory: Record<string, unknown>;
 }) => string | null | Promise<string | null>;
-
-/**
- * Extract registration for the next answer:
- * - `fields` tell Brain what to pull
- * - `onExtracted` lets the Node write memory (required for applying values)
- */
-export interface ListenExtractSpec {
-  fields: ListenExtractField[];
-  onExtracted?: ListenExtractHandler;
-}
 
 export interface ListenExpectation {
   /** Intentions this Node expects / wants Brain to prioritize. */
@@ -72,8 +40,6 @@ export interface ListenExpectation {
   hints?: string[];
   /** Optional free-form operator note. */
   note?: string;
-  /** Structured extraction for the next user answer (fields + apply callback). */
-  extract?: ListenExtractSpec;
   /**
    * Seconds the channel waits after a user pause before closing this listen.
    * Omit to use the Node class `listenTimeoutSeconds` (framework default 2.5).
@@ -88,25 +54,20 @@ export interface ListenExpectation {
    * Cheap closed-set match **before** Brain scan. If this returns an intention
    * name that is on this listen, Supervisor skips OpenAI and walks that
    * intention at confidence 1. Return null to fall through to Brain (portals,
-   * unknown, free-form). Use after the bot listed numbered options.
+   * unknown, free-form). Use after the bot named a few options in a sentence.
    */
   resolveIntention?: ListenResolveIntention;
+  /**
+   * Text spoken by the `sayAndListen` that opened this listen. Set by the
+   * Supervisor. When a portal returns to its origin (Continue / still-there
+   * "yes"), the origin repeats this question instead of treating the
+   * caller's agreement as an answer to it.
+   */
+  question?: string;
 }
 
-/** Options passed to `sayAndListen` — especially extraction for the next answer. */
+/** Options passed to `sayAndListen` for the next answer's listen. */
 export interface SayAndListenOptions {
-  /**
-   * Ask Brain for fields, then run `onExtracted` so the Node sets memory itself.
-   *
-   * @example
-   * sayAndListen("What's your first name?", {
-   *   extract: {
-   *     fields: [{ key: 'firstName', type: 'string', required: true }],
-   *     onExtracted: (data) => { ctx.memory.callerName = String(data.firstName ?? ''); },
-   *   },
-   * })
-   */
-  extract?: ListenExtractSpec;
   /** If set, replaces listen intentions for the next turn. */
   intentions?: ListenIntentionBoost[];
   hints?: string[];
@@ -147,7 +108,6 @@ export function applyListenBoosts(
 
 /**
  * Merge `sayAndListen` options into the listen registered by `node.listen()`.
- * Extract spec on sayAndListen wins for the upcoming user answer.
  */
 export function mergeSayAndListenOptions(
   current: ListenExpectation | null | undefined,
@@ -161,8 +121,6 @@ export function mergeSayAndListenOptions(
     intentions: options.intentions ?? base.intentions,
     hints: options.hints ?? base.hints,
     note: options.note ?? base.note,
-    extract:
-      options.extract !== undefined ? options.extract : base.extract,
     timeoutSeconds:
       options.timeoutSeconds !== undefined
         ? options.timeoutSeconds
@@ -203,22 +161,6 @@ export async function tryResolveListenIntention(input: {
     return null;
   }
   return name;
-}
-
-export function missingRequiredExtractKeys(
-  fields: ListenExtractField[] | undefined,
-  extracted: Record<string, unknown> | undefined,
-): string[] {
-  if (!fields?.length) {
-    return [];
-  }
-  return fields
-    .filter((f) => f.required)
-    .filter((f) => {
-      const v = extracted?.[f.key];
-      return v === undefined || v === null || v === '';
-    })
-    .map((f) => f.key);
 }
 
 /** Pronouns / fillers that must never be treated as a person name. */
@@ -264,10 +206,6 @@ const MOCK_NAME_INTENT_WORDS = new Set([
 ]);
 
 const NAME_TOKEN_RE = /^[A-Za-z][A-Za-z'-]{0,30}$/;
-
-function isNameLikeExtractKey(key: string): boolean {
-  return /name/i.test(key);
-}
 
 function stripAsrNameNoise(text: string): string {
   return text
@@ -315,46 +253,4 @@ export function mockExtractPersonName(
   const names = nameTokensFromUtterance(userText);
   if (!names?.length) return undefined;
   return prefer === 'last' ? names[names.length - 1] : names[0];
-}
-
-/**
- * Deterministic mock extraction for tests / MockBrain (no LLM).
- */
-export function mockExtractFromUserText(
-  userText: string,
-  fields: ListenExtractField[] | undefined,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  if (!fields?.length) {
-    return out;
-  }
-  const text = userText.trim();
-  for (const field of fields) {
-    if (field.type === 'number') {
-      const n = text.match(/-?\d+(?:\.\d+)?/);
-      if (n) out[field.key] = Number(n[0]);
-      continue;
-    }
-    if (field.type === 'boolean') {
-      const lower = text.toLowerCase();
-      if (/\b(yes|yeah|yep|true)\b/.test(lower)) out[field.key] = true;
-      else if (/\b(no|nope|false)\b/.test(lower)) out[field.key] = false;
-      continue;
-    }
-    if (isNameLikeExtractKey(field.key)) {
-      const prefer = /last|family|surname/i.test(field.key) ? 'last' : 'first';
-      const name = mockExtractPersonName(text, prefer);
-      if (name) out[field.key] = name;
-      continue;
-    }
-    const named = mockExtractPersonName(text);
-    if (named) {
-      out[field.key] = named;
-    } else if (text) {
-      const cleaned = stripAsrNameNoise(text);
-      const first = cleaned.split(/\s+/)[0];
-      if (first) out[field.key] = first;
-    }
-  }
-  return out;
 }

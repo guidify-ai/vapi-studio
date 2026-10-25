@@ -168,11 +168,11 @@ String-only intention names in `flow.yaml` still work (`phase: scan` behavior).
 
 `AgentNode<TSchema>` — declare overrides in **runtime order**:
 
-1. `before(ctx)` — authorize / prepare; `false` rejects this candidate. Put **async prep** here (JWT/API warm, auth). Prefer spawn-without-await when first speech must stay fast; `await` only when the gate needs the result. Do not dump that I/O into `run()`.
-2. `listen(ctx)` — register the **next** listen (intentions, hints, extract, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind (no I/O)
+1. `before(ctx)` — authorize / prepare; `false` rejects this candidate ("not my turn"). Read the data this Node needs from `ctx.userText` here or in `run()`, and **throw** when the answer breaks the Node's expectations — `catch()` handles it. Put **async prep** here (JWT/API warm, auth). Prefer spawn-without-await when first speech must stay fast; `await` only when the gate needs the result. Do not dump that I/O into `run()`.
+2. `listen(ctx)` — register the **next** listen (intentions, hints, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind (no I/O)
 3. `run(ctx)` — **required**; speech + exactly one terminal output action — keep integrations/teardown out unless speak cannot proceed without the result
 4. `after(ctx, result)` — teardown for this execution (non-speech side effects; no TTS)
-5. `catch(ctx, error)` — optional recovery (`restartNode`, `forceIntention`, `catchResult`, `rethrowCatch`)
+5. `catch(ctx, error)` — optional recovery from errors thrown in `before()` or `run()`: `forceIntention(...)` (e.g. route back so the asking Node re-asks, rephrased for the failure), `catchResult(...)`, `restartNode()`, or `rethrowCatch()` (default — the call breaks and the Node needs fixing)
 
 Doctrine: [`docs/best-practices/nodes-and-listens.md`](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
@@ -205,7 +205,7 @@ export class AskTimelineNode extends AgentNode {
 
 A Node may `say()` several times in one turn. It must finish with exactly one of:
 
-- `sayAndListen(text, options?)` — speak and wait (optional `extract`, `timeoutSeconds`, `onExtracted` that **the app** writes into memory)
+- `sayAndListen(text, options?)` — speak and wait (optional `intentions`, `hints`, `timeoutSeconds`, `interruptible`, `resolveIntention`)
 - `endCall(text?)` — ends the Conversation (Vapi → end-call tool)
 - `transferToHuman(destination?)` — phone transfer (Vapi → `transferCall` tool)
 - `handoff({ to, reason?, payload?, text? })` — leave this **workflow module** without ending the Conversation (`to` = module id; Vapi → Squad handoff tool). Requires a loaded `workflow.yaml`.
@@ -331,11 +331,31 @@ Native Vapi members use `kind: vapi` (no flow file) — Vapi Studio only emits t
 
 Portals stay globally eligible in every module (same runtime).
 
-### Listen / extract
+### Listen: where to go, not what was said
 
-`listen()` / `sayAndListen({ extract })` tell Brain what to score and which JSON fields to pull. The framework does not auto-assign memory: `onExtracted` is application-owned. Listen timeout is documented above.
+`listen()` / `sayAndListen()` tell the scan which intentions to score. An intention answers one question — where the call goes next — and never carries data ([ARD-0008](../ards/ARD-0008-pure-intentions.md)). One intention per outcome of the call to action: "gave a number", not "gave a good number" / "gave a bad number".
 
-**Closed choice (`resolveIntention`)** — after the bot listed numbered options, attach a cheap matcher on the listen. If it returns an intention name that is on that listen, Supervisor **skips Brain** and walks that intention at confidence 1 (no 3s abort). Return `null` to fall through to Brain so portals and unknown still work. Use this for pick-N / neither, not for free-form answers. A skipped scan still advances `brainSequenceIndex` so MockBrain sequences stay aligned.
+The **Node that handles the answer extracts the data**: read `ctx.userText` in `before()` or `run()` with whatever works (code, regex, direct use, or `ctx.clarify` for messy input), triage it (good, incomplete, wrong, too much) and ask follow-ups. When the answer breaks what the Node expects, throw; `catch()` can route back so the asking Node re-asks, rephrased for the failure.
+
+```ts
+export class UsePhoneNode extends AgentNode<Schema> {
+  async before(ctx) {
+    const digits = ctx.userText.replace(/\D/g, '');
+    if (digits.length !== 10) throw new FlowUncertainError('phone needs 10 digits', { digits });
+    ctx.memory.phone = digits;
+    return true;
+  }
+  async catch(ctx, error) {
+    ctx.memory.phoneProblem = error.details?.digits;
+    return forceIntention('isRetryPhone'); // the asking Node re-asks
+  }
+  async run(ctx) { /* … */ }
+}
+```
+
+Listen timeout is documented above.
+
+**Closed choice (`resolveIntention`)** — after the bot offered a few options, attach a cheap matcher on the listen. If it returns an intention name that is on that listen, Supervisor **skips Brain** and walks that intention at confidence 1 (no 3s abort). Return `null` to fall through to Brain so portals and unknown still work. Use this for picking an option (its words or an ordinal like “the second one”) or neither, not for free-form answers. A skipped scan still advances `brainSequenceIndex` so MockBrain sequences stay aligned.
 
 ```ts
 return ctx.output.sayAndListen('I have two matches. Which one is correct?', {
@@ -410,8 +430,8 @@ Port (`BrainService` / `BrainAdapter`) — Supervisor depends only on this:
 
 | Method | Use |
 | --- | --- |
-| `scan` | Rank candidates + optional `extracted` map |
-| `clarify` | Structured Q&A; always `{ answer: object }` |
+| `scan` | Rank candidates (intentions only — no data) |
+| `clarify` | Structured Q&A; always `{ answer: object }`. Nodes use it to read messy answers |
 | `judge` | LLM-as-a-judge for **evals**; rare on the live path |
 
 Judge result: `{ passed, confidence, reasoning, belowThreshold }`. `confidence` is always `/^\d\.\d{6}$/`. Threshold does **not** flip `passed`. Trusted pass = `passed && !belowThreshold`. Paid e2e evals are not in the current delivery slice.
@@ -433,11 +453,43 @@ Stock adapters:
 | `providerOptions` | no | Merged into the provider request body (plain objects one level deep). Studio sends **no** sampling settings itself — add `temperature`, `reasoning_effort`, Gemini `generationConfig`, … here as your model allows. |
 | `confidenceThreshold` | no | Scan floor, default `0.4`. |
 | `timeoutMs` | no | Abort one provider round-trip after this many ms → unknown transition. Default `3000`; set it from the model's measured latency. |
+| `memorySnapshot` | no | `(memory) => object` — what the scanner sees of memory. Default: the whole user memory (bootstrap keys dropped). Return a trimmed / redacted copy to keep PII away from the provider. |
+| `llm` | decision drivers | `{ adapter, model, providerOptions?, timeoutMs? }` — chat model serving Nodes' `ctx.clarify` / `ctx.judge`. Optional with an LLM scanner (unset → the scanner answers them). |
 
 ```ts
 brain: {
   model: 'gpt-6-luna',
   providerOptions: { reasoning_effort: 'none' }, // keep live scans ~1s on reasoning models
+},
+```
+
+**Live (decision models, scan only)** — [ARD-0006](../ards/ARD-0006-decision-brain-drivers.md). Decision models answer yes/no questions with a probability and are billed for input tokens only. Studio asks **one predicate per candidate intention** ("does the caller's latest turn express `<name>`? Meaning: `<description>`") over a JSON context: untrusted caller text, last 8 chat + node history entries, hints, and the memory snapshot. Scores are independent (they do not sum to 1), rounded to 6 decimals, and go through the same threshold → unknown-transition rules. Refused questions are skipped.
+
+- `OpenAiDecisionsBrainAdapter` — `POST /v1/decisions` (e.g. `model: 'gpt-6-luna'`). Env: `OPENAI_API_KEY`.
+- `TypeSafeJevBrainAdapter` (**experimental** — not yet tested against the live API) — `POST https://api.typesafe.ai/v1/systemone`, `noul` questions (e.g. `model: 'jev-latest'`). Env: `TYPESAFE_API_KEY`.
+
+**Deterministic matchers come first and feed the scan.** A listen `resolveIntention` hit or a match-phase `CodeIntention` at/above the threshold routes with no scan (cheap, exact). When the scan does run, the context carries `priors`: `expected` (candidates with a listen/CodeIntention `boost`, highest first) and `localMatches` (match-phase scores that fired below the threshold). The scanner treats them as weak hints. LLM scans get `localMatches` too (boosts were already in their candidate list).
+
+Decision models cannot write. A scan never extracts (no driver does); `clarify()` / `judge()` go to `brain.llm`. Without `brain.llm`, they throw a configuration error.
+
+**Every candidate needs a description.** A missing one logs an error and the scan returns `studio.isUnknownTransition` (`reason: missing_intention_description`, `missing: [...]`). Sources, first non-empty wins: listen `intentions[].description` → `CodeIntention.description` → flow.yaml `intentions` → `STANDARD_INTENTION_DESCRIPTIONS` (built-in `studio.*`). LLM adapters also receive descriptions and memory, but do not require them.
+
+```yaml
+# flow.yaml
+intentions:
+  wantsBooking: Caller wants to book a new appointment.
+  wantsReschedule:
+    description: Caller wants to move an appointment they already have.
+```
+
+```ts
+brainAdapter: OpenAiDecisionsBrainAdapter,
+brain: {
+  model: 'gpt-6-luna',
+  confidenceThreshold: 0.4,
+  timeoutMs: 1_500,
+  memorySnapshot: ({ contactPhone, ...rest }) => rest,
+  llm: { adapter: ChatGptBrainAdapter, model: 'gpt-4.1-mini', providerOptions: { temperature: 0 } },
 },
 ```
 
@@ -452,13 +504,13 @@ Studio reports **token usage only** (`BRAIN_USAGE` per call, `BRAIN_USAGE_SUMMAR
 
 All JSON-LLM stock adapters share the same scan/clarify/judge contracts: HTTP timeout **3s**; scan failure → unknown; live path with no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code** via `brainAdapter`.
 
-**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on extract (clarify answer strings too). Stock JSON-LLM adapters **fail closed** before the provider when `utteranceLooksLikePromptInjection()` matches (scan → unknown / `prompt_injection_blocked`; clarify → `cannotAnswer`). Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
+**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on clarify answer strings. Stock JSON-LLM adapters **fail closed** before the provider when `utteranceLooksLikePromptInjection()` matches (scan → unknown / `prompt_injection_blocked`; clarify → `cannotAnswer`). Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
 
 Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 
 ### Email PII helpers (boxed)
 
-Voice / ASR email recovery — use on listen extracts; fail closed before writing memory.
+Voice / ASR email recovery — use in the Node that reads the answer; fail closed before writing memory.
 
 **Import (preferred):**
 
@@ -474,9 +526,9 @@ Also available from `@guidify-ai/vapi-studio`.
 
 | Export | Role |
 | --- | --- |
-| `EMAIL_EXTRACT_DESCRIPTION` | GOT string for `extract.fields[].description` (normal + spelled ASR) |
+| `EMAIL_EXTRACT_DESCRIPTION` | Field description for `ctx.clarify` (normal + spelled ASR) |
 | `parseSpelledEmail(raw)` | Direct `name@domain` or spelled (`mark at example dot com`, letter-by-letter) → address or `null` |
-| `collectedEmail(extracted, spoken)` | Prefer Brain extract, then spoken |
+| `collectedEmail(candidate, spoken)` | Prefer a candidate value (e.g. from `ctx.clarify`), then parse the spoken text |
 
 See [identity-and-pii.md](../best-practices/identity-and-pii.md).
 
@@ -537,11 +589,11 @@ Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engage
 
 **Mad is sticky for one re-engage:** once in the `mad` portal, Supervisor does not offer other portals (or unknown) until the caller continues / goodbyes / transfers. Apps should **not** keep de-escalating forever — typical policy is one apology listen, then transfer on a second mad hit. Other listens may still escalate *into* mad via `studio.isMad`.
 
-**Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). That path stamps `resolvedVia = force_intention` so the walk accepts still-there; Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` **Continue-replays** the origin listen (same utterance) — do not steal a new “how can I help?” CTA.
+**Still-there is force-only:** `studio.isStillThere` may enter the portal only via `handleTurn({ forceIntention })` (idle / Vapi speech-timeout). That path stamps `resolvedVia = force_intention` so the walk accepts still-there; Brain must not promote filler like “hey?” into still-there mid-flow. While in the portal, `studio.isPositive` / `isContinue` returns to the origin the same way as Continue (below) — do not steal a new “how can I help?” CTA.
 
-**`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId`, refreshes that Node’s listen (preferring the **listen snapshot** taken when the portal opened — so `sayAndListen` overrides and `resolveIntention` survive), re-scans the **same** user utterance, and routes again (skips re-selecting `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior.
+**`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId` and the **listen snapshot** taken when the portal opened (so `sayAndListen` overrides and `resolveIntention` survive), and the origin **repeats its question** — the `sayAndListen` text saved on that listen as `listen.question`. The caller's utterance ("okay, I'll stay", "yes, still here") answered the portal, so it is **never** scanned as an answer to the origin: on a yes/no origin ("I heard 555-010-0999 — is that correct?") agreement must not count as confirmation. `run()` is not re-executed, so origin side effects (SMS, API calls) do not repeat. Only when the snapshot has no `question` does Supervisor fall back to re-scanning the same utterance against the origin listen (skipping `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior. Content the caller adds while declining the portal ("no thanks, my number is 555…") is routed only if the portal's listen offers that product intention and the scan picks it over `isContinue`; otherwise the origin re-asks and the caller repeats.
 
-**Unknown origin consume:** While `studio.isUnknownTransition` is the active portal, the **next** user utterance is first matched against the **origin listen** (same snapshot). If `resolveIntention` or Brain yields a walkable non-unknown intention, Supervisor exits the portal and routes that intention on **this turn** (`ROUTE_DECISION.resolvedVia = unknown_origin_consume`) — it must not steal the turn via unknown’s thin candidate list (e.g. mapping “as soon as possible” to an unrelated roof-estimate path). If the origin still cannot accept the utterance, the normal unknown listen / recovery path runs.
+**Unknown origin consume:** While `studio.isUnknownTransition` is the active portal, the **next** user utterance is first matched against the **origin listen** (same snapshot). If `resolveIntention` or Brain yields a walkable non-unknown intention, Supervisor exits the portal and routes that intention on **this turn** (`ROUTE_DECISION.resolvedVia = unknown_origin_consume`) — it must not steal the turn via unknown’s thin candidate list (e.g. mapping “as soon as possible” to an unrelated estimate path). If the origin still cannot accept the utterance, the normal unknown listen / recovery path runs.
 
 ## Vapi integration
 
@@ -691,6 +743,7 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 | `ANTHROPIC_API_KEY` | — | Claude Brain adapter secret |
 | `GOOGLE_API_KEY` | — | Gemini Brain adapter (or `GEMINI_API_KEY`) |
 | `XAI_API_KEY` | — | Grok Brain adapter secret |
+| `TYPESAFE_API_KEY` | — | TypeSafe Jev Brain adapter secret |
 | `STUDIO_CONSOLE_DEBUG` | on | Pretty stdout |
 | `STUDIO_FILE_LOG` | on | Daily files |
 | `LOG_DIR` | `logs` | Directory the **app** owns (project `logs/`); framework writes `dailyYYYYMMDD.log` here |

@@ -46,7 +46,6 @@ export function listenForensics(
       boost: i.boost,
       priority: i.priority,
     })),
-    extractKeys: (listen.extract?.fields ?? []).map((f) => f.key),
     timeoutSeconds: listen.timeoutSeconds ?? null,
     hasResolveIntention:
       'resolveIntention' in listen &&

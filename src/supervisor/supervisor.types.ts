@@ -25,7 +25,6 @@ export interface TurnExecutionResult {
   result: NodeResult;
   actions: OutputAction[];
   portalOriginRestored?: string | null;
-  extracted?: Record<string, unknown>;
 }
 
 /** Injectable services shared by all Supervisor method modules. */

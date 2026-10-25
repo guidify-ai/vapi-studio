@@ -150,7 +150,14 @@ export async function routeIntentions(this: SupervisorEngine, input: {
         intention: intentionName,
       });
 
-      const can = await node.before(ctx);
+      let beforeError: unknown;
+      let can: boolean;
+      try {
+        can = await node.before(ctx);
+      } catch (error) {
+        beforeError = error ?? new Error(`${candidate.id} before() threw`);
+        can = true;
+      }
       if (!can) {
         rejected.push({
           nodeId: candidate.id,
@@ -268,6 +275,7 @@ export async function routeIntentions(this: SupervisorEngine, input: {
         ctx,
         restarts: 0,
         forceHop,
+        beforeError,
       });
 
       if (executed.kind === 'forceIntention') {

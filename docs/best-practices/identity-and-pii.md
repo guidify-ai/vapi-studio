@@ -45,8 +45,8 @@ import {
 
 | Export | Role |
 | --- | --- |
-| `EMAIL_EXTRACT_DESCRIPTION` | `extract.fields[].description` so Brain GOT knows spelled ASR (`at` / `dot` / letter-by-letter) |
-| `collectedEmail(extracted, spoken)` | Prefer Brain extract, then spoken; `null` on fail |
+| `EMAIL_EXTRACT_DESCRIPTION` | Field description for `ctx.clarify` so the chat model knows spelled ASR (`at` / `dot` / letter-by-letter) |
+| `collectedEmail(candidate, spoken)` | Prefer a candidate value (e.g. from `ctx.clarify`), then parse the spoken text; `null` on fail |
 | `parseSpelledEmail(raw)` | Direct `name@domain` **or** spelled forms |
 
 Fail closed → re-ask the same CTA. Prefer a read-back confirm before sending mail (“I heard … Is that correct?”). Do not hardcode demo emails in production paths; PoC mocks belong behind clearly named constants and mock-only branches.

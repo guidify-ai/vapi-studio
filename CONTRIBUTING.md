@@ -57,6 +57,11 @@ See [ARD-0005](./docs/ards/ARD-0005-release-flow.md). In short:
 4. `develop` → `master` PR, tag `vX.Y.Z` on master, `npm publish` from the tag.
 5. Apps switch to the exact published version right away.
 
+Every release has an article in [`docs/releases/`](./docs/releases/README.md)
+([ARD-0007](./docs/ards/ARD-0007-release-articles.md)). **Feature PRs add their
+section to the upcoming article** — what, **why**, trade-offs, reference. A
+feature without reasoning does not ship.
+
 ## Local setup
 
 ```bash

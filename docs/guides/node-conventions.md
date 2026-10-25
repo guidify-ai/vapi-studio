@@ -12,11 +12,11 @@ Human-readable summary of agent-step conventions. Doctrine: [nodes-and-listens.m
 
 Declare in source in **runtime call order**:
 
-1. `before()` — CAN gate **and** async prep (auth warm, JWT spawn, lookups needed to authorize). Prefer non-blocking spawn when speech must not wait; `await` only for the gate.
-2. `listen()` — register extract / intentions (before speech completes); no I/O
+1. `before()` — CAN gate **and** async prep (auth warm, JWT spawn, lookups needed to authorize, reading the caller's answer from `ctx.userText`). Throw when the answer breaks the Node's expectations — `catch()` handles it. Prefer non-blocking spawn when speech must not wait; `await` only for the gate.
+2. `listen()` — register intentions / hints (before speech completes); no I/O
 3. `run()` — speech + one terminal output only; do not overload with integrations that belong in `before()` / `after()`
 4. `after()` — teardown / non-speech side effects after the terminal action (no TTS)
-5. `catch()` — only when overridden
+5. `catch()` — only when overridden; handles errors from `before()` and `run()`
 
 Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
@@ -31,7 +31,7 @@ Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-b
 
 ## Listed choices
 
-After numbered options, always the same closing question pattern via `listedChoiceQuestion` / `listedChoiceListen` — pick N or neither.
+Speak options as a person would — “9, 10, or 11 am — which works?” — never as an IVR menu (“1) …, 2) …”). Keep a cheap `resolveIntention` that accepts the option's words, ordinals (“the first one”, “second”) and “neither”, even though no numbers were spoken.
 
 Soft affirmatives that do **not** pick N (“yeah, why not”, bare “sure”) are not a choice — re-ask which option with cheap `resolveIntention`; do not send them to Brain/unknown ([conversation-design.md](../best-practices/conversation-design.md#do-not-auto-pick-lanes)).
 

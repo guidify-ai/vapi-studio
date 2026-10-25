@@ -122,8 +122,12 @@ provider quirks.
 4. Prefer shipped `docs/` and `docs/reference/runtime-api.md` over historical
    SpecKit dumps.
 5. Amendments bump the constitution version (MAJOR / MINOR / PATCH) with dates.
+6. Every feature MUST state its reasoning in the release article
+   (`docs/releases/vX.Y.Z.md`, ARD-0007). No reasoning, no release. No version
+   is published without maintainer sign-off on the reference apps (ARD-0005).
 
-**Version**: 2.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-24  
+**Version**: 2.3.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-25  
+*(2.3.0 — Release articles with per-feature reasoning; sign-off before every release.)*  
 *(2.2.0 — Decision boundary: no app content or remote facts in the framework.)*  
 *(2.1.0 — North Star: Vapi-only toolkit; adapters are not a multi-provider seam.)*  
 *(2.0.0 — public framework constitution; Guidify product IP removed.)*

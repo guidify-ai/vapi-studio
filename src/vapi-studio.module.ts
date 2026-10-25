@@ -26,6 +26,9 @@ import {
 } from './intention/code-intention';
 import {
   STUDIO_BRAIN_CONFIG,
+  STUDIO_BRAIN_LLM,
+  llmBrainConfig,
+  routeBrainLlm,
   resolveStudioBrainConfig,
   type StudioBrainConfig,
 } from './brain/brain-config';
@@ -162,8 +165,25 @@ export class VapiStudioModule {
         },
         FlowLoader,
         BrainAdapterClass,
-        { provide: BRAIN_SERVICE, useExisting: BrainAdapterClass },
+        {
+          provide: BRAIN_SERVICE,
+          useFactory: (scanner: BrainAdapter, llm: BrainAdapter | null) =>
+            routeBrainLlm(scanner, llm),
+          inject: [BrainAdapterClass, STUDIO_BRAIN_LLM],
+        },
         { provide: STUDIO_BRAIN_CONFIG, useValue: brainConfig },
+        {
+          provide: STUDIO_BRAIN_LLM,
+          useFactory: (usage: BrainUsageTracker, events: EventService) =>
+            brainConfig.llm
+              ? new brainConfig.llm.adapter(
+                  usage,
+                  events,
+                  llmBrainConfig(brainConfig.llm),
+                )
+              : null,
+          inject: [BrainUsageTracker, EventService],
+        },
         { provide: STUDIO_CONVERSATION_LIMITS, useValue: conversationLimits },
         SupervisedConversationRegistry,
         ConversationRepository,

@@ -248,7 +248,6 @@ function listenSummary(listen: unknown): string {
   const L = listen as {
     intentions?: Array<{ name?: string; boost?: number; priority?: number }>;
     hints?: string[];
-    extract?: { fields?: Array<{ key?: string }> };
     timeoutSeconds?: number;
   };
   const intents = (L.intentions ?? [])
@@ -261,16 +260,12 @@ function listenSummary(listen: unknown): string {
       return `${name}${boost}`;
     })
     .join(paint(ANSI.dim, ', '));
-  const fields = (L.extract?.fields ?? [])
-    .map((f) => paint(ANSI.yellow, f.key ?? '?'))
-    .join(paint(ANSI.dim, ', '));
   const timeout =
     typeof L.timeoutSeconds === 'number'
       ? paint(ANSI.dim, `${L.timeoutSeconds}s`)
       : '';
   const parts = [
     intents || paint(ANSI.dim, 'no intents'),
-    fields ? `extract[${fields}]` : '',
     timeout,
   ].filter(Boolean);
   return parts.join(paint(ANSI.dim, ' | '));
@@ -404,9 +399,6 @@ export function printConversationConsole(
         paint(ANSI.green, '→'),
         paint(ANSI.magenta + ANSI.bold, String(payload.winner ?? '?')),
         payload.reason ? paint(ANSI.dim, String(payload.reason)) : '',
-        payload.extracted
-          ? paint(ANSI.yellow, `extract=${formatValue(payload.extracted)}`)
-          : '',
         payload.durationMs != null
           ? paint(ANSI.dim, `${payload.durationMs}ms`)
           : '',
@@ -579,12 +571,6 @@ export function printConversationConsole(
           listenSummary(payload.listen),
         ]);
       }
-      if (payload.extracted && Object.keys(payload.extracted as object).length) {
-        line([
-          paint(ANSI.dim, '       extract'),
-          formatValue(payload.extracted),
-        ]);
-      }
       return;
 
     case 'NODE_ENTER':
@@ -613,26 +599,6 @@ export function printConversationConsole(
         listenSummary(payload.listen),
         paint(ANSI.dim, String(payload.class ?? payload.nodeId ?? '')),
       ]);
-      return;
-
-    case 'LISTEN_EXTRACT_REGISTERED':
-      line([
-        roleTag(ANSI.bgGray, ANSI.white, 'EXTRACT'),
-        formatValue(payload.fields),
-        paint(ANSI.dim, String(payload.nodeId ?? '')),
-      ]);
-      return;
-
-    case 'LISTEN_EXTRACTED':
-      line([
-        roleTag(ANSI.bgGray, ANSI.white, 'EXTRACTED'),
-        formatValue(payload.extracted),
-        Array.isArray(payload.missingRequired) &&
-        (payload.missingRequired as unknown[]).length
-          ? paint(ANSI.red, `missing=${formatValue(payload.missingRequired)}`)
-          : '',
-      ]);
-      if (payload.memory) printMemoryDiff(payload.memory, payload);
       return;
 
     case 'NODE_AFTER':

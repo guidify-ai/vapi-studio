@@ -34,6 +34,8 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
   ctx: NodeContext;
   restarts: number;
   forceHop: number;
+  /** Error thrown by `before()` during the walk; handled by `catch()` like a run() error. */
+  beforeError?: unknown;
 }): Promise<
   | { kind: 'done'; result: NodeResult }
   | { kind: 'forceIntention'; intention: string }
@@ -47,6 +49,21 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
     ctx,
     restarts,
   } = input;
+
+  let pendingError: unknown;
+  if (input.beforeError !== undefined) {
+    if (restarts === 0) {
+      pendingError = input.beforeError;
+    } else {
+      try {
+        if (!(await node.before(ctx))) {
+          pendingError = new Error(`${candidate.id} rejected before() on restart`);
+        }
+      } catch (error) {
+        pendingError = error;
+      }
+    }
+  }
 
   // Register listen BEFORE speech so mid-talk interrupts still bind here.
   const listenExpectation = await node.listen(ctx);
@@ -87,26 +104,21 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
   }
 
   try {
+    if (pendingError !== undefined) throw pendingError;
     const result = await node.run(ctx);
     if (result.kind === 'sayAndListen') {
-      runtime.listenExpectation = mergeSayAndListenOptions(
+      const merged = mergeSayAndListenOptions(
         runtime.listenExpectation,
         result.sayAndListen,
-      );
+      ) ?? { intentions: [] };
+      runtime.listenExpectation = result.text?.trim()
+        ? { ...merged, question: result.text.trim() }
+        : merged;
       this.stampListenTimeout(
         runtime,
         node,
         result.sayAndListen?.timeoutSeconds,
       );
-      if (result.sayAndListen?.extract?.fields?.length) {
-        this.events.log('info', 'LISTEN_EXTRACT_REGISTERED', {
-          conversationId: runtime.conversationId,
-          runtimeInstanceId: runtime.runtimeInstanceId,
-          nodeId: candidate.id,
-          fields: result.sayAndListen.extract.fields,
-          hasOnExtracted: Boolean(result.sayAndListen.extract.onExtracted),
-        });
-      }
     }
     await node.after(ctx, result);
     this.events.log('info', 'NODE_AFTER', {

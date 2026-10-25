@@ -154,13 +154,11 @@ describe('Portal still-there enter/exit', () => {
     assert.equal(runtime.normalFlowNodeId, 'origin');
   });
 
-  it('positive reply while in still-there Continue-replays origin listen', async () => {
+  it('positive reply while in still-there re-asks the origin question', async () => {
     const brain = new MockBrainService();
-    // After silent portal exit, same utterance is re-scanned against origin.
-    brain.setSequence('state-machine', [
-      STANDARD_INTENTIONS.isPositive,
-      'isOriginContinue',
-    ]);
+    // "yes still here" answers the portal; it must not reach the origin's
+    // resolveIntention (which would read "yes" as an answer).
+    brain.setSequence('state-machine', [STANDARD_INTENTIONS.isPositive]);
     brain.setActiveProfile('state-machine');
     const supervisor = buildSupervisor(brain);
     const runtime = new SupervisedConversation({
@@ -188,8 +186,10 @@ describe('Portal still-there enter/exit', () => {
     });
     assert.equal(runtime.portalState.activePortalId, null);
     assert.equal(runtime.portalState.stillThere.attempts, 0);
-    assert.equal(resumed.selectedNodeId, 'originContinue');
-    assert.match(String(resumed.result.text), /Resumed with: yes still here/i);
+    assert.equal(resumed.selectedNodeId, 'origin');
+    assert.equal(runtime.currentNodeId, 'origin');
+    assert.equal(resumed.result.text, 'What is your first name?');
+    assert.equal(runtime.listenExpectation?.question, 'What is your first name?');
   });
 
   it('second still-there ask ends the call', async () => {

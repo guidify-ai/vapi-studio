@@ -3,7 +3,7 @@
  * Not executed by the framework package.
  *
  * Bridges onStudioEvent → Redis Streams so a separate consumer (analytics,
- * warehouse, …) can read the same way Roofr → ecosystem-analytics does.
+ * warehouse, …) can read the events out of process.
  *
  * Requires: yarn add ioredis
  * Env: STUDIO_EVENTS_REDIS_URL, STUDIO_EVENTS_REDIS_STREAM (optional)
