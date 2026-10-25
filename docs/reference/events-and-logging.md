@@ -78,7 +78,7 @@ Types below appear on the bus when emitted via `emit` / `persist` /
 
 | Event | Answers |
 | --- | --- |
-| `BRAIN_SCAN_START` / `BRAIN_SCAN_RESULT` | Intention / extract scan |
+| `BRAIN_SCAN_START` / `BRAIN_SCAN_RESULT` | Intention scan |
 | `BRAIN_JUDGE_START` / `BRAIN_JUDGE_RESULT` | Judge pass |
 | `BRAIN_CLARIFY_START` / `BRAIN_CLARIFY_RESULT` | Clarify pass |
 | `BRAIN_USAGE` / `BRAIN_USAGE_SUMMARY` | Token counts per Brain call / per call and model (live adapters; no cost) |

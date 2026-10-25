@@ -12,8 +12,8 @@ App identity: **`config/project.identity.json`** (`slug` / `name`). App boot ups
 | Claude | `ClaudeBrainAdapter` | `ANTHROPIC_API_KEY` |
 | Gemini | `GeminiBrainAdapter` | `GOOGLE_API_KEY` (alias `GEMINI_API_KEY`) |
 | Grok | `GrokBrainAdapter` | `XAI_API_KEY` |
-| OpenAI Decisions | `OpenAiDecisionsBrainAdapter` | `OPENAI_API_KEY` (+ the `brain.delegate` adapter's key) |
-| TypeSafe Jev (experimental) | `TypeSafeJevBrainAdapter` | `TYPESAFE_API_KEY` (+ the `brain.delegate` adapter's key) |
+| OpenAI Decisions | `OpenAiDecisionsBrainAdapter` | `OPENAI_API_KEY` (+ the `brain.llm` adapter's key) |
+| TypeSafe Jev (experimental) | `TypeSafeJevBrainAdapter` | `TYPESAFE_API_KEY` (+ the `brain.llm` adapter's key) |
 | Mock | `MockBrainAdapter` / `Mock*BrainAdapter` | none |
 
 **Brain model and confidence** are set in `VapiStudioModule.forRoot({ brain })` — not env.

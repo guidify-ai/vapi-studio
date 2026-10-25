@@ -57,7 +57,7 @@ must be an option.
 | Defaults: listen 2.5 s, confidence 0.4, form ACK 15 s, fill-out 10 min, resume 10 min, log retention 14 days | Mechanism tuning | Each is overridable (Node/listen, `brain`, env, form spec, `withinMs`, `LOG_DAYS`) |
 | Scan history size (8 chat / 8 nodes), compaction sizes | Mechanism (internal) | Prompt-construction detail, not an app-visible behaviour |
 | English Brain system prompts | Mechanism (internal) | Instructions to the model, never spoken to a caller |
-| English mock yes/no parsing | Mechanism (tests) | `MockBrainAdapter` only; live adapters extract via the model |
+| English mock yes/no parsing | Mechanism (tests) | `MockBrainAdapter` only; live adapters answer via the model |
 | `parseSpokenEmail` English rules | Opt-in helper | Apps call it explicitly |
 | Form page English text | Opt-in helper | Apps call the renderers; every string is an option |
 | Provider API URLs | Invariant (protocol) | The adapter *is* the protocol binding |

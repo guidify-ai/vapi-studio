@@ -11,7 +11,7 @@ Ask **one** clear call-to-action per assistant turn. Never combine unrelated dec
 | “Is it okay if I text you a form? What’s the best mobile?” | Turn 1: “OK to text a short form?” → Turn 2: “Best mobile?” |
 | “Do you want an appointment or an estimate, and what’s your address?” | Offer **or** collect address — not both |
 
-**Prefer more Nodes** (or `continueTo` hops) over stuffing two CTAs into one `sayAndListen`. Combined prompts cause ambiguous answers, wrong intention routing, and extract pollution.
+**Prefer more Nodes** (or `continueTo` hops) over stuffing two CTAs into one `sayAndListen`. Combined prompts cause ambiguous answers, wrong intention routing, and polluted data.
 
 Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a different number”) — that is still one decision: confirm destination vs provide another.
 
@@ -21,9 +21,9 @@ There is **no unlimited conversation**. The framework enforces `limits.maxTurns`
 
 ## Fail closed on constrained fields
 
-If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, listed choice 1…N), the extractor must:
+If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, listed choice 1…N), the Node that reads the answer must:
 
-1. Know the constraint (local parser **and** Brain extract `description`).
+1. Know the constraint (local parser, and the field `description` when it uses `ctx.clarify`).
 2. Accept only valid recoveries (e.g. strip `+1`, take first 10 digits, drop trailing “hello”).
 3. **Fail** (re-ask that same single CTA) when recovery is impossible — never invent or store junk.
 4. For spoken phones: **always read back and confirm** before using the number (separate CTA).

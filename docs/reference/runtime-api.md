@@ -168,11 +168,11 @@ String-only intention names in `flow.yaml` still work (`phase: scan` behavior).
 
 `AgentNode<TSchema>` — declare overrides in **runtime order**:
 
-1. `before(ctx)` — authorize / prepare; `false` rejects this candidate. Put **async prep** here (JWT/API warm, auth). Prefer spawn-without-await when first speech must stay fast; `await` only when the gate needs the result. Do not dump that I/O into `run()`.
-2. `listen(ctx)` — register the **next** listen (intentions, hints, extract, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind (no I/O)
+1. `before(ctx)` — authorize / prepare; `false` rejects this candidate ("not my turn"). Read the data this Node needs from `ctx.userText` here or in `run()`, and **throw** when the answer breaks the Node's expectations — `catch()` handles it. Put **async prep** here (JWT/API warm, auth). Prefer spawn-without-await when first speech must stay fast; `await` only when the gate needs the result. Do not dump that I/O into `run()`.
+2. `listen(ctx)` — register the **next** listen (intentions, hints, optional `timeoutSeconds`) **before** speech so mid-talk interrupts still bind (no I/O)
 3. `run(ctx)` — **required**; speech + exactly one terminal output action — keep integrations/teardown out unless speak cannot proceed without the result
 4. `after(ctx, result)` — teardown for this execution (non-speech side effects; no TTS)
-5. `catch(ctx, error)` — optional recovery (`restartNode`, `forceIntention`, `catchResult`, `rethrowCatch`)
+5. `catch(ctx, error)` — optional recovery from errors thrown in `before()` or `run()`: `forceIntention(...)` (e.g. route back so the asking Node re-asks, rephrased for the failure), `catchResult(...)`, `restartNode()`, or `rethrowCatch()` (default — the call breaks and the Node needs fixing)
 
 Doctrine: [`docs/best-practices/nodes-and-listens.md`](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
@@ -205,7 +205,7 @@ export class AskTimelineNode extends AgentNode {
 
 A Node may `say()` several times in one turn. It must finish with exactly one of:
 
-- `sayAndListen(text, options?)` — speak and wait (optional `extract`, `timeoutSeconds`, `onExtracted` that **the app** writes into memory)
+- `sayAndListen(text, options?)` — speak and wait (optional `intentions`, `hints`, `timeoutSeconds`, `interruptible`, `resolveIntention`)
 - `endCall(text?)` — ends the Conversation (Vapi → end-call tool)
 - `transferToHuman(destination?)` — phone transfer (Vapi → `transferCall` tool)
 - `handoff({ to, reason?, payload?, text? })` — leave this **workflow module** without ending the Conversation (`to` = module id; Vapi → Squad handoff tool). Requires a loaded `workflow.yaml`.
@@ -331,9 +331,29 @@ Native Vapi members use `kind: vapi` (no flow file) — Vapi Studio only emits t
 
 Portals stay globally eligible in every module (same runtime).
 
-### Listen / extract
+### Listen: where to go, not what was said
 
-`listen()` / `sayAndListen({ extract })` tell Brain what to score and which JSON fields to pull. The framework does not auto-assign memory: `onExtracted` is application-owned. Listen timeout is documented above.
+`listen()` / `sayAndListen()` tell the scan which intentions to score. An intention answers one question — where the call goes next — and never carries data ([ARD-0008](../ards/ARD-0008-pure-intentions.md)). One intention per outcome of the call to action: "gave a number", not "gave a good number" / "gave a bad number".
+
+The **Node that handles the answer extracts the data**: read `ctx.userText` in `before()` or `run()` with whatever works (code, regex, direct use, or `ctx.clarify` for messy input), triage it (good, incomplete, wrong, too much) and ask follow-ups. When the answer breaks what the Node expects, throw; `catch()` can route back so the asking Node re-asks, rephrased for the failure.
+
+```ts
+export class UsePhoneNode extends AgentNode<Schema> {
+  async before(ctx) {
+    const digits = ctx.userText.replace(/\D/g, '');
+    if (digits.length !== 10) throw new FlowUncertainError('phone needs 10 digits', { digits });
+    ctx.memory.phone = digits;
+    return true;
+  }
+  async catch(ctx, error) {
+    ctx.memory.phoneProblem = error.details?.digits;
+    return forceIntention('isRetryPhone'); // the asking Node re-asks
+  }
+  async run(ctx) { /* … */ }
+}
+```
+
+Listen timeout is documented above.
 
 **Closed choice (`resolveIntention`)** — after the bot listed numbered options, attach a cheap matcher on the listen. If it returns an intention name that is on that listen, Supervisor **skips Brain** and walks that intention at confidence 1 (no 3s abort). Return `null` to fall through to Brain so portals and unknown still work. Use this for pick-N / neither, not for free-form answers. A skipped scan still advances `brainSequenceIndex` so MockBrain sequences stay aligned.
 
@@ -410,8 +430,8 @@ Port (`BrainService` / `BrainAdapter`) — Supervisor depends only on this:
 
 | Method | Use |
 | --- | --- |
-| `scan` | Rank candidates + optional `extracted` map |
-| `clarify` | Structured Q&A; always `{ answer: object }` |
+| `scan` | Rank candidates (intentions only — no data) |
+| `clarify` | Structured Q&A; always `{ answer: object }`. Nodes use it to read messy answers |
 | `judge` | LLM-as-a-judge for **evals**; rare on the live path |
 
 Judge result: `{ passed, confidence, reasoning, belowThreshold }`. `confidence` is always `/^\d\.\d{6}$/`. Threshold does **not** flip `passed`. Trusted pass = `passed && !belowThreshold`. Paid e2e evals are not in the current delivery slice.
@@ -434,7 +454,7 @@ Stock adapters:
 | `confidenceThreshold` | no | Scan floor, default `0.4`. |
 | `timeoutMs` | no | Abort one provider round-trip after this many ms → unknown transition. Default `3000`; set it from the model's measured latency. |
 | `memorySnapshot` | no | `(memory) => object` — what the scanner sees of memory. Default: the whole user memory (bootstrap keys dropped). Return a trimmed / redacted copy to keep PII away from the provider. |
-| `delegate` | decision drivers | `{ adapter, model, providerOptions?, timeoutMs? }` — LLM adapter for listen extraction, `clarify`, `judge`. |
+| `llm` | decision drivers | `{ adapter, model, providerOptions?, timeoutMs? }` — chat model serving Nodes' `ctx.clarify` / `ctx.judge`. Optional with an LLM scanner (unset → the scanner answers them). |
 
 ```ts
 brain: {
@@ -450,7 +470,7 @@ brain: {
 
 **Deterministic matchers come first and feed the scan.** A listen `resolveIntention` hit or a match-phase `CodeIntention` at/above the threshold routes with no scan (cheap, exact). When the scan does run, the context carries `priors`: `expected` (candidates with a listen/CodeIntention `boost`, highest first) and `localMatches` (match-phase scores that fired below the threshold). The scanner treats them as weak hints. LLM scans get `localMatches` too (boosts were already in their candidate list).
 
-Decision models cannot extract or write. Listen `extract` fields go to `brain.delegate.clarify` **in parallel** with scoring; `clarify()` / `judge()` go to the delegate. No delegate → extraction is skipped (error log `BRAIN_EXTRACT_SKIPPED`) and `clarify` / `judge` throw.
+Decision models cannot write. A scan never extracts (no driver does); `clarify()` / `judge()` go to `brain.llm`. Without `brain.llm`, they throw a configuration error.
 
 **Every candidate needs a description.** A missing one logs an error and the scan returns `studio.isUnknownTransition` (`reason: missing_intention_description`, `missing: [...]`). Sources, first non-empty wins: listen `intentions[].description` → `CodeIntention.description` → flow.yaml `intentions` → `STANDARD_INTENTION_DESCRIPTIONS` (built-in `studio.*`). LLM adapters also receive descriptions and memory, but do not require them.
 
@@ -469,7 +489,7 @@ brain: {
   confidenceThreshold: 0.4,
   timeoutMs: 1_500,
   memorySnapshot: ({ contactPhone, ...rest }) => rest,
-  delegate: { adapter: ChatGptBrainAdapter, model: 'gpt-4.1-mini', providerOptions: { temperature: 0 } },
+  llm: { adapter: ChatGptBrainAdapter, model: 'gpt-4.1-mini', providerOptions: { temperature: 0 } },
 },
 ```
 
@@ -484,13 +504,13 @@ Studio reports **token usage only** (`BRAIN_USAGE` per call, `BRAIN_USAGE_SUMMAR
 
 All JSON-LLM stock adapters share the same scan/clarify/judge contracts: HTTP timeout **3s**; scan failure → unknown; live path with no pre-scan hold; first speech target **< 1.5s**. Do not special-case Vapi stale repeats in the scan prompt. Enable in **application code** via `brainAdapter`.
 
-**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on extract (clarify answer strings too). Stock JSON-LLM adapters **fail closed** before the provider when `utteranceLooksLikePromptInjection()` matches (scan → unknown / `prompt_injection_blocked`; clarify → `cannotAnswer`). Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
+**Prompt injection:** Brain never streams prose to the caller. Scan/clarify/judge use `brainUntrustedInputRules()`, JSON-only responses, intention allowlists, and `sanitizeExtractedFieldValue()` on clarify answer strings. Stock JSON-LLM adapters **fail closed** before the provider when `utteranceLooksLikePromptInjection()` matches (scan → unknown / `prompt_injection_blocked`; clarify → `cannotAnswer`). Caller payloads use `untrustedCallerText`. Agent steps must not speak raw ASR or Brain `reason`. See [brain-and-prompt-injection.md](../best-practices/brain-and-prompt-injection.md).
 
 Exports: `brainUntrustedInputRules`, `looksLikePromptInjection`, `utteranceLooksLikePromptInjection`, `sanitizeExtractedFieldValue`, `wrapUntrustedUserText`.
 
 ### Email PII helpers (boxed)
 
-Voice / ASR email recovery — use on listen extracts; fail closed before writing memory.
+Voice / ASR email recovery — use in the Node that reads the answer; fail closed before writing memory.
 
 **Import (preferred):**
 
@@ -506,9 +526,9 @@ Also available from `@guidify-ai/vapi-studio`.
 
 | Export | Role |
 | --- | --- |
-| `EMAIL_EXTRACT_DESCRIPTION` | GOT string for `extract.fields[].description` (normal + spelled ASR) |
+| `EMAIL_EXTRACT_DESCRIPTION` | Field description for `ctx.clarify` (normal + spelled ASR) |
 | `parseSpelledEmail(raw)` | Direct `name@domain` or spelled (`mark at example dot com`, letter-by-letter) → address or `null` |
-| `collectedEmail(extracted, spoken)` | Prefer Brain extract, then spoken |
+| `collectedEmail(candidate, spoken)` | Prefer a candidate value (e.g. from `ctx.clarify`), then parse the spoken text |
 
 See [identity-and-pii.md](../best-practices/identity-and-pii.md).
 

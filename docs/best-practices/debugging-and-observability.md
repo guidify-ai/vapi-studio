@@ -25,7 +25,7 @@ Before merging conversation/routing work, confirm logs can answer:
 2. **How was the intention chosen?** (`listen_resolve` vs Brain scores + reasons, or `CONDITION_TRANSITION` / `resolvedVia: condition_force|condition_boost` — console **FORCE** / **WHEN**)
 3. **Why did this Node win?** (`ROUTE_DECISION`: walk order, listen boosts, `rejected[]` with `before_false` / `missing`, winner)
 4. **Which form sendout lane?** (`FORM_SENDOUT`: conversation `branch` + adapter `deliveryBranch` — console **FORM** — before ACK/submit). Resends show as `FORM_RESEND` / `FORM_RESENT` (same exposeId).
-5. **What did the Node do?** (`NODE_AFTER.resultDetail`: say text, `continueTo` target+reason, listen/extract keys)
+5. **What did the Node do?** (`NODE_AFTER.resultDetail`: say text, `continueTo` target+reason, listen keys)
 6. **What memory flags mattered?** MEMORY diffs include `introSpoken`, consent, phone confirm, `formSendoutBranch`, etc. (do not strip conversation-critical booleans)
 7. **Constrained field outcomes?** e.g. `PHONE_DIGITS_EVAL`: raw ASR, normalized digits, count, accepted path
 

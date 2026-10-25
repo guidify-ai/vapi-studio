@@ -21,17 +21,27 @@ Start  →  Greeting (flow.start)  →  …
 
 Each Node should own a small slice: one ask, one verification, one side effect, or one lane step. If you need two sequential CTAs, use two Nodes (or `output.continueTo({ nodeId })`) — see [conversation-design.md](./conversation-design.md).
 
+### One exit per Node (advice)
+
+Prefer one `sayAndListen` per Node: one call to action, one listen set. Studio allows several exits, but each brings its own possible intentions; when the sets overlap, explaining why the call reached the next Node takes an analytics investigation. Split cases into Nodes and let gate intentions (force-phase `CodeIntention`, `transitions`) route between them ([ARD-0008](../ards/ARD-0008-pure-intentions.md)).
+
+## Intentions route; the next Node extracts
+
+An intention answers one question: **where does the call go next**. It never carries data, and there is one intention per outcome of the call to action ("gave a number", not "gave a good number"). It can come from the caller's words or be an `if` gate on call state.
+
+The Node that handles the answer reads `ctx.userText` and extracts what it needs — in `before()`, `run()`, or a helper; with code, regex, direct use, or `ctx.clarify`. It triages the value (good, incomplete, wrong, too much) and asks follow-ups. Data that breaks the Node's expectations is an error like a breached method signature: throw, and let `catch()` decide — `forceIntention(...)` back so the asking Node re-asks, rephrased for the failure; `catchResult(...)`; or rethrow (the Node needs fixing).
+
 ## Prefer `before()` / `after()` for async work
 
 Do **not** overload `run()` with auth, CRM lookups, JWT warmups, or post-speak teardown. `run()` owns **speech + one terminal output** (`sayAndListen` / `continueTo` / `endCall` / …). Keep side effects on the lifecycle hooks:
 
 | Hook | Role | Async guidance |
 | --- | --- | --- |
-| **`before(ctx)`** | CAN gate + prepare | Authorize (`return false` to reject). **Prep / warm** integrations here. Prefer **spawn without awaiting** when the token is for *later* Nodes (do not block first SSE — target &lt; 1.5s). `await` only when the gate itself needs the result. |
-| **`listen(ctx)`** | Next listen binding | Register intentions / extract **before** speech; no I/O. |
+| **`before(ctx)`** | CAN gate + prepare | Authorize (`return false` to reject). Read the caller's answer here when this Node needs data; throw when it breaks expectations. **Prep / warm** integrations here. Prefer **spawn without awaiting** when the token is for *later* Nodes (do not block first SSE — target &lt; 1.5s). `await` only when the gate itself needs the result. |
+| **`listen(ctx)`** | Next listen binding | Register intentions / hints **before** speech; no I/O. |
 | **`run(ctx)`** | Speak + terminal action | Copy and routing only. Do not nest “fetch then greet” unless the speak **cannot** proceed without the result. |
 | **`after(ctx, result)`** | Teardown | Fire-and-forget analytics stamps that are not on the critical path, release handles, log completion. Must not speak. |
-| **`catch(ctx, error)`** | Recovery | Only when overridden. |
+| **`catch(ctx, error)`** | Recovery | Only when overridden. Handles errors from `before()` and `run()`. |
 
 Detached promises from `before()` should land in a Nest service / `Map<conversationId, Promise<…>>` (or similar), not assume late `ctx.memory` writes persist after the turn. Later Nodes `await` that shared promise when they need the value.
 
@@ -41,7 +51,6 @@ Whatever you just asked for, `listen()` should advertise:
 
 - Intention names + boosts for that answer class
 - `hints` for the Brain (short, operational)
-- `extract` fields with **constraint-aware** `description`s when collecting data
 - `resolveIntention` for cheap local matches (skip Brain when obvious) — include short answers like “new one” / “yes” / “ASAP” when the ask is constrained
 - **Open-ended discovery:** prefer `INTENTION_CASCADE_PHASE.Scan` for the catch-all answer intention (so Brain can classify short/ambiguous turns). Use Match only for clear proceed phrases; keep FAQ as Force. `resolveIntention` should skip Brain for long substantive answers (≥ ~12 chars) and re-ask soft affirmatives locally — do **not** Match every ≥4-char utterance (that starves Scan)
 - **Multi-choice soft affirmatives** (“yeah, why not”, bare “sure”) that do **not** name an option → re-ask which lane locally; never leave that to Brain/unknown ([conversation-design.md](./conversation-design.md#do-not-auto-pick-lanes))
@@ -51,13 +60,13 @@ Whatever you just asked for, `listen()` should advertise:
 
 Do not leave a broad “collect name” listen active while you are asking for SMS consent.
 
-## Extracts teach the Brain
+## Parsers spell the rule
 
-`description` is part of the product. Spell the rule:
+The receiving Node's parser is part of the product. Spell the rule in code, and in the field `description` when you hand messy input to `ctx.clarify`:
 
 > North American mobile: exactly 10 digits. Prefer the first 10 digit characters; ignore trailing words. Fail if fewer than 10.
 
-Local parsers and GOT must agree. Prefer framework boxed helpers from `@guidify-ai/vapi-studio/identity` (`collectedEmail`, `EMAIL_EXTRACT_DESCRIPTION`); app helpers (`collectedPhone`, `collectedPersonName`, …) for the rest — called from `onExtracted`.
+Prefer framework boxed helpers from `@guidify-ai/vapi-studio/identity` (`collectedEmail`, `EMAIL_EXTRACT_DESCRIPTION`); app helpers (`collectedPhone`, `collectedPersonName`, …) for the rest — called from the Node that reads the answer.
 
 ## Memory writes are guarded
 

@@ -1,6 +1,6 @@
 # ARD-0008: Pure intentions — the scan decides where to go, nodes extract data
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-10-25
 - **Tags:** runtime | brain | intentions | nodes
 

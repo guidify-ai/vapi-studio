@@ -22,9 +22,9 @@ Caller audio / ASR is **untrusted**. A user asking for a pancake recipe, jailbre
 
 Vapi Studio’s deterministic model:
 
-- **Brain** returns JSON only (intention scores + allowlisted extract fields) — never caller-facing prose
+- **Brain** returns JSON only (intention scores; clarify answers limited to requested fields) — never caller-facing prose
 - **Supervisor + agent steps** own routing and **all spoken copy**
-- Framework Brain adapters apply [`brainUntrustedInputRules`](../best-practices/brain-and-prompt-injection.md), candidate allowlists, extract sanitization, and a **pre-LLM fail-closed gate** on injection-shaped ASR (all stock JSON-LLM providers share this path)
+- Framework Brain adapters apply [`brainUntrustedInputRules`](../best-practices/brain-and-prompt-injection.md), candidate allowlists, answer sanitization, and a **pre-LLM fail-closed gate** on injection-shaped ASR (all stock JSON-LLM providers share this path)
 
 App authors must not echo raw `userText` or Brain `reason` to the caller, and must not add unconstrained sidecar LLM chat on the same call.
 

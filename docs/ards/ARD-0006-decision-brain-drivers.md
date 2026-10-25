@@ -1,6 +1,6 @@
 # ARD-0006: Decision-model Brain drivers (OpenAI Decisions, TypeSafe Jev)
 
-- **Status:** Accepted
+- **Status:** Accepted (decision 6 superseded by [ARD-0008](./ARD-0008-pure-intentions.md))
 - **Date:** 2026-10-25
 - **Tags:** brain | adapters | intentions
 
@@ -22,7 +22,7 @@ calibrated probability and bill input tokens only:
   live API, until someone runs it on real calls.
 
 Both are cheaper per scan than an LLM (no output tokens) and faster. Neither can
-generate text, so neither can extract field values or answer `clarify`.
+generate text, so neither can answer `clarify` or `judge`.
 
 A model that sees only the intention name (`wantsReschedule`) guesses at its
 meaning. Names were enough for LLM prompts that also saw the Node's hints; a
@@ -55,10 +55,11 @@ per-question probability model needs the meaning stated.
    `priors`: Node-author boosts on expected intentions, and match-phase scores
    that fired below the threshold (`BrainScanInput.localSignals`). They are weak
    hints — the model still judges the caller's words.
-6. **Extraction is delegated.** `brain.delegate` names an LLM adapter + model.
-   Listen `extract` fields go to `delegate.clarify` in parallel with scoring;
-   `clarify()` and `judge()` forward to it. Without a delegate, extraction is
-   skipped with an error log and `clarify` / `judge` throw a configuration error.
+6. ~~**Extraction is delegated.**~~ *Superseded by
+   [ARD-0008](./ARD-0008-pure-intentions.md):* scans never extract; the Node
+   that handles the answer does. `brain.llm` (formerly `brain.delegate`) names
+   the chat model that serves `clarify()` and `judge()`; without it they throw a
+   configuration error.
 
 Built-in `studio.*` descriptions are model instructions, never spoken to callers,
 so they sit on the framework side of ARD-0004 like the existing scan prompts.
@@ -68,8 +69,8 @@ Model ids and prices stay out of the framework (ARD-0003).
 
 - Apps that switch to a decision driver must describe every intention a scan can
   see. Apps on LLM adapters are unaffected.
-- A decision scan with listen extraction costs one decision call plus one LLM
-  call; turns without extraction pay only the decision call.
+- A decision scan is one provider call. A Node that needs a chat model to read
+  the answer calls `ctx.clarify` itself (ARD-0008).
 - Scores are no longer mutually exclusive. Several intentions can clear the
   threshold; the Supervisor's priority walk already handles that.
 - The JSON context counts against provider limits (OpenAI 256 KiB JSON, Jev 64k

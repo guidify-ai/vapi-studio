@@ -12,11 +12,11 @@ Human-readable summary of agent-step conventions. Doctrine: [nodes-and-listens.m
 
 Declare in source in **runtime call order**:
 
-1. `before()` — CAN gate **and** async prep (auth warm, JWT spawn, lookups needed to authorize). Prefer non-blocking spawn when speech must not wait; `await` only for the gate.
-2. `listen()` — register extract / intentions (before speech completes); no I/O
+1. `before()` — CAN gate **and** async prep (auth warm, JWT spawn, lookups needed to authorize, reading the caller's answer from `ctx.userText`). Throw when the answer breaks the Node's expectations — `catch()` handles it. Prefer non-blocking spawn when speech must not wait; `await` only for the gate.
+2. `listen()` — register intentions / hints (before speech completes); no I/O
 3. `run()` — speech + one terminal output only; do not overload with integrations that belong in `before()` / `after()`
 4. `after()` — teardown / non-speech side effects after the terminal action (no TTS)
-5. `catch()` — only when overridden
+5. `catch()` — only when overridden; handles errors from `before()` and `run()`
 
 Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-before--after-for-async-work).
 
