@@ -1,32 +1,15 @@
 /**
- * Shared model pricing shape + multi-provider USD estimates for Brain usage.
+ * Brain usage USD estimates. Prices come from the app (`brain.pricing`);
+ * Studio ships no price table.
  */
 
-import {
-  CHEAP_OPENAI_MODELS,
-  isCheapOpenAiModel,
-} from './openai-cheap-models';
-import {
-  CHEAP_CLAUDE_MODELS,
-  isCheapClaudeModel,
-} from './claude-cheap-models';
-import {
-  CHEAP_GEMINI_MODELS,
-  isCheapGeminiModel,
-} from './gemini-cheap-models';
-import {
-  CHEAP_GROK_MODELS,
-  isCheapGrokModel,
-} from './grok-cheap-models';
+import type { BrainModelPricing } from './brain-config';
 
+/** Model the stock adapters call: provider id plus optional app pricing. */
 export interface LlmModelPricing {
-  /** Display / API model id. */
+  /** Provider model id. */
   id: string;
-  /** USD per 1M input tokens. */
-  inputPerMillion: number;
-  /** USD per 1M output tokens. */
-  outputPerMillion: number;
-  note?: string;
+  pricing?: BrainModelPricing;
 }
 
 export type TokenUsage = {
@@ -35,16 +18,8 @@ export type TokenUsage = {
   total_tokens?: number;
 };
 
-export function lookupModelPricing(model: string): LlmModelPricing | null {
-  if (isCheapOpenAiModel(model)) return CHEAP_OPENAI_MODELS[model];
-  if (isCheapClaudeModel(model)) return CHEAP_CLAUDE_MODELS[model];
-  if (isCheapGeminiModel(model)) return CHEAP_GEMINI_MODELS[model];
-  if (isCheapGrokModel(model)) return CHEAP_GROK_MODELS[model];
-  return null;
-}
-
 export function estimateUsdFromPricing(
-  pricing: LlmModelPricing | null | undefined,
+  pricing: BrainModelPricing | null | undefined,
   promptTokens: number,
   completionTokens: number,
 ): number {
@@ -56,17 +31,14 @@ export function estimateUsdFromPricing(
   return inCost + outCost;
 }
 
-/**
- * Approximate USD from any stock Brain cheap whitelist (OpenAI / Claude / Gemini / Grok).
- * Unknown models → 0 (still track tokens).
- */
+/** Approximate USD for one call. No pricing → 0 (tokens still tracked). */
 export function estimateUsdCost(input: {
-  model: string;
+  pricing?: BrainModelPricing | null;
   promptTokens: number;
   completionTokens: number;
 }): number {
   return estimateUsdFromPricing(
-    lookupModelPricing(input.model),
+    input.pricing,
     input.promptTokens,
     input.completionTokens,
   );

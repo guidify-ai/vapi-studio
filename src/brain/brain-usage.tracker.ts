@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { BrainModelPricing } from './brain-config';
 import { estimateUsdCost } from './llm-model-pricing';
 
 export type BrainCallKind = 'scan' | 'clarify' | 'judge';
@@ -20,7 +21,7 @@ export interface BrainUsageSummary {
   promptTokens: number;
   completionTokens: number;
   totalTokens: number;
-  /** Approximate USD from whitelist pricing table. */
+  /** Approximate USD from app `brain.pricing` (0 when not configured). */
   estimatedUsd: number;
   byModel: Record<
     string,
@@ -69,6 +70,7 @@ export class BrainUsageTracker {
     model: string;
     promptTokens: number;
     completionTokens: number;
+    pricing?: BrainModelPricing;
   }): BrainUsageRecord {
     this.beginCall(input.providerCallId, input.conversationId);
     const bucket = this.byCall.get(input.providerCallId)!;
@@ -84,7 +86,7 @@ export class BrainUsageTracker {
       completionTokens,
       totalTokens: promptTokens + completionTokens,
       estimatedUsd: estimateUsdCost({
-        model: input.model,
+        pricing: input.pricing,
         promptTokens,
         completionTokens,
       }),

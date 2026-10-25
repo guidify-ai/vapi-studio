@@ -32,6 +32,7 @@ not change behavior — unless reviewers ask for one.
 | ARD | Title | Status |
 | --- | --- | --- |
 | [ARD-0001](./ARD-0001-host-scoped-vapi-ingress.md) | Host-scoped Vapi ingress (no project UUID in path) | Accepted |
+| [ARD-0003](./ARD-0003-model-agnostic-brain.md) | Model-agnostic Brain adapters (no model whitelist / default) | Accepted |
 
 Constitution: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)  
 Contributing: [CONTRIBUTING.md](../../CONTRIBUTING.md)

@@ -6,7 +6,7 @@
 
 ```text
 my-bot/                         ← clone of vapi-studio-project
-├── package.json                ← "@guidify-ai/vapi-studio": "0.1.2"
+├── package.json                ← "@guidify-ai/vapi-studio": "0.1.3"
 ├── config/
 │   ├── project.identity.json   ← name + slug (from .env)
 │   └── flow.yaml

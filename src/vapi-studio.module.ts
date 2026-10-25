@@ -77,7 +77,7 @@ export interface VapiStudioModuleOptions {
   eventListeners?: Array<Type<StudioEventListener>>;
   /**
    * Brain settings (model, scan threshold). Code layer — not .env.
-   * `model` must be on the cheap whitelist. Default gpt-4.1-nano / 0.4.
+   * `model` is any provider model id (required by stock LLM adapters); threshold default 0.4.
    */
   brain?: StudioBrainConfig;
   /**

@@ -23,7 +23,7 @@ Application-specific agent steps, copy, and flows do **not** belong in this repo
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.2"
+    "@guidify-ai/vapi-studio": "0.1.3"
   }
 }
 ```
@@ -40,7 +40,7 @@ VapiStudioModule.forRoot({
   entryPoint: MyConversationEntry,
   brainAdapter: MockBrainAdapter,        // or ChatGpt / Claude / Gemini / Grok / app class
   brain: {
-    model: 'gpt-4.1-nano',               // adapter cheap whitelist; not .env
+    model: 'gpt-6-luna',                 // any provider model id; app-owned, not .env
     confidenceThreshold: 0.4,
   },
   limits: {
@@ -416,12 +416,31 @@ Judge result: `{ passed, confidence, reasoning, belowThreshold }`. `confidence` 
 
 Stock adapters:
 
-**Live (JSON-LLM, cheap whitelist only):**
+**Live (JSON-LLM, model-agnostic):** each adapter speaks one provider's HTTP API; the **app** names the model. Studio ships no model list, default model, or price table ([ARD-0003](../ards/ARD-0003-model-agnostic-brain.md)).
 
-- `ChatGptBrainAdapter` — OpenAI (`gpt-4.1-nano`, `gpt-4o-mini`, `gpt-4.1-mini`, `gpt-5.4-nano`). Env: `OPENAI_API_KEY`.
-- `ClaudeBrainAdapter` — Anthropic Haiku (`claude-haiku-4-5-20251001`, `claude-3-5-haiku-latest`, …). Env: `ANTHROPIC_API_KEY`.
-- `GeminiBrainAdapter` — Gemini Flash (`gemini-2.0-flash`, `gemini-2.0-flash-lite`, …). Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
-- `GrokBrainAdapter` — xAI Grok (`grok-3-mini`, `grok-4-fast-non-reasoning`, …) via OpenAI-compatible API. Env: `XAI_API_KEY`.
+- `ChatGptBrainAdapter` — OpenAI Chat Completions (JSON mode). Env: `OPENAI_API_KEY`.
+- `ClaudeBrainAdapter` — Anthropic Messages (`max_tokens: 1024` unless overridden). Env: `ANTHROPIC_API_KEY`.
+- `GeminiBrainAdapter` — Google `generateContent` (`responseMimeType: application/json`). Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`).
+- `GrokBrainAdapter` — xAI OpenAI-compatible Chat Completions (JSON mode). Env: `XAI_API_KEY`.
+
+`brain` config for stock LLM adapters:
+
+| Field | Required | Meaning |
+| --- | --- | --- |
+| `model` | yes | Provider model id, passed through as-is. Missing → adapter throws (scan → unknown). |
+| `providerOptions` | no | Merged into the provider request body (plain objects one level deep). Studio sends **no** sampling settings itself — add `temperature`, `reasoning_effort`, Gemini `generationConfig`, … here as your model allows. |
+| `pricing` | no | `{ inputPerMillion, outputPerMillion }` USD for `BRAIN_USAGE` / `BRAIN_COST_SUMMARY`. Omit → tokens tracked, USD `0`. |
+| `confidenceThreshold` | no | Scan floor, default `0.4`. |
+
+```ts
+brain: {
+  model: 'gpt-6-luna',
+  providerOptions: { reasoning_effort: 'none' }, // keep live scans ~1s on reasoning models
+  pricing: { inputPerMillion: 0.1, outputPerMillion: 0.5 },
+},
+```
+
+Pick a model your provider still serves and that answers within the 3s scan timeout. Provider deprecations are an app config change, not a Studio upgrade.
 
 **Mock (deterministic sequences / profiles; no provider network):**
 
@@ -460,7 +479,7 @@ See [identity-and-pii.md](../best-practices/identity-and-pii.md).
 
 Apps may supply their own adapter (e.g. HTTP Brain) via `brainAdapter`.
 
-Brain **model** and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — model must be on the **selected adapter’s** cheap whitelist (default when omitted). Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
+Brain **model**, **provider options**, **pricing**, and **scan threshold** are `VapiStudioModule.forRoot({ brain })` — any model id the selected adapter's provider accepts; no framework default. Provider **API keys** belong in `.env`. End of call may log `BRAIN_COST_SUMMARY` when a stock LLM adapter recorded usage.
 
 ## Studio UI (operator SPA)
 
