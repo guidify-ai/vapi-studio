@@ -2,6 +2,15 @@
 
 Thanks for contributing to **`@guidify-ai/vapi-studio`** (framework only).
 
+## North Star
+
+**Vapi Studio is a toolkit for building on [Vapi](https://vapi.ai).** Vapi is
+required, not one channel among many. Before opening a PR, ask: *does this make
+building on Vapi better?* If the change makes Studio work without Vapi, or makes
+Vapi swappable for another platform, it will be declined.
+See the [constitution](./.specify/memory/constitution.md#north-star) and
+[ARD-0002](./docs/ards/ARD-0002-vapi-only-north-star.md).
+
 ## What belongs here
 
 | In this repo | Not in this repo |
@@ -9,6 +18,7 @@ Thanks for contributing to **`@guidify-ai/vapi-studio`** (framework only).
 | Runtime, adapters, persistence, Studio UI package bits | Customer bot flows / copy |
 | Public docs + ARDs | Commercial product roadmap / private strategy |
 | SpecKit for **framework** features | App-only Nest projects (use the starter) |
+| Vapi features and companion surfaces that serve a Vapi call (SMS form links, analytics, CRM hooks) | Adapters for other voice/agent platforms (Twilio Voice, Retell, Bland, LiveKit, …) or a provider-agnostic layer |
 
 ## Pull requests
 
