@@ -6,8 +6,8 @@
 
 ## Context
 
-0.1.2 shipped a correct Supervisor routing fix that broke a behaviour the
-landing-page sample relied on. Nobody noticed: the maintainer-owned apps stayed
+0.1.2 shipped a correct Supervisor routing fix that broke a behaviour one of
+the projects built on Studio relied on. Nobody noticed: the maintainer-owned apps stayed
 on 0.1.1 and only met the change while the next release was being prepared,
 after 0.1.2 was already public. Unit tests in
 this repo cannot catch an app that depended on old behaviour; only the apps can.
@@ -27,9 +27,9 @@ A version moves through five stages. Each stage gates the next.
    `"@guidify-ai/vapi-studio": "file:../vapi-studio"` (app Dockerfiles build the
    sibling framework when the dependency is `file:`). Each app is adapted to any
    breaking change, type-checks, builds, and passes its tests against `develop`.
-3. **Sign-off.** The maintainer runs the reference apps and makes real calls:
-   the **production reference app** and the **landing-page sample**
-   (`vapi-studio-sample-landing-llm`) are the required checks. The release is
+3. **Sign-off.** The maintainer runs the reference apps (maintainer-owned
+   projects built on Studio, chosen to cover different runtime paths) and makes
+   real calls; every reference app is a required check. The release is
    **ready** only when the maintainer says so. Defects found here are fixed on
    `develop` (framework) or in the app, then re-checked. **No exceptions:**
    patch and hotfix releases need the same sign-off. When a release adds a

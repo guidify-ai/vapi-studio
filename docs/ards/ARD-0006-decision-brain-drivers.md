@@ -17,7 +17,9 @@ calibrated probability and bill input tokens only:
 - **OpenAI Decisions** — `POST /v1/decisions`, `predicate` questions (1–400 per
   request), JSON context via `input_json`, shared-prefix prompt caching.
 - **TypeSafe Jev** — `POST /v1/systemone`, `noul` questions keyed by id, a
-  `state` string or object, 64k-token context.
+  `state` string or object, 64k-token context. The driver ships
+  **experimental**: tested against recorded request/response shapes, not the
+  live API, until someone runs it on real calls.
 
 Both are cheaper per scan than an LLM (no output tokens) and faster. Neither can
 generate text, so neither can extract field values or answer `clarify`.

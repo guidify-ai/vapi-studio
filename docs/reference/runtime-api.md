@@ -446,7 +446,7 @@ brain: {
 **Live (decision models, scan only)** — [ARD-0006](../ards/ARD-0006-decision-brain-drivers.md). Decision models answer yes/no questions with a probability and are billed for input tokens only. Studio asks **one predicate per candidate intention** ("does the caller's latest turn express `<name>`? Meaning: `<description>`") over a JSON context: untrusted caller text, last 8 chat + node history entries, hints, and the memory snapshot. Scores are independent (they do not sum to 1), rounded to 6 decimals, and go through the same threshold → unknown-transition rules. Refused questions are skipped.
 
 - `OpenAiDecisionsBrainAdapter` — `POST /v1/decisions` (e.g. `model: 'gpt-6-luna'`). Env: `OPENAI_API_KEY`.
-- `TypeSafeJevBrainAdapter` — `POST https://api.typesafe.ai/v1/systemone`, `noul` questions (e.g. `model: 'jev-latest'`). Env: `TYPESAFE_API_KEY`.
+- `TypeSafeJevBrainAdapter` (**experimental** — not yet tested against the live API) — `POST https://api.typesafe.ai/v1/systemone`, `noul` questions (e.g. `model: 'jev-latest'`). Env: `TYPESAFE_API_KEY`.
 
 **Deterministic matchers come first and feed the scan.** A listen `resolveIntention` hit or a match-phase `CodeIntention` at/above the threshold routes with no scan (cheap, exact). When the scan does run, the context carries `priors`: `expected` (candidates with a listen/CodeIntention `boost`, highest first) and `localMatches` (match-phase scores that fired below the threshold). The scanner treats them as weak hints. LLM scans get `localMatches` too (boosts were already in their candidate list).
 

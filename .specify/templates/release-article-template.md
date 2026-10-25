@@ -37,7 +37,8 @@ should upgrade, the one thing to watch for. Reused as GitHub release / post text
 - **Automated (framework):** suites, counts, runtime.
 - **Projects built on Studio:** against which build, their suites (never name them).
 - **Evals:** what ran, or why none.
-- **Manual sign-off:** calls made, on which configuration, by whom.
+- **Manual sign-off:** what the calls check and on which configuration; no
+  call counts, timings or costs.
 - **Not tested:** be explicit.
 
 ## Upgrade guide

@@ -21,6 +21,8 @@ type JevResponse = {
 /**
  * TypeSafe Jev Brain adapter — `POST /v1/systemone`, one `noul` question per candidate.
  *
+ * Experimental: tested against recorded request/response shapes only, not the live API.
+ *
  * Scores only; listen extraction / clarify / judge use `brain.delegate`.
  * Env: TYPESAFE_API_KEY. Model from `brain.model` (e.g. `jev-latest`).
  */
