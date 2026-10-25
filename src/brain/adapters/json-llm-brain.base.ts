@@ -45,7 +45,6 @@ import {
 import { snapshotUserMemory } from '../../events/conversation-console';
 import {
   brainUntrustedInputRules,
-  sanitizeExtractedFieldValue,
   utteranceLooksLikePromptInjection,
   wrapUntrustedUserText,
 } from '../prompt-injection-guard';
@@ -124,7 +123,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     const listen = input.listen ?? input.runtime.listenExpectation;
     const threshold = resolveConfidenceThreshold(input.confidenceThreshold);
     const candidates = this.resolveCandidates(input);
-    const extractFields = listen?.extract?.fields ?? [];
     const series = detectUserSpeechSeries(input.userText);
 
     this.usage.beginCall(
@@ -142,7 +140,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       series: series.isSeries,
       seriesParts: series.parts,
       candidateCount: candidates.length,
-      extractKeys: extractFields.map((f) => f.key),
       threshold,
     });
 
@@ -181,7 +178,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
 
     const system = buildScanSystemPrompt({
       candidates,
-      extractFields,
       hints: listen?.hints,
       threshold,
       series,
@@ -259,7 +255,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
         confidence?: number;
         reason?: string;
       }>;
-      extracted?: Record<string, unknown>;
     };
 
     const allowed = new Set(candidates.map((c) => c.name));
@@ -276,8 +271,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
         reason: i.reason,
       }));
 
-    const extracted = this.filterExtracted(parsed.extracted, extractFields);
-
     if (allBelowConfidenceThreshold(scores, threshold)) {
       this.events.log('info', 'BRAIN_SCAN_RESULT', {
         adapter: this.adapterId,
@@ -287,7 +280,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
         reason: 'below_confidence_threshold',
         threshold,
         scores,
-        extracted,
         usage,
         durationMs,
       });
@@ -298,7 +290,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
             series: series.isSeries,
           }),
         ],
-        extracted,
       };
     }
 
@@ -316,15 +307,11 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       model: model.id,
       winner: ranked[0]?.name,
       scores,
-      extracted,
       usage,
       durationMs,
     });
 
-    return {
-      intentions: ranked,
-      extracted,
-    };
+    return { intentions: ranked };
   }
 
   public async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
@@ -539,29 +526,6 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     });
   }
 
-  private filterExtracted(
-    raw: Record<string, unknown> | undefined,
-    fields: Array<{ key: string }>,
-  ): Record<string, unknown> | undefined {
-    if (!fields.length || !raw || typeof raw !== 'object') {
-      return undefined;
-    }
-    const allowed = new Set(fields.map((f) => f.key));
-    const out: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(raw)) {
-      if (!allowed.has(key)) continue;
-      if (value === undefined || value === null || value === '') continue;
-      if (typeof value === 'string') {
-        const sanitized = sanitizeExtractedFieldValue(value);
-        if (sanitized === undefined) continue;
-        out[key] = sanitized;
-        continue;
-      }
-      out[key] = value;
-    }
-    return Object.keys(out).length ? out : undefined;
-  }
-
   private resolveCandidates(input: BrainScanInput): BrainIntentionOption[] {
     if (input.candidates?.length) {
       return input.candidates;
@@ -602,24 +566,18 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
 
 function buildScanSystemPrompt(input: {
   candidates: BrainIntentionOption[];
-  extractFields: Array<{
-    key: string;
-    description?: string;
-    type?: string;
-    required?: boolean;
-  }>;
   hints?: string[];
   threshold: number;
   series: { isSeries: boolean; parts: string[] };
 }): string {
   return [
     ...brainUntrustedInputRules('scan'),
-    'You are the Vapi Studio Brain for a voice bot: score intentions and extract fields.',
+    'You are the Vapi Studio Brain for a voice bot: score intentions. Never extract data.',
     'Score ONLY the provided candidate intentions for the latest user utterance.',
     'Use compact history and memory (facts collected so far) for context; the latest untrustedCallerText is the turn to score.',
     'Each candidate may carry a description of what it means — score by that meaning, not just the name.',
     'Return ONLY valid JSON of the form:',
-    '{"intentions":[{"name":"<exact candidate name>","confidence":0.123456,"reason":"<short>"}],"extracted":{"<key>":"<value>"}}',
+    '{"intentions":[{"name":"<exact candidate name>","confidence":0.123456,"reason":"<short>"}]}',
     'confidence is 0..1 inclusive with 6 decimal places. NEVER return a value above 1.',
     'Include every candidate you can score. Boost is a hint, not a score.',
     'localMatches (when present) are scores from keyword/pattern matchers that were too unsure to decide — weak hints only.',
@@ -636,16 +594,6 @@ function buildScanSystemPrompt(input: {
           `Series parts: ${JSON.stringify(input.series.parts)}`,
         ].join(' ')
       : '',
-    input.extractFields.length
-      ? `Extract these fields into "extracted" (omit key if truly unknown; strip fillers from values): ${JSON.stringify(
-          input.extractFields.map((f) => ({
-            key: f.key,
-            description: f.description,
-            type: f.type ?? 'string',
-            required: f.required ?? false,
-          })),
-        )}`
-      : 'No extract fields — return "extracted": {}.',
     `Candidates: ${JSON.stringify(
       input.candidates.map((c) => ({
         name: c.name,

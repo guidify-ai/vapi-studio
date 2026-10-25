@@ -71,13 +71,12 @@ describe('route-forensics helpers', () => {
     ]);
   });
 
-  it('listenForensics includes boosts and extract keys', () => {
+  it('listenForensics includes boosts', () => {
     const row = listenForensics({
       intentions: [
         { name: 'isCollectedPhone', boost: 28 },
         { name: 'studio.isPositive', boost: 8 },
       ],
-      extract: { fields: [{ key: 'phone', type: 'string', required: true }] },
       timeoutSeconds: 1,
       resolveIntention: () => null,
     });
@@ -85,7 +84,7 @@ describe('route-forensics helpers', () => {
       { name: 'isCollectedPhone', boost: 28, priority: undefined },
       { name: 'studio.isPositive', boost: 8, priority: undefined },
     ]);
-    assert.deepEqual(row.extractKeys, ['phone']);
+    assert.equal('extractKeys' in row, false);
     assert.equal(row.timeoutSeconds, 1);
     assert.equal(row.hasResolveIntention, true);
   });

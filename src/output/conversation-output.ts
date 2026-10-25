@@ -1,8 +1,4 @@
-import type {
-  ListenExtractField,
-  ListenExtractSpec,
-  SayAndListenOptions,
-} from '../conversation/listen-expectation';
+import type { SayAndListenOptions } from '../conversation/listen-expectation';
 
 export type OutputKind =
   | 'say'
@@ -37,7 +33,7 @@ export interface OutputAction {
    * Does not emit a Squad handoff — stays on the current assistant.
    */
   continueToNodeId?: string;
-  /** Present when sayAndListen declared listen/extract for the next answer. */
+  /** Present when sayAndListen set listen options for the next answer. */
   sayAndListen?: SayAndListenOptions;
   /** Present when kind === 'toolCall' — raw channel tool by advertised name. */
   toolCall?: ToolCallRequest;
@@ -225,5 +221,4 @@ export class BufferedConversationOutput implements ConversationOutput {
   }
 }
 
-/** Re-export for callers that import extract types via output. */
-export type { ListenExtractField, ListenExtractSpec, SayAndListenOptions };
+export type { SayAndListenOptions };

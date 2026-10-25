@@ -58,9 +58,13 @@ export async function executeModuleEntryTurn(this: SupervisorEngine, input: {
     memory: snapshotUserMemory(runtime.memory as Record<string, unknown>),
   });
 
-  const can = await node.before(ctx);
-  if (!can) {
-    throw new Error(`Module entry node ${entryId} rejected before()`);
+  let beforeError: unknown;
+  try {
+    if (!(await node.before(ctx))) {
+      throw new Error(`Module entry node ${entryId} rejected before()`);
+    }
+  } catch (error) {
+    beforeError = error;
   }
 
   if (candidate.portal) {
@@ -79,6 +83,7 @@ export async function executeModuleEntryTurn(this: SupervisorEngine, input: {
     ctx,
     restarts: 0,
     forceHop: 0,
+    beforeError,
   });
 
   if (executed.kind === 'forceIntention') {
@@ -171,9 +176,13 @@ export async function executeOpeningTurn(this: SupervisorEngine, input: {
     memory: snapshotUserMemory(runtime.memory as Record<string, unknown>),
   });
 
-  const can = await node.before(ctx);
-  if (!can) {
-    throw new Error(`Opening start node ${startId} rejected before()`);
+  let beforeError: unknown;
+  try {
+    if (!(await node.before(ctx))) {
+      throw new Error(`Opening start node ${startId} rejected before()`);
+    }
+  } catch (error) {
+    beforeError = error;
   }
 
   if (candidate.portal) {
@@ -192,6 +201,7 @@ export async function executeOpeningTurn(this: SupervisorEngine, input: {
     ctx,
     restarts: 0,
     forceHop: 0,
+    beforeError,
   });
 
   if (executed.kind === 'forceIntention') {
@@ -289,9 +299,13 @@ export async function executeToolResultTurn(this: SupervisorEngine, input: {
     turnNumber: runtime.turn.turnNumber,
   });
 
-  const can = await node.before(ctx);
-  if (!can) {
-    throw new Error(`Tool-result node ${entryId} rejected before()`);
+  let beforeError: unknown;
+  try {
+    if (!(await node.before(ctx))) {
+      throw new Error(`Tool-result node ${entryId} rejected before()`);
+    }
+  } catch (error) {
+    beforeError = error;
   }
 
   if (candidate.portal) {
@@ -310,6 +324,7 @@ export async function executeToolResultTurn(this: SupervisorEngine, input: {
     ctx,
     restarts: 0,
     forceHop: 0,
+    beforeError,
   });
 
   if (executed.kind === 'forceIntention') {

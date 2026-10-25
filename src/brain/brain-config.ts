@@ -9,25 +9,27 @@
  */
 
 import type { BrainAdapter } from './brain.port';
+import type { BrainClarifyRequest } from './brain-clarify';
+import type { BrainJudgeRequest } from './brain-judge';
 import type { BrainUsageTracker } from './brain-usage.tracker';
 import type { EventService } from '../events/event.service';
 import { DEFAULT_BRAIN_CONFIDENCE_THRESHOLD } from './brain-ranking';
 
 export const STUDIO_BRAIN_CONFIG = Symbol('STUDIO_BRAIN_CONFIG');
-/** LLM adapter instance that a decision Brain uses for extraction / clarify / judge. */
-export const STUDIO_BRAIN_DELEGATE = Symbol('STUDIO_BRAIN_DELEGATE');
+/** Chat-model adapter instance (`brain.llm`) serving Nodes' clarify / judge. */
+export const STUDIO_BRAIN_LLM = Symbol('STUDIO_BRAIN_LLM');
 
 /** Stock LLM adapter constructor shape (ChatGpt / Claude / Gemini / Grok). */
-export type BrainDelegateAdapterClass = new (
+export type BrainLlmAdapterClass = new (
   usage: BrainUsageTracker,
   events: EventService,
   brainConfig?: StudioBrainConfig,
 ) => BrainAdapter;
 
-export interface BrainDelegateConfig {
+export interface BrainLlmConfig {
   /** LLM adapter class, e.g. `ChatGptBrainAdapter`. */
-  adapter: BrainDelegateAdapterClass;
-  /** Model id for the delegate (its own provider's id). */
+  adapter: BrainLlmAdapterClass;
+  /** Model id for this chat model (its own provider's id). */
   model: string;
   providerOptions?: Record<string, unknown>;
   timeoutMs?: number;
@@ -59,10 +61,11 @@ export interface StudioBrainConfig {
    */
   memorySnapshot?: (memory: Record<string, unknown>) => Record<string, unknown>;
   /**
-   * Decision drivers (OpenAI Decisions, TypeSafe Jev) only score. Listen field
-   * extraction, `clarify`, and `judge` go to this LLM adapter.
+   * Chat model that serves Nodes' `ctx.clarify` / `ctx.judge`. Required with a
+   * decision driver (OpenAI Decisions, TypeSafe Jev), which only scores. With
+   * an LLM scanner it is optional; unset, the scanner answers them itself.
    */
-  delegate?: BrainDelegateConfig;
+  llm?: BrainLlmConfig;
 }
 
 export type ResolvedStudioBrainConfig = {
@@ -71,7 +74,7 @@ export type ResolvedStudioBrainConfig = {
   providerOptions?: Record<string, unknown>;
   timeoutMs?: number;
   memorySnapshot?: (memory: Record<string, unknown>) => Record<string, unknown>;
-  delegate?: BrainDelegateConfig;
+  llm?: BrainLlmConfig;
 };
 
 export function resolveStudioBrainConfig(
@@ -87,18 +90,38 @@ export function resolveStudioBrainConfig(
     providerOptions: input?.providerOptions,
     timeoutMs: positiveMs(input?.timeoutMs),
     memorySnapshot: input?.memorySnapshot,
-    delegate: input?.delegate,
+    llm: input?.llm,
   };
 }
 
-/** Delegate settings as a Brain config for the delegate adapter's constructor. */
-export function delegateBrainConfig(
-  delegate: BrainDelegateConfig,
-): StudioBrainConfig {
+/** `brain.llm` settings as a Brain config for that adapter's constructor. */
+export function llmBrainConfig(llm: BrainLlmConfig): StudioBrainConfig {
   return {
-    model: delegate.model,
-    providerOptions: delegate.providerOptions,
-    timeoutMs: delegate.timeoutMs,
+    model: llm.model,
+    providerOptions: llm.providerOptions,
+    timeoutMs: llm.timeoutMs,
+  };
+}
+
+/**
+ * Brain the app and Nodes see: scans from the scanner, clarify / judge from
+ * `brain.llm` when one is configured.
+ */
+export function routeBrainLlm(
+  scanner: BrainAdapter,
+  llm: BrainAdapter | null | undefined,
+): BrainAdapter {
+  if (!llm) return scanner;
+  return {
+    scan: (input) => scanner.scan(input),
+    clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
+      request: BrainClarifyRequest,
+    ) {
+      return llm.clarify<TAnswer>(request);
+    },
+    judge<TContext = unknown>(request: BrainJudgeRequest<TContext>) {
+      return llm.judge<TContext>(request);
+    },
   };
 }
 

@@ -13,28 +13,13 @@ import {
   VapiSseCompiler,
 } from '../dist/adapters/vapi/vapi-sse.compiler.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
+import { mockExtractPersonName } from '../dist/conversation/listen-expectation.js';
 
 class AcknowledgeNode extends AgentNode {
   async run(ctx) {
     const companyName = ctx.conversation?.variables?.companyName ?? 'Acme';
     return ctx.output.sayAndListen(
       `Hi, thanks for calling ${companyName}. What's your first name?`,
-      {
-        extract: {
-          fields: [
-            {
-              key: 'firstName',
-              type: 'string',
-              required: true,
-            },
-          ],
-          onExtracted: (data) => {
-            if (typeof data.firstName === 'string') {
-              ctx.memory.callerName = data.firstName;
-            }
-          },
-        },
-      },
     );
   }
 }
@@ -47,6 +32,11 @@ class AlwaysRejectNode extends AgentNode {
   }
 }
 class MultiSayNode extends AgentNode {
+  async before(ctx) {
+    const name = mockExtractPersonName(ctx.userText);
+    if (name) ctx.memory.callerName = name;
+    return true;
+  }
   async run(ctx) {
     const name = ctx.memory?.callerName?.trim?.() ?? ctx.memory?.callerName;
     await ctx.output.say(

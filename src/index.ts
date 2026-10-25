@@ -170,17 +170,18 @@ export type {
 export type { BrainModelRef, TokenUsage } from './brain/brain-model';
 export {
   STUDIO_BRAIN_CONFIG,
-  STUDIO_BRAIN_DELEGATE,
+  STUDIO_BRAIN_LLM,
   resolveStudioBrainConfig,
   mergeProviderOptions,
-  delegateBrainConfig,
+  llmBrainConfig,
+  routeBrainLlm,
   scannerMemorySnapshot,
 } from './brain/brain-config';
 export type {
   StudioBrainConfig,
   ResolvedStudioBrainConfig,
-  BrainDelegateConfig,
-  BrainDelegateAdapterClass,
+  BrainLlmConfig,
+  BrainLlmAdapterClass,
   CheapOpenAiModelId,
   CheapClaudeModelId,
   CheapGeminiModelId,
@@ -263,18 +264,12 @@ export {
 export {
   applyListenBoosts,
   mergeSayAndListenOptions,
-  missingRequiredExtractKeys,
-  mockExtractFromUserText,
   mockExtractPersonName,
   tryResolveListenIntention,
 } from './conversation/listen-expectation';
 export type {
   ListenExpectation,
   ListenIntentionBoost,
-  ListenExtractField,
-  ListenExtractSpec,
-  ListenExtractHandler,
-  ListenExtractApplyContext,
   ListenResolveIntention,
   SayAndListenOptions,
 } from './conversation/listen-expectation';

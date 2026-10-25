@@ -4,7 +4,7 @@ import { BrainUsageTracker } from '../brain-usage.tracker';
 import type { BrainAdapter } from '../brain.port';
 import {
   STUDIO_BRAIN_CONFIG,
-  STUDIO_BRAIN_DELEGATE,
+  STUDIO_BRAIN_LLM,
   type StudioBrainConfig,
 } from '../brain-config';
 import {
@@ -29,7 +29,7 @@ type OpenAiDecisionsResponse = {
 /**
  * OpenAI Decisions Brain adapter — `POST /v1/decisions`, one predicate per candidate.
  *
- * Scores only; listen extraction / clarify / judge use `brain.delegate`.
+ * Scores only; clarify / judge use `brain.llm`.
  * Env: OPENAI_API_KEY. Model from `brain.model` (e.g. `gpt-6-luna`).
  */
 @Injectable()
@@ -44,10 +44,10 @@ export class OpenAiDecisionsBrainAdapter extends DecisionBrainAdapter {
     @Inject(STUDIO_BRAIN_CONFIG)
     brainConfig?: StudioBrainConfig,
     @Optional()
-    @Inject(STUDIO_BRAIN_DELEGATE)
-    delegate?: BrainAdapter | null,
+    @Inject(STUDIO_BRAIN_LLM)
+    llm?: BrainAdapter | null,
   ) {
-    super(usage, events, brainConfig, delegate);
+    super(usage, events, brainConfig, llm);
   }
 
   protected requireApiKey(op: string): string {

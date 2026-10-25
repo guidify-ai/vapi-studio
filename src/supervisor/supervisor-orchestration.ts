@@ -3,10 +3,7 @@ import type { IntentionCandidate } from '../conversation/types';
 import type { ChannelToolResult } from '../channel/channel-tools';
 import { CHANNEL_META } from '../channel/channel-tools';
 import { appendChat, DEFAULT_INTENTION_PRIORITY } from '../conversation/conversation-history';
-import {
-  missingRequiredExtractKeys,
-  tryResolveListenIntention,
-} from '../conversation/listen-expectation';
+import { tryResolveListenIntention } from '../conversation/listen-expectation';
 import {
   resolveConfidenceThreshold,
   scoresToRankedCandidates,
@@ -356,37 +353,12 @@ export async function executeTurn(this: SupervisorEngine, input: {
     );
   }
   const intentions = scan.intentions;
-  if (activeListen?.extract?.fields?.length) {
-    const missingRequired = missingRequiredExtractKeys(
-      activeListen.extract.fields,
-      scan.extracted,
-    );
-    if (activeListen.extract.onExtracted) {
-      await activeListen.extract.onExtracted(scan.extracted ?? {}, {
-        memory: runtime.memory as Record<string, unknown>,
-        variables: runtime.variables as Record<string, unknown>,
-        userText,
-      });
-    }
-    this.events.log('info', 'LISTEN_EXTRACTED', {
-      conversationId: runtime.conversationId,
-      runtimeInstanceId: runtime.runtimeInstanceId,
-      turnNumber: runtime.turn.turnNumber,
-      extracted: scan.extracted,
-      missingRequired,
-      appliedViaCallback: Boolean(activeListen.extract.onExtracted),
-      memory: snapshotUserMemory(
-        runtime.memory as Record<string, unknown>,
-      ),
-    });
-  }
   this.events.log('info', 'INTENTION_SCAN', {
     conversationId: runtime.conversationId,
     providerCallId: runtime.providerCallId,
     runtimeInstanceId: runtime.runtimeInstanceId,
     turnNumber: runtime.turn.turnNumber,
     intentions,
-    extracted: scan.extracted,
     listen: activeListen,
     candidates,
     confidenceThreshold,
@@ -481,6 +453,5 @@ export async function executeTurn(this: SupervisorEngine, input: {
     result: routed.result,
     actions: output.actions,
     portalOriginRestored: routed.portalOriginRestored,
-    extracted: scan.extracted,
   };
 }

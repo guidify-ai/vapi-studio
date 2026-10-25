@@ -44,13 +44,11 @@ export interface BrainLocalSignal {
 }
 
 /**
- * Brain scan output: ranked intentions + optional structured extractions
- * declared on the active listen / sayAndListen.
+ * Brain scan output: ranked intentions only. A scan decides where the call goes;
+ * the Node that handles the answer extracts its own data (ARD-0008).
  */
 export interface BrainScanResult {
   intentions: IntentionCandidate[];
-  /** Map of ListenExtractField.key → value. */
-  extracted?: Record<string, unknown>;
 }
 
 /**

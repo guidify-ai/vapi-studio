@@ -4,13 +4,12 @@
  * Decision models answer yes/no questions with a probability — they score but do
  * not generate. Scan asks one predicate per candidate intention ("does the
  * caller's latest turn express <name>: <description>?") over a JSON context of
- * the utterance, compact history, and memory. Listen field extraction, clarify,
- * and judge go to the configured LLM delegate (`brain.delegate`).
+ * the utterance, compact history, and memory. A scan only ranks; clarify and
+ * judge go to the configured chat model (`brain.llm`).
  */
 
 import type { Logger } from '@nestjs/common';
 import type { IntentionCandidate } from '../../conversation/types';
-import type { ListenExtractField } from '../../conversation/listen-expectation';
 import { STANDARD_INTENTIONS } from '../../intentions/standard-intentions';
 import { EventService } from '../../events/event.service';
 import { snapshotUserMemory } from '../../events/conversation-console';
@@ -86,7 +85,7 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
     protected readonly usage: BrainUsageTracker,
     protected readonly events: EventService,
     protected readonly brainConfig?: StudioBrainConfig,
-    protected readonly delegate?: BrainAdapter | null,
+    protected readonly llm?: BrainAdapter | null,
   ) {}
 
   protected abstract requireApiKey(op: string): string;
@@ -126,7 +125,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
     const listen = input.listen ?? input.runtime.listenExpectation;
     const threshold = resolveConfidenceThreshold(input.confidenceThreshold);
     const candidates = this.resolveCandidates(input);
-    const extractFields = listen?.extract?.fields ?? [];
     const series = detectUserSpeechSeries(input.userText);
     const callId = input.runtime.providerCallId;
 
@@ -142,8 +140,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
       series: series.isSeries,
       seriesParts: series.parts,
       candidateCount: candidates.length,
-      extractKeys: extractFields.map((f) => f.key),
-      delegate: Boolean(this.delegate),
       threshold,
     });
 
@@ -221,7 +217,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
     };
 
     const started = Date.now();
-    const extraction = this.extract(input, extractFields);
     let evaluated: DecisionEvaluateResult;
     try {
       evaluated = await this.evaluate({
@@ -233,13 +228,10 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
         signal: this.requestSignal(),
       });
     } catch (error) {
-      const durationMs = Date.now() - started;
-      const extracted = await extraction;
-      const result = unknown('warn', 'scan_error', {
-        durationMs,
+      return unknown('warn', 'scan_error', {
+        durationMs: Date.now() - started,
         error: error instanceof Error ? error.message : String(error),
       });
-      return { ...result, extracted };
     }
     const durationMs = Date.now() - started;
     this.recordUsage({
@@ -265,7 +257,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
     }
 
     scores.sort((a, b) => b.confidence - a.confidence);
-    const extracted = await extraction;
 
     if (allBelowConfidenceThreshold(scores, threshold)) {
       this.events.log('info', 'BRAIN_SCAN_RESULT', {
@@ -277,7 +268,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
         threshold,
         scores,
         refused: refused.length ? refused : undefined,
-        extracted,
         usage: evaluated.usage,
         durationMs,
       });
@@ -288,7 +278,6 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
             series: series.isSeries,
           }),
         ],
-        extracted,
       };
     }
 
@@ -307,24 +296,23 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
       winner: ranked[0]?.name,
       scores,
       refused: refused.length ? refused : undefined,
-      extracted,
       usage: evaluated.usage,
       durationMs,
     });
 
-    return { intentions: ranked, extracted };
+    return { intentions: ranked };
   }
 
   public async clarify<TAnswer extends Record<string, unknown> = Record<string, unknown>>(
     request: BrainClarifyRequest,
   ): Promise<BrainClarifyResult<TAnswer>> {
-    return this.requireDelegate('clarify').clarify<TAnswer>(request);
+    return this.requireLlm('clarify').clarify<TAnswer>(request);
   }
 
   public async judge<TContext = unknown>(
     request: BrainJudgeRequest<TContext>,
   ): Promise<BrainJudgeResult> {
-    return this.requireDelegate('judge').judge<TContext>(request);
+    return this.requireLlm('judge').judge<TContext>(request);
   }
 
   protected recordUsage(input: {
@@ -354,67 +342,14 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
     });
   }
 
-  private requireDelegate(op: string): BrainAdapter {
-    if (!this.delegate) {
+  private requireLlm(op: string): BrainAdapter {
+    if (!this.llm) {
       throw new Error(
-        `${this.adapterId} cannot ${op} — decision models only score. Configure an LLM via ` +
-          'VapiStudioModule.forRoot({ brain: { delegate: { adapter, model } } }).',
+        `${this.adapterId} cannot ${op} — decision models only score. Configure a chat model via ` +
+          'VapiStudioModule.forRoot({ brain: { llm: { adapter, model } } }).',
       );
     }
-    return this.delegate;
-  }
-
-  /** Listen field extraction through the delegate's clarify (in parallel with scoring). */
-  private async extract(
-    input: BrainScanInput,
-    fields: ListenExtractField[],
-  ): Promise<Record<string, unknown> | undefined> {
-    if (!fields.length) return undefined;
-    if (!this.delegate) {
-      this.logger.error(
-        `${this.adapterId} cannot extract listen fields (${fields.map((f) => f.key).join(', ')}) without brain.delegate.`,
-      );
-      this.events.log('error', 'BRAIN_EXTRACT_SKIPPED', {
-        adapter: this.adapterId,
-        providerCallId: input.runtime.providerCallId,
-        reason: 'no_delegate',
-        fields: fields.map((f) => f.key),
-      });
-      return undefined;
-    }
-    try {
-      const result = await this.delegate.clarify({
-        input: input.userText,
-        question:
-          "Extract these fields from the caller's latest utterance. Omit any field the caller did not state.",
-        answer: {
-          fields: fields.map((f) => ({
-            key: f.key,
-            description: f.description,
-            type: f.type ?? 'string',
-            required: false,
-          })),
-        },
-        meta: {
-          providerCallId: input.runtime.providerCallId,
-          conversationId: input.runtime.conversationId,
-        },
-      });
-      const out: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(result.answer ?? {})) {
-        if (value === undefined || value === null || value === '') continue;
-        out[key] = value;
-      }
-      return Object.keys(out).length ? out : undefined;
-    } catch (error) {
-      this.events.log('warn', 'BRAIN_EXTRACT_SKIPPED', {
-        adapter: this.adapterId,
-        providerCallId: input.runtime.providerCallId,
-        reason: 'delegate_error',
-        error: error instanceof Error ? error.message : String(error),
-      });
-      return undefined;
-    }
+    return this.llm;
   }
 
   private resolveCandidates(input: BrainScanInput): BrainIntentionOption[] {

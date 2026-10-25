@@ -4,7 +4,7 @@ import { BrainUsageTracker } from '../brain-usage.tracker';
 import type { BrainAdapter } from '../brain.port';
 import {
   STUDIO_BRAIN_CONFIG,
-  STUDIO_BRAIN_DELEGATE,
+  STUDIO_BRAIN_LLM,
   type StudioBrainConfig,
 } from '../brain-config';
 import {
@@ -23,7 +23,7 @@ type JevResponse = {
  *
  * Experimental: tested against recorded request/response shapes only, not the live API.
  *
- * Scores only; listen extraction / clarify / judge use `brain.delegate`.
+ * Scores only; clarify / judge use `brain.llm`.
  * Env: TYPESAFE_API_KEY. Model from `brain.model` (e.g. `jev-latest`).
  */
 @Injectable()
@@ -38,10 +38,10 @@ export class TypeSafeJevBrainAdapter extends DecisionBrainAdapter {
     @Inject(STUDIO_BRAIN_CONFIG)
     brainConfig?: StudioBrainConfig,
     @Optional()
-    @Inject(STUDIO_BRAIN_DELEGATE)
-    delegate?: BrainAdapter | null,
+    @Inject(STUDIO_BRAIN_LLM)
+    llm?: BrainAdapter | null,
   ) {
-    super(usage, events, brainConfig, delegate);
+    super(usage, events, brainConfig, llm);
   }
 
   protected requireApiKey(op: string): string {

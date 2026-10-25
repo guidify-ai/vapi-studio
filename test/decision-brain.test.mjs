@@ -31,12 +31,12 @@ const candidates = [
   { name: 'studio.isUnknownTransition', description: 'Nothing else fits.' },
 ];
 
-function make(Cls, brain = {}, delegate) {
+function make(Cls, brain = {}, llm) {
   return new Cls(
     new BrainUsageTracker(),
     noopEvents,
     { model: 'test-model', confidenceThreshold: 0.4, ...brain },
-    delegate,
+    llm,
   );
 }
 
@@ -162,40 +162,33 @@ test('all scores below threshold → unknown transition', async () => {
   assert.equal(result.intentions[0].payload.reason, 'below_confidence_threshold');
 });
 
-test('listen extraction goes to the delegate in parallel; clarify/judge delegate too', async () => {
+test('scan only ranks: one provider call, no extraction; clarify/judge go to brain.llm', async () => {
   const seen = [];
-  const delegate = {
+  const llm = {
     clarify: async (req) => {
       seen.push(req);
-      return { answer: { street: '5 Oak Ave', zip: '' } };
+      return { answer: { street: '5 Oak Ave' } };
     },
     judge: async () => ({ passed: true, confidence: 1, reasoning: [] }),
     scan: async () => ({ intentions: [] }),
   };
-  const a = make(OpenAiDecisionsBrainAdapter, {}, delegate);
-  const listen = {
-    intentions: candidates,
-    extract: { fields: [{ key: 'street' }, { key: 'zip' }] },
-  };
-  const { result } = await withFetch(decisionsReply, () =>
-    a.scan({ runtime: runtime(), userText: '5 Oak Ave', listen, candidates }),
+  const a = make(OpenAiDecisionsBrainAdapter, {}, llm);
+  const { result, calls } = await withFetch(decisionsReply, () =>
+    a.scan({ runtime: runtime(), userText: '5 Oak Ave', candidates }),
   );
-  assert.deepEqual(result.extracted, { street: '5 Oak Ave' });
-  assert.equal(seen[0].answer.fields.every((f) => f.required === false), true);
+  assert.equal(calls.length, 1);
+  assert.equal(seen.length, 0, 'scan never calls the chat model');
+  assert.deepEqual(Object.keys(result), ['intentions']);
+  const answer = await a.clarify({ input: '5 Oak Ave', question: 'street?', answer: { fields: [] } });
+  assert.equal(answer.answer.street, '5 Oak Ave');
   assert.equal((await a.judge({ context: 'x', goals: ['y'] })).passed, true);
 });
 
-test('no delegate: extraction skipped, clarify throws a configuration error', async () => {
+test('no brain.llm: clarify throws a configuration error', async () => {
   const a = make(OpenAiDecisionsBrainAdapter);
-  const listen = { intentions: candidates, extract: { fields: [{ key: 'street' }] } };
-  const { result } = await withFetch(decisionsReply, () =>
-    a.scan({ runtime: runtime(), userText: '5 Oak Ave', listen, candidates }),
-  );
-  assert.equal(result.extracted, undefined);
-  assert.equal(result.intentions[0].name, 'wantsRepair');
   await assert.rejects(
     a.clarify({ input: 'x', question: 'q', answer: { fields: [] } }),
-    /brain: \{ delegate/,
+    /brain: \{ llm/,
   );
 });
 
