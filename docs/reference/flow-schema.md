@@ -12,7 +12,7 @@ nodes:
   acknowledge:
     class: AcknowledgeNode
     intentions:
-      - isRequestedRoofEstimate
+      - isRequestedBooking
   goodbye:
     class: GoodbyeNode
     portal: true
@@ -68,7 +68,7 @@ see [Runtime API](./runtime-api.md) and [ARD-0006](../ards/ARD-0006-decision-bra
 
 ```yaml
 intentions:
-  isRequestedRoofEstimate: Caller wants a price estimate for roof work.
+  isRequestedBooking: Caller wants to book an appointment.
   isCollectedFirstName:
     description: Caller states their first name.
 ```

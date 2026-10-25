@@ -22,7 +22,7 @@ calibrated probability and bill input tokens only:
 Both are cheaper per scan than an LLM (no output tokens) and faster. Neither can
 generate text, so neither can extract field values or answer `clarify`.
 
-A model that sees only the intention name (`wantsRepair`) guesses at its
+A model that sees only the intention name (`wantsReschedule`) guesses at its
 meaning. Names were enough for LLM prompts that also saw the Node's hints; a
 per-question probability model needs the meaning stated.
 

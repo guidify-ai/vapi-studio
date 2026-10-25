@@ -101,7 +101,7 @@ Example apps (`/flow`) should follow this layout instead of a cramped vertical g
 
 | OK (caller-facing) | Internal only (never spoken) |
 | --- | --- |
-| “roof estimate”, “appointment”, “text you a form” | `routerTriage`, `askSmsPhone`, `isRouterReady` |
+| “estimate”, “appointment”, “text you a form” | `routerTriage`, `askSmsPhone`, `isRouterReady` |
 | “Are you still there?” (when the **still-there portal** owns the turn) | “stillThere portal attempt 2” |
 | “Let me connect you to someone.” | `transferToHuman`, `WORKFLOW_HANDOFF` |
 

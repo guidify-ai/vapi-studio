@@ -35,7 +35,7 @@ must be an option.
 
 | Decision | Was | Class | Now |
 | --- | --- | --- | --- |
-| Mock name extractor stop words | Included `roof`, `estimate`, `quote`, `appointment` | App content (one customer's vocabulary) | Generic words only |
+| Mock name extractor stop words | Included one project's business words | App content (one project's vocabulary) | Generic words only |
 | Limit goodbye line | English default "We've been talking for a while…" | App content | `limits.endMessage` **required** (boot error) |
 | Turn / duration ceilings | Clamped to 150 turns / 60 min | Mechanism tuning | Any finite value; defaults 40 / 20 min stay; limits still cannot be disabled |
 | Listen timeout ceiling | Clamped to 12 s | Mechanism tuning | No ceiling; Vapi's 0.4 s floor stays (protocol) |

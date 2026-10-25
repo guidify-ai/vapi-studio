@@ -457,9 +457,9 @@ Decision models cannot extract or write. Listen `extract` fields go to `brain.de
 ```yaml
 # flow.yaml
 intentions:
-  wantsRepair: Caller wants an existing roof repaired (leak, missing shingles).
-  wantsReplacement:
-    description: Caller wants the whole roof replaced or a new roof.
+  wantsBooking: Caller wants to book a new appointment.
+  wantsReschedule:
+    description: Caller wants to move an appointment they already have.
 ```
 
 ```ts
@@ -573,7 +573,7 @@ Portals are global Nodes (`portal: true`). Transfer-to-human typically re-engage
 
 **`isContinue` / ContinueNode:** not a spoken filler. When the walk selects Continue, Supervisor **exits the portal**, restores `originNodeId`, refreshes that Node’s listen (preferring the **listen snapshot** taken when the portal opened — so `sayAndListen` overrides and `resolveIntention` survive), re-scans the **same** user utterance, and routes again (skips re-selecting `isContinue` to avoid a loop). Apps must not ship “Okay, continuing.” as Continue behavior.
 
-**Unknown origin consume:** While `studio.isUnknownTransition` is the active portal, the **next** user utterance is first matched against the **origin listen** (same snapshot). If `resolveIntention` or Brain yields a walkable non-unknown intention, Supervisor exits the portal and routes that intention on **this turn** (`ROUTE_DECISION.resolvedVia = unknown_origin_consume`) — it must not steal the turn via unknown’s thin candidate list (e.g. mapping “as soon as possible” to an unrelated roof-estimate path). If the origin still cannot accept the utterance, the normal unknown listen / recovery path runs.
+**Unknown origin consume:** While `studio.isUnknownTransition` is the active portal, the **next** user utterance is first matched against the **origin listen** (same snapshot). If `resolveIntention` or Brain yields a walkable non-unknown intention, Supervisor exits the portal and routes that intention on **this turn** (`ROUTE_DECISION.resolvedVia = unknown_origin_consume`) — it must not steal the turn via unknown’s thin candidate list (e.g. mapping “as soon as possible” to an unrelated estimate path). If the origin still cannot accept the utterance, the normal unknown listen / recovery path runs.
 
 ## Vapi integration
 

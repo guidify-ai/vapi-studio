@@ -50,8 +50,11 @@ constitution, defended in a support thread, or safely removed later.
 6. **Status line:** `Draft` while on `develop`, `Released YYYY-MM-DD` after
    `npm publish`. The announcement section is the source text for the GitHub
    release and any public post.
-7. **No customer names** in articles (same rule as ARDs): say "production
-   reference app".
+7. **No project names.** Articles never name or identify the projects built on
+   Studio — not customers, not proofs of concept, not samples, and no details
+   that point to one (industry, intention names, counts). Say "projects built on
+   Studio". Early versions were proven through such projects; say that, without
+   naming them.
 8. **Written for a series.** Articles are for `vapi-studio` (app repos don't get
    them). Each opens with *Where we were* — the state and assumptions before the
    release — so it reads on its own years later and the sequence shows the
@@ -61,6 +64,7 @@ constitution, defended in a support thread, or safely removed later.
    tables or markdown, under 3,000 characters, first person (the maintainer),
    ending with the link to the article on `master`. It tells the story — what
    I believed, what changed my mind, what shipped — not the full feature list.
+   Framework first: no company or services promotion, no personal backstory.
 10. **Backfill:** versions before ARD-0007 get short retrospective articles,
     marked *Retrospective*, written from commits and ARDs.
 

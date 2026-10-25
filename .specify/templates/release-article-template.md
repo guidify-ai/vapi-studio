@@ -35,7 +35,7 @@ should upgrade, the one thing to watch for. Reused as GitHub release / post text
 ## How X.Y.Z was tested
 
 - **Automated (framework):** suites, counts, runtime.
-- **Reference apps:** which apps, against which build, their suites.
+- **Projects built on Studio:** against which build, their suites (never name them).
 - **Evals:** what ran, or why none.
 - **Manual sign-off:** calls made, on which configuration, by whom.
 - **Not tested:** be explicit.
