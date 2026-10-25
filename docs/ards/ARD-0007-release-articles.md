@@ -11,10 +11,13 @@ Nothing records a **release** as a whole: what a version contains, why each part
 is there, what an upgrading app must change, and how the version was tested.
 That knowledge lived in chat threads and the maintainer's head.
 
-Three readers need it:
+Four readers need it:
 
 - **App developers** upgrading: what breaks, what to change, what they gain.
-- **The public**: an announcement they can read without opening the code.
+- **The public**: articles are published on LinkedIn as well as in the repo.
+- **Anyone following the project's evolution**: read in order, the articles show
+  how the maintainer's thinking about the framework changed — what was assumed,
+  what broke, what was decided instead.
 - **Future contributors and SpecKit work (SDD)**: why the framework looks the way
   it does, version by version, so specs build on decisions instead of
   rediscovering them.
@@ -49,6 +52,17 @@ constitution, defended in a support thread, or safely removed later.
    release and any public post.
 7. **No customer names** in articles (same rule as ARDs): say "production
    reference app".
+8. **Written for a series.** Articles are for `vapi-studio` (app repos don't get
+   them). Each opens with *Where we were* — the state and assumptions before the
+   release — so it reads on its own years later and the sequence shows the
+   evolution. Mistakes and regressions are stated plainly; they are the most
+   useful history.
+9. **A LinkedIn post per article** (*LinkedIn post* section): plain text, no
+   tables or markdown, under 3,000 characters, first person (the maintainer),
+   ending with the link to the article on `master`. It tells the story — what
+   I believed, what changed my mind, what shipped — not the full feature list.
+10. **Backfill:** versions before ARD-0007 get short retrospective articles,
+    marked *Retrospective*, written from commits and ARDs.
 
 ## Consequences
 

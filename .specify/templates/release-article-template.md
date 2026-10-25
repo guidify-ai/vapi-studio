@@ -4,6 +4,11 @@
 - **Previous published version:** X.Y.Z
 - **Breaking:** yes | no
 
+## Where we were
+
+The framework's state and the assumptions held before this release — so the
+article reads on its own and the series shows the evolution.
+
 ## Announcement
 
 Two or three short paragraphs for humans: what this release lets you do, who
@@ -44,6 +49,16 @@ Checklist an app works through, breaking items first.
 | Change | Reason | Source |
 | --- | --- | --- |
 | … | … | ARD / PR |
+
+## LinkedIn post
+
+```text
+Plain text, first person, under 3,000 characters, no tables. The story: what I
+believed, what changed my mind, what shipped. End with:
+
+Full article: https://github.com/guidify-ai/vapi-studio/blob/master/docs/releases/vX.Y.Z.md
+#Vapi #VoiceAI #NestJS #TypeScript
+```
 
 ## Open questions
 

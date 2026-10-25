@@ -8,7 +8,8 @@
 
 0.1.2 shipped a correct Supervisor routing fix that broke a behaviour the
 landing-page sample relied on. Nobody noticed: the maintainer-owned apps stayed
-on 0.1.1 and only met the new version long after it was public. Unit tests in
+on 0.1.1 and only met the change while the next release was being prepared,
+after 0.1.2 was already public. Unit tests in
 this repo cannot catch an app that depended on old behaviour; only the apps can.
 
 A published npm version cannot be changed. The check against real apps has to
