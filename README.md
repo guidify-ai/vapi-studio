@@ -2,6 +2,8 @@
 
 **[@guidify-ai/vapi-studio](https://www.npmjs.com/package/@guidify-ai/vapi-studio)** — a **code-driven toolkit for [Vapi](https://vapi.ai)**.
 
+**North star:** tools for building on Vapi. Vapi is required — Studio is not a channel-agnostic engine and does not target other voice platforms ([constitution](./.specify/memory/constitution.md#north-star)).
+
 **Website:** [vapi-studio.guidify.ca](https://vapi-studio.guidify.ca) — *coming soon*
 
 **Need help shipping?** The **official Guidify team** builds with Vapi Studio — we can forward engineers onto your project at competitive rates, and cover professional services of any kind you need (design, integration, production hardening). See [Need the official team?](#need-the-official-team) below.

@@ -76,6 +76,8 @@ Live-call rules: no pre-scan listen-hold on ChatGPT path; scan abort ≤ 3s; tar
 
 Vapi Custom LLM and webhooks translate wire format ↔ Vapi Studio I/O.
 
+Vapi is the only platform Studio targets. Where the API says **channel** (`ChannelTool`, `variables.channel`, form dispose "channel"), read it as *a surface of the Vapi conversation* — the Vapi phone/web call, a Vapi-advertised tool, or a companion surface like an SMS form link — not as a pluggable platform. See [ARD-0002](../ards/ARD-0002-vapi-only-north-star.md).
+
 - **Live calls** — SSE streaming, tool calls for end/transfer/handoff
 - **Flow Studio** — HTTP text harness on the same supervisor (application feature for local dev)
 
