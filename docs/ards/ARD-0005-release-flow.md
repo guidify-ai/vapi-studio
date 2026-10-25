@@ -30,7 +30,10 @@ A version moves through five stages. Each stage gates the next.
    the **production reference app** and the **landing-page sample**
    (`vapi-studio-sample-landing-llm`) are the required checks. The release is
    **ready** only when the maintainer says so. Defects found here are fixed on
-   `develop` (framework) or in the app, then re-checked.
+   `develop` (framework) or in the app, then re-checked. **No exceptions:**
+   patch and hotfix releases need the same sign-off. When a release adds a
+   Brain driver or other runtime path, both reference apps run on it during
+   sign-off (e.g. 0.2.0: OpenAI Decisions).
 4. **Release.** PR `develop` → `master` (enforced by `master-from-develop.yml`),
    then an annotated tag `vX.Y.Z` on the master merge commit (`tag-on-master.yml`
    removes tags elsewhere), then `npm publish` from a clean checkout of that tag,
