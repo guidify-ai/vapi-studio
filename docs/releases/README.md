@@ -8,7 +8,7 @@ published as. Release mechanics: [ARD-0005](../ards/ARD-0005-release-flow.md).
 
 | Version | Theme | Status |
 | --- | --- | --- |
-| [0.2.0](./v0.2.0.md) | Pure intentions, decision-model scanning, app-owned decisions | Draft — awaiting sign-off |
+| [0.2.0](./v0.2.0.md) | Pure intentions, decision-model scanning, app-owned decisions | Released 2026-10-25 |
 | [0.1.2](./v0.1.2.md) | Guard rails for releases and routing | Released 2026-10-24 (retrospective) |
 | [0.1.1](./v0.1.1.md) | Writing the rules down | Released 2026-09-25 (retrospective) |
 | [0.1.0](./v0.1.0.md) | A package, not a monorepo | Released 2026-09-25 (retrospective) |
