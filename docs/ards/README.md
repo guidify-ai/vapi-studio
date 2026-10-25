@@ -34,6 +34,7 @@ not change behavior — unless reviewers ask for one.
 | [ARD-0001](./ARD-0001-host-scoped-vapi-ingress.md) | Host-scoped Vapi ingress (no project UUID in path) | Accepted |
 | [ARD-0002](./ARD-0002-vapi-only-north-star.md) | Vapi-only North Star (not channel-agnostic) | Accepted |
 | [ARD-0003](./ARD-0003-model-agnostic-brain.md) | Model-agnostic Brain adapters (no model whitelist / default) | Accepted |
+| [ARD-0004](./ARD-0004-framework-decision-boundary.md) | Framework decision boundary (invariants vs app content vs remote facts) | Accepted |
 
 Constitution: [`.specify/memory/constitution.md`](../../.specify/memory/constitution.md)  
 Contributing: [CONTRIBUTING.md](../../CONTRIBUTING.md)

@@ -19,9 +19,9 @@ The [vapi-studio-project](https://github.com/guidify-ai/vapi-studio-project) sta
 | `nodes` | Yes | `{ className, useClass }[]` — every node in `flow.yaml` |
 | `entryPoint` | Yes | `ConversationEntryPoint` — seed variables, `beforeEach` / `afterEach` |
 | `brainAdapter` | Yes | `MockBrainAdapter`, `ChatGptBrainAdapter`, `ClaudeBrainAdapter`, `GeminiBrainAdapter`, `GrokBrainAdapter`, or custom |
-| `brain` | No | `{ model, confidenceThreshold }` for ChatGPT adapter |
+| `brain` | For LLM adapters | `{ model, providerOptions?, confidenceThreshold?, timeoutMs? }` — `model` required by stock LLM adapters |
 | `intentions` | No | `CodeIntention[]` providers (`INTENTION_CASCADE_PHASE`) |
-| `limits` | No | Always on: `{ maxTurns?, maxDurationMs?, endMessage? }` (defaults 40 / 20m; ceilings 150 / 60m) |
+| `limits` | Yes | Always on: `{ endMessage, maxTurns?, maxDurationMs? }` — `endMessage` required; bounds default 40 / 20m, any finite value |
 | `eventListeners` | No | `StudioEventListener[]` |
 | `formDisposeAdapter` | No | Delivers forms (HTML link, Studio modal, Twilio SMS, …) |
 

@@ -49,10 +49,38 @@ describe('Twilio SMS env + dispose adapter', () => {
     assert.equal(resolved.config.dryRun, true);
   });
 
-  it('normalizes NA mobiles to E.164', () => {
-    assert.equal(normalizeSmsToE164('5550100999'), '+15550100999');
+  it('accepts E.164 only — no national-format guessing', () => {
     assert.equal(normalizeSmsToE164('+15550100999'), '+15550100999');
+    assert.equal(normalizeSmsToE164('+1 (555) 010-0999'), '+15550100999');
+    assert.equal(normalizeSmsToE164('+44 20 7946 0958'), '+442079460958');
+    assert.equal(normalizeSmsToE164('5550100999'), null);
+    assert.equal(normalizeSmsToE164('15550100999'), null);
     assert.equal(normalizeSmsToE164(''), null);
+  });
+
+  it('missing body persists OUTBOUND_NOTIFICATION_ERROR (no framework copy)', async () => {
+    process.env.TWILIO_SMS_DRY_RUN = '1';
+    const events = mockEvents();
+    const adapter = new TwilioSmsFormDisposeAdapter(
+      events,
+      undefined,
+      new DryRunTwilioSmsSender(),
+    );
+    await assert.rejects(
+      () =>
+        adapter.dispose({
+          exposeId: 'x',
+          formId: 1,
+          conversationId: 'c',
+          fields: [],
+          disposeContext: {
+            contactPhone: '+15550100999',
+            formUrl: 'https://example.test/f',
+          },
+        }),
+      /disposeContext\.body/,
+    );
+    assert.equal(events.persist.mock.calls[0].arguments[1], 'OUTBOUND_NOTIFICATION_ERROR');
   });
 
   it('dry-run dispose persists OUTBOUND_NOTIFICATION and ACKs without twilio package', async () => {
@@ -72,8 +100,9 @@ describe('Twilio SMS env + dispose adapter', () => {
       fields: [{ name: 'email', label: 'Email', type: 'email', required: true }],
       branch: 'identity_sms_form',
       disposeContext: {
-        contactPhone: '5550100999',
+        contactPhone: '+15550100999',
         formUrl: 'https://example.test/forms/abc',
+        body: 'Your form: {formUrl}',
       },
     });
 
@@ -90,7 +119,7 @@ describe('Twilio SMS env + dispose adapter', () => {
     assert.equal(payload.provider, 'twilio');
     assert.equal(payload.status, 'dry_run');
     assert.equal(payload.to, '+15550100999');
-    assert.match(payload.body, /example\.test\/forms\/abc/);
+    assert.equal(payload.body, 'Your form: https://example.test/forms/abc');
     assert.equal(payload.dryRun, true);
     assert.equal(payload.sid.startsWith('dryrun_'), true);
   });
@@ -135,7 +164,7 @@ describe('Twilio SMS env + dispose adapter', () => {
       formId: 1,
       conversationId: 'conv-sms-2',
       fields: [],
-      disposeContext: { contactPhone: '+15550100999' },
+      disposeContext: { contactPhone: '+15550100999', body: 'Form: {formUrl}' },
     });
 
     assert.equal(forms.ack.mock.callCount(), 1);

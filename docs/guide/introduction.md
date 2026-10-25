@@ -36,6 +36,7 @@ VapiStudioModule.forRoot({
     model: 'gpt-6-luna',
     confidenceThreshold: 0.4,
   },
+  limits: { endMessage: 'Thanks for calling — goodbye.' },
   formDisposeAdapter: LinkFormDisposeAdapter,
   eventListeners: [MyEventBuffer],
 })

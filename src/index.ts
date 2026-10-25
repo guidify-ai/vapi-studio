@@ -60,9 +60,6 @@ export {
   STUDIO_CONVERSATION_LIMITS,
   DEFAULT_MAX_CONVERSATION_TURNS,
   DEFAULT_MAX_CONVERSATION_DURATION_MS,
-  HARD_MAX_CONVERSATION_TURNS,
-  HARD_MAX_CONVERSATION_DURATION_MS,
-  DEFAULT_CONVERSATION_LIMIT_MESSAGE,
   resolveConversationLimits,
   evaluateConversationLimits,
 } from './conversation/conversation-limits';
@@ -263,7 +260,6 @@ export type {
 export {
   DEFAULT_LISTEN_TIMEOUT_SECONDS,
   MIN_LISTEN_TIMEOUT_SECONDS,
-  MAX_LISTEN_TIMEOUT_SECONDS,
   clampListenTimeoutSeconds,
   resolveListenTimeoutSeconds,
   listenTimeoutSecondsToMs,
@@ -409,8 +405,8 @@ export {
   pickSmsDestination,
   pickSmsFormUrl,
   resolveSmsFormUrl,
-  buildDefaultSmsBody,
   resolveSmsBody,
+  SMS_FORM_URL_PLACEHOLDER,
 } from './forms/twilio-sms.env';
 export type {
   TwilioSmsConfig,

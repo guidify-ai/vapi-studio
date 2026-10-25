@@ -45,7 +45,10 @@ import {
   wrapUntrustedUserText,
 } from '../prompt-injection-guard';
 
-/** Fail the provider round-trip rather than stalling a live call. */
+/**
+ * Default provider round-trip budget — fail rather than stall a live call.
+ * Apps override via `brain.timeoutMs`.
+ */
 export const JSON_LLM_BRAIN_TIMEOUT_MS = 3_000;
 
 /** Keep scan prompts small — live voice cannot wait on a fat history dump. */
@@ -91,6 +94,16 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
       );
     }
     return { id };
+  }
+
+  /** Abort signal for one provider round-trip (`brain.timeoutMs`). */
+  protected requestSignal(): AbortSignal {
+    const ms = this.brainConfig?.timeoutMs;
+    return AbortSignal.timeout(
+      typeof ms === 'number' && Number.isFinite(ms) && ms > 0
+        ? ms
+        : JSON_LLM_BRAIN_TIMEOUT_MS,
+    );
   }
 
   /** Provider request body with the app's `brain.providerOptions` merged in. */

@@ -9,7 +9,7 @@ import {
   evaluateConversationLimits,
   resolveConversationLimits,
   DEFAULT_MAX_CONVERSATION_TURNS,
-  HARD_MAX_CONVERSATION_TURNS,
+  DEFAULT_MAX_CONVERSATION_DURATION_MS,
 } from '../dist/conversation/conversation-limits.js';
 import { FlowLoader } from '../dist/flow/flow-loader.js';
 import { AgentNode } from '../dist/node/agent-node.js';
@@ -63,21 +63,49 @@ function buildSupervisor(limits) {
     undefined,
     undefined,
     undefined,
-    resolveConversationLimits(limits),
+    limits ? resolveConversationLimits(limits) : undefined,
   );
   return { supervisor, events };
 }
 
 describe('Conversation limits', () => {
-  it('resolveConversationLimits clamps and defaults', () => {
-    const d = resolveConversationLimits();
+  it('resolveConversationLimits requires the app endMessage', () => {
+    assert.throws(() => resolveConversationLimits(), /endMessage/);
+    assert.throws(() => resolveConversationLimits({ endMessage: '  ' }), /endMessage/);
+  });
+
+  it('resolveConversationLimits defaults bounds with no framework ceiling', () => {
+    const d = resolveConversationLimits({ endMessage: 'Bye.' });
     assert.equal(d.maxTurns, DEFAULT_MAX_CONVERSATION_TURNS);
-    assert.equal(resolveConversationLimits({ maxTurns: 999 }).maxTurns, HARD_MAX_CONVERSATION_TURNS);
-    assert.equal(resolveConversationLimits({ maxTurns: 0 }).maxTurns, 1);
+    assert.equal(d.maxDurationMs, DEFAULT_MAX_CONVERSATION_DURATION_MS);
+    assert.equal(d.endMessage, 'Bye.');
+    assert.equal(resolveConversationLimits({ maxTurns: 999, endMessage: 'Bye.' }).maxTurns, 999);
+    assert.equal(
+      resolveConversationLimits({ maxDurationMs: 3 * 60 * 60 * 1000, endMessage: 'Bye.' }).maxDurationMs,
+      3 * 60 * 60 * 1000,
+    );
+    assert.equal(resolveConversationLimits({ maxTurns: 0, endMessage: 'Bye.' }).maxTurns, 1);
+  });
+
+  it('Supervisor without injected limits ends the call silently at default bounds', async () => {
+    const { supervisor } = buildSupervisor(undefined);
+    const runtime = new SupervisedConversation({
+      conversationId: 'c0',
+      providerCallId: 'p0',
+      flowId: 'limits-test',
+      brainProfileId: 'state-machine',
+      startNodeId: 'opening',
+    });
+    runtime.createdAt = new Date(Date.now() - DEFAULT_MAX_CONVERSATION_DURATION_MS - 1_000);
+    runtime.openingCompleted = true;
+    runtime.currentNodeId = 'echo';
+    const turn = await supervisor.handleTurn({ runtime, userText: 'hi' });
+    assert.equal(turn.result.kind, 'endCall');
+    assert.equal(turn.result.text, undefined);
   });
 
   it('evaluateConversationLimits flags max turns and duration', () => {
-    const limits = resolveConversationLimits({ maxTurns: 3, maxDurationMs: 5_000 });
+    const limits = resolveConversationLimits({ maxTurns: 3, maxDurationMs: 5_000, endMessage: 'Bye.' });
     const start = new Date('2026-01-01T00:00:00.000Z');
     assert.equal(
       evaluateConversationLimits({

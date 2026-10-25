@@ -76,6 +76,31 @@ test('OpenAI request sends no sampling settings unless the app adds them', async
   assert.equal(tuned.reasoning_effort, 'none');
 });
 
+test('brain.timeoutMs aborts the provider round-trip (app-owned latency budget)', async () => {
+  const a = adapter(ChatGptBrainAdapter, { model: 'm', timeoutMs: 30 });
+  const original = globalThis.fetch;
+  globalThis.fetch = (_url, init) =>
+    new Promise((_resolve, reject) => {
+      init.signal.addEventListener('abort', () => reject(init.signal.reason));
+    });
+  const started = Date.now();
+  try {
+    await assert.rejects(() =>
+      a.completeJson({
+        apiKey: 'k',
+        model: a.resolveModel(),
+        kind: 'scan',
+        providerCallId: 'call-timeout',
+        system: 's',
+        user: 'u',
+      }),
+    );
+  } finally {
+    globalThis.fetch = original;
+  }
+  assert.ok(Date.now() - started < 1_000);
+});
+
 test('Gemini providerOptions merge into generationConfig without dropping JSON mode', async () => {
   const body = await captureBody(
     GeminiBrainAdapter,

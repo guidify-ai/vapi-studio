@@ -12,17 +12,12 @@ export const DEFAULT_LISTEN_TIMEOUT_SECONDS = 2.5;
 /** Shortest listen window (Vapi waitSeconds floor is 0.4). */
 export const MIN_LISTEN_TIMEOUT_SECONDS = 0.4;
 
-/** Longest listen window — long dictation (address) needs room after pauses. */
-export const MAX_LISTEN_TIMEOUT_SECONDS = 12;
-
+/** Raise to Vapi's floor; no upper bound — how long to wait is the app's call. */
 export function clampListenTimeoutSeconds(value: number): number {
   if (!Number.isFinite(value)) {
     return DEFAULT_LISTEN_TIMEOUT_SECONDS;
   }
-  return Math.min(
-    MAX_LISTEN_TIMEOUT_SECONDS,
-    Math.max(MIN_LISTEN_TIMEOUT_SECONDS, value),
-  );
+  return Math.max(MIN_LISTEN_TIMEOUT_SECONDS, value);
 }
 
 /**
