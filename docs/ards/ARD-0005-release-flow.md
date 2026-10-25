@@ -33,7 +33,9 @@ A version moves through five stages. Each stage gates the next.
    `develop` (framework) or in the app, then re-checked. **No exceptions:**
    patch and hotfix releases need the same sign-off. When a release adds a
    Brain driver or other runtime path, both reference apps run on it during
-   sign-off (e.g. 0.2.0: OpenAI Decisions).
+   sign-off (e.g. 0.2.0: OpenAI Decisions). The release article
+   (`docs/releases/vX.Y.Z.md`, [ARD-0007](./ARD-0007-release-articles.md)) is
+   reviewed here: every feature has reasoning and *Open questions* is empty.
 4. **Release.** PR `develop` → `master` (enforced by `master-from-develop.yml`),
    then an annotated tag `vX.Y.Z` on the master merge commit (`tag-on-master.yml`
    removes tags elsewhere), then `npm publish` from a clean checkout of that tag,
