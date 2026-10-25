@@ -22,7 +22,7 @@ See the [constitution](./.specify/memory/constitution.md#north-star) and
 
 ## Pull requests
 
-1. **Branch** from `master` (or `develop` if that is the active integration branch).
+1. **Branch** from `develop` and open the PR into `develop`. Only release PRs go `develop` → `master`.
 2. **Tests:** `yarn test` must pass.
 3. **Docs:** update `docs/reference/runtime-api.md` (and best-practices if doctrine changes) in the same PR.
 4. **ARDs (required for architecture):** if the change affects public API, Supervisor/Brain/listen behavior, persistence, or adapters, add or update an entry under [`docs/ards/`](./docs/ards/README.md) using [`.specify/templates/ard-template.md`](./.specify/templates/ard-template.md). Link the ARD in the PR body.
@@ -46,6 +46,16 @@ are intentional release work, not drive-by installs.
 | `devDependencies` | Same Nest/peer pins as peers for this package’s build |
 
 Bump peers only in a deliberate PR (+ ARD if the upgrade changes supported app contracts).
+
+## Releases
+
+See [ARD-0005](./docs/ards/ARD-0005-release-flow.md). In short:
+
+1. `develop` carries the next version; nothing is published from it.
+2. Maintainer-owned apps switch to `file:../vapi-studio`, adapt, and pass their checks.
+3. Maintainer signs off with real calls on the reference apps — then the release is **ready**.
+4. `develop` → `master` PR, tag `vX.Y.Z` on master, `npm publish` from the tag.
+5. Apps switch to the exact published version right away.
 
 ## Local setup
 
