@@ -8,7 +8,6 @@ import {
 import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
-  JSON_LLM_BRAIN_TIMEOUT_MS,
   type JsonLlmCompleteInput,
 } from './json-llm-brain.base';
 
@@ -58,7 +57,7 @@ export class GrokBrainAdapter extends JsonLlmBrainAdapter {
         authorization: `Bearer ${input.apiKey}`,
         'content-type': 'application/json',
       },
-      signal: AbortSignal.timeout(JSON_LLM_BRAIN_TIMEOUT_MS),
+      signal: this.requestSignal(),
       body: this.requestBody({
         model: input.model.id,
         response_format: { type: 'json_object' },

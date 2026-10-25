@@ -17,7 +17,7 @@ Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a differen
 
 ## Conversations must end (hard rule)
 
-There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise within hard ceilings in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
+There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye (your required `limits.endMessage`) + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise them in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room — any finite value; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
 
 ## Fail closed on constrained fields
 

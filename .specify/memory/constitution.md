@@ -40,6 +40,14 @@ Adapters exist to keep Nodes clean and testable and to absorb Vapi API
 changes in one place — **not** to make Vapi replaceable. Do not generalize an
 adapter, port, or type toward hypothetical non-Vapi providers.
 
+The framework decides only **invariants** (safety, correctness, Vapi protocol)
+and **overridable mechanism defaults** (timeouts, windows, sizes). It MUST NOT
+ship app content — anything a caller hears or reads, language, country,
+business vocabulary, provider/model choice — nor copies of **remote facts**
+(prices, model catalogues). Opt-in helpers may carry starter copy only when
+every string is an option. See
+[ARD-0004](../../docs/ards/ARD-0004-framework-decision-boundary.md).
+
 **Rationale:** Reusable infrastructure; bots are separate NestJS applications.
 
 ### II. Code-First Conversation Runtime
@@ -115,6 +123,7 @@ provider quirks.
    SpecKit dumps.
 5. Amendments bump the constitution version (MAJOR / MINOR / PATCH) with dates.
 
-**Version**: 2.1.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-24  
+**Version**: 2.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-24  
+*(2.2.0 — Decision boundary: no app content or remote facts in the framework.)*  
 *(2.1.0 — North Star: Vapi-only toolkit; adapters are not a multi-provider seam.)*  
 *(2.0.0 — public framework constitution; Guidify product IP removed.)*

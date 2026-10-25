@@ -1,10 +1,6 @@
 import { DynamicModule, Module, type Provider, type Type } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  BRAIN_SERVICE,
-  MockBrainAdapter,
-  type BrainAdapter,
-} from './brain/brain.service';
+import { BRAIN_SERVICE, type BrainAdapter } from './brain/brain.service';
 import { ConversationBootstrapService } from './conversation/conversation-bootstrap.service';
 import { ConversationResumeService } from './conversation/conversation-resume.service';
 import {
@@ -67,9 +63,10 @@ export interface VapiStudioModuleOptions {
   entryPoint?: Type<ConversationEntryPoint<object>>;
   /**
    * Brain adapter (Mock, ChatGPT, Claude, Gemini, Grok, or app-owned).
-   * Defaults to MockBrainAdapter. Supervisor depends only on BRAIN_SERVICE.
+   * Required — pass `MockBrainAdapter` explicitly for offline/dev.
+   * Supervisor depends only on BRAIN_SERVICE.
    */
-  brainAdapter?: Type<BrainAdapter>;
+  brainAdapter: Type<BrainAdapter>;
   /**
    * Nest `StudioEventListener`s (in-process only — e.g. Studio UI event buffer).
    * Remote exporters belong in app code via `onStudioEvent`, not here.
@@ -81,10 +78,10 @@ export interface VapiStudioModuleOptions {
    */
   brain?: StudioBrainConfig;
   /**
-   * Hard conversation caps (turns + wall-clock). Always on — defaults 40 turns /
-   * 20 minutes. Cannot be disabled; values are clamped to safe ceilings.
+   * Conversation bounds (turns + wall-clock). Always on — defaults 40 turns /
+   * 20 minutes; the app may set any finite values. `endMessage` is required.
    */
-  limits?: ConversationLimitsConfig;
+  limits: ConversationLimitsConfig;
   /**
    * How to dispose `forms.expose` to the active channel.
    * Default: noop (ACK never arrives → Nodes fall back to voice).
@@ -99,7 +96,13 @@ export class VapiStudioModule {
     const nodeProviders: Provider[] = options.nodes.map((n) => n.useClass);
     const intentionDefs = options.intentions ?? [];
     const intentionProviders: Provider[] = intentionDefs.map((c) => c);
-    const BrainAdapterClass = options.brainAdapter ?? MockBrainAdapter;
+    const BrainAdapterClass = options.brainAdapter;
+    if (!BrainAdapterClass) {
+      throw new Error(
+        'VapiStudioModule.forRoot({ brainAdapter }) is required — ' +
+          'pass MockBrainAdapter explicitly for offline/dev.',
+      );
+    }
     const extraListeners = options.eventListeners ?? [];
     const brainConfig = resolveStudioBrainConfig(options.brain);
     const conversationLimits = resolveConversationLimits(options.limits);

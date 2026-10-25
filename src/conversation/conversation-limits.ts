@@ -1,6 +1,7 @@
 /**
- * Hard caps on conversation length — fail-closed goodbye + endCall.
- * Every call must have finite turn and wall-clock bounds.
+ * Conversation length bounds — fail-closed goodbye + endCall.
+ * Every call must have finite turn and wall-clock bounds; the app picks the
+ * values and the words spoken when one fires.
  */
 
 export const STUDIO_CONVERSATION_LIMITS = Symbol('STUDIO_CONVERSATION_LIMITS');
@@ -11,30 +12,24 @@ export const DEFAULT_MAX_CONVERSATION_TURNS = 40;
 /** Default: 20 minutes from runtime `createdAt`. */
 export const DEFAULT_MAX_CONVERSATION_DURATION_MS = 20 * 60 * 1000;
 
-/** Soft ceiling — apps may raise, not beyond. */
-export const HARD_MAX_CONVERSATION_TURNS = 150;
-
-/** Soft ceiling — apps may raise, not beyond (60 minutes). */
-export const HARD_MAX_CONVERSATION_DURATION_MS = 60 * 60 * 1000;
-
-export const DEFAULT_CONVERSATION_LIMIT_MESSAGE =
-  "We've been talking for a while, so I'm going to end this call now. Please call back if you still need help.";
-
 export type ConversationLimitReason = 'max_turns' | 'max_duration';
 
 export interface ConversationLimitsConfig {
   /**
    * Max Supervisor turns (each `handleTurn` bumps `turn.turnNumber`).
-   * Default 40. Clamped to 1…150.
+   * Default 40. Any positive integer.
    */
   maxTurns?: number;
   /**
    * Max wall-clock ms from `SupervisedConversation.createdAt`.
-   * Default 20 minutes. Clamped to 1s…60 minutes.
+   * Default 20 minutes. At least 1s.
    */
   maxDurationMs?: number;
-  /** Spoken text before endCall when a limit fires. */
-  endMessage?: string;
+  /**
+   * Spoken text before endCall when a limit fires. Required — the caller
+   * hears it, so the app owns the wording and language.
+   */
+  endMessage: string;
 }
 
 export interface ResolvedConversationLimits {
@@ -46,22 +41,20 @@ export interface ResolvedConversationLimits {
 export function resolveConversationLimits(
   input?: ConversationLimitsConfig,
 ): ResolvedConversationLimits {
-  const maxTurns = clampInt(
-    input?.maxTurns,
-    DEFAULT_MAX_CONVERSATION_TURNS,
-    1,
-    HARD_MAX_CONVERSATION_TURNS,
-  );
-  const maxDurationMs = clampInt(
+  const endMessage =
+    typeof input?.endMessage === 'string' ? input.endMessage.trim() : '';
+  if (!endMessage) {
+    throw new Error(
+      'VapiStudioModule.forRoot({ limits: { endMessage } }) is required — ' +
+        'the words spoken when a conversation limit ends the call.',
+    );
+  }
+  const maxTurns = positiveInt(input?.maxTurns, DEFAULT_MAX_CONVERSATION_TURNS, 1);
+  const maxDurationMs = positiveInt(
     input?.maxDurationMs,
     DEFAULT_MAX_CONVERSATION_DURATION_MS,
     1_000,
-    HARD_MAX_CONVERSATION_DURATION_MS,
   );
-  const endMessage =
-    typeof input?.endMessage === 'string' && input.endMessage.trim()
-      ? input.endMessage.trim()
-      : DEFAULT_CONVERSATION_LIMIT_MESSAGE;
   return { maxTurns, maxDurationMs, endMessage };
 }
 
@@ -85,12 +78,11 @@ export function evaluateConversationLimits(input: {
   return { exceeded: false, elapsedMs };
 }
 
-function clampInt(
+function positiveInt(
   raw: number | undefined,
   fallback: number,
   min: number,
-  max: number,
 ): number {
   if (typeof raw !== 'number' || !Number.isFinite(raw)) return fallback;
-  return Math.min(max, Math.max(min, Math.floor(raw)));
+  return Math.max(min, Math.floor(raw));
 }

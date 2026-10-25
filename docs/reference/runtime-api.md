@@ -23,7 +23,7 @@ Application-specific agent steps, copy, and flows do **not** belong in this repo
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.3"
+    "@guidify-ai/vapi-studio": "0.2.0"
   }
 }
 ```
@@ -42,16 +42,18 @@ VapiStudioModule.forRoot({
   brain: {
     model: 'gpt-6-luna',                 // any provider model id; app-owned, not .env
     confidenceThreshold: 0.4,
+    timeoutMs: 3000,                     // default 3000; fit to the model's latency
   },
   limits: {
-    maxTurns: 40,                        // default 40; hard ceiling 150
-    maxDurationMs: 20 * 60 * 1000,       // default 20m; hard ceiling 60m
+    maxTurns: 40,                        // default 40; any finite value
+    maxDurationMs: 20 * 60 * 1000,       // default 20m; any finite value
+    endMessage: 'Thanks for calling — goodbye.', // required; the caller hears it
   },
   eventListeners: [],
 })
 ```
 
-Conversation **limits are always on** (defaults apply when `limits` is omitted). They cannot be disabled — only raised within hard ceilings.
+`brainAdapter` and `limits.endMessage` are **required**. Conversation **limits are always on** — they cannot be disabled; the app picks the values ([ARD-0004](../ards/ARD-0004-framework-decision-boundary.md)).
 ## Architecture
 
 | Piece | Role |
@@ -83,19 +85,19 @@ Identity is the **provider call id**. One supervised runtime per active call.
 
 ## Conversation limits (hard rule)
 
-Every conversation has finite bounds. At the start of each `Supervisor` turn (after `turnNumber` bumps), if either cap is exceeded the runtime **skips Brain/routing**, speaks a short goodbye, and returns `endCall`:
+Every conversation has finite bounds. At the start of each `Supervisor` turn (after `turnNumber` bumps), if either cap is exceeded the runtime **skips Brain/routing**, speaks the app's `limits.endMessage`, and returns `endCall`:
 
-| Cap | Default | Hard ceiling |
+| Cap | Default | Floor |
 | --- | --- | --- |
-| `limits.maxTurns` | 40 | 150 |
-| `limits.maxDurationMs` | 20 minutes | 60 minutes |
+| `limits.maxTurns` | 40 | 1 |
+| `limits.maxDurationMs` | 20 minutes | 1 second |
 
 - Turn count = `runtime.turn.turnNumber` (opening, user speech, tool-result, force-intention, and module entry-speak each count).
 - Duration = wall clock from `SupervisedConversation.createdAt` (restored from checkpoint so crash recovery keeps the original start).
 - Forensic event: `CONVERSATION_LIMIT_EXCEEDED` (`reason`: `max_turns` \| `max_duration`).
-- Optional `limits.endMessage` overrides the spoken line (still one CTA / farewell).
+- Required `limits.endMessage` is the spoken line (one CTA / farewell, in the app's language). Studio ships no default copy.
 
-Apps may raise caps within the ceilings; they must not ship unlimited conversations. Complement with Vapi’s own max-duration / idle policies — Studio only checks at turn boundaries.
+Apps may set any finite caps; they must not ship unlimited conversations. Complement with Vapi’s own max-duration / idle policies — Studio only checks at turn boundaries.
 
 ## Supervisor routing
 
@@ -189,7 +191,7 @@ How long the channel waits after a user pause before closing the listen (so ASR 
 | `listen()` | `ListenExpectation.timeoutSeconds` | Node class |
 | `sayAndListen({ timeoutSeconds })` | that turn only | `listen()` |
 
-Clamped to `[0.4, 12]`. The Supervisor stamps the resolved value onto `runtime.listenExpectation`. Transient `assistant-request` assistants get a matching Vapi `startSpeakingPlan`. **Do not hold the Custom LLM request** when the Brain is ChatGPT — that delay plus OpenAI latency makes Vapi retry and the caller repeat. **Exception:** a listen with `interruptible: false` (address dictation) queues overlapping Custom LLM POSTs until **3s of silence** after the last fragment, then scans once. Mock Brain may still pass `listenHoldMs` to coalesce ASR crumbs. ChatGPT scans abort after **3s** and fall back to `studio.isUnknownTransition`. Target: first SSE speech **< 1.5s** after the Custom LLM request (live conversation — silence is a failure). **Speech must land on the Custom LLM HTTP request Vapi is still listening to.** A queued/coalesced waiter replays `lastAssistantSpeech`; it must not finish with empty SSE. **Shit in, shit out:** Vapi duplicate/stale Custom LLM posts are a provider artifact — do not teach scan prompts or Nodes to detect “stale repeats.” Garbage ASR and weird callers are not fully in scope; unknown / re-ask is enough.
+Floored at `0.4` (Vapi's minimum); no framework ceiling. The Supervisor stamps the resolved value onto `runtime.listenExpectation`. Transient `assistant-request` assistants get a matching Vapi `startSpeakingPlan`. **Do not hold the Custom LLM request** when the Brain is ChatGPT — that delay plus OpenAI latency makes Vapi retry and the caller repeat. **Exception:** a listen with `interruptible: false` (address dictation) queues overlapping Custom LLM POSTs until **3s of silence** after the last fragment, then scans once. Mock Brain may still pass `listenHoldMs` to coalesce ASR crumbs. LLM Brain scans abort after `brain.timeoutMs` (default **3s**) and fall back to `studio.isUnknownTransition`. Target: first SSE speech **< 1.5s** after the Custom LLM request (live conversation — silence is a failure). **Speech must land on the Custom LLM HTTP request Vapi is still listening to.** A queued/coalesced waiter replays `lastAssistantSpeech`; it must not finish with empty SSE. **Shit in, shit out:** Vapi duplicate/stale Custom LLM posts are a provider artifact — do not teach scan prompts or Nodes to detect “stale repeats.” Garbage ASR and weird callers are not fully in scope; unknown / re-ask is enough.
 
 Override on the class:
 
@@ -259,7 +261,7 @@ Blocking structured collection. Apps deliver via a dispose adapter — Studio mo
 
 The dispose adapter is the **sendout driver**. It declares a delivery `branch` (`html_link`, `sms`, `unavailable`, …). The app may also pass a conversation `branch` on expose (e.g. `identity_html_form`) so logs show which flow lane requested the form.
 
-**Twilio SMS (prepared):** reserved env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, and `TWILIO_SMS_DRY_RUN` (default **on**). Sends emit `OUTBOUND_NOTIFICATION` (and `OUTBOUND_NOTIFICATION_ERROR` on failure) via `EventService` (in-process Node bus + Nest listeners). Dry-run still emits with `status: dry_run`. Live send needs optional peer `twilio` and `TWILIO_SMS_DRY_RUN=0`. `disposeContext`: `contactPhone` (optional `formUrl` — defaults to `{PUBLIC_BASE_URL}/forms/{exposeId}`; optional `body`). See [Forms](../guide/forms.md) and [environment variables](./environment-variables.md).
+**Twilio SMS (prepared):** reserved env `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` or `TWILIO_MESSAGING_SERVICE_SID`, and `TWILIO_SMS_DRY_RUN` (default **on**). Sends emit `OUTBOUND_NOTIFICATION` (and `OUTBOUND_NOTIFICATION_ERROR` on failure) via `EventService` (in-process Node bus + Nest listeners). Dry-run still emits with `status: dry_run`. Live send needs optional peer `twilio` and `TWILIO_SMS_DRY_RUN=0`. `disposeContext`: `contactPhone` in E.164 (national formats are rejected — the app normalizes), `body` (required SMS text; `{formUrl}` is replaced with the link), optional `formUrl` (defaults to `{PUBLIC_BASE_URL}/forms/{exposeId}`). See [Forms](../guide/forms.md) and [environment variables](./environment-variables.md).
 
 ```ts
 const values = await ctx.forms.expose({
@@ -284,7 +286,7 @@ const values = await ctx.forms.expose({
    - **`open()` (preferred on live Vapi)** — returns after delivery so the Custom LLM turn can finish (`stop`/`[DONE]`), TTS can complete, and silence timers do not fight a multi-minute hold. Later: `submit` → `claimSubmitted()` (or FormResume / still-there).
 5. **`ctx.forms.resend()`** — re-runs dispose on the open (unsubmitted) expose when the caller says they never got the SMS / link. Same `exposeId` + stored `disposeContext`; emits `FORM_RESEND` (persist) + `FORM_RESENT`. Returns `null` if nothing is pending.
 6. Events: `FORM_SENDOUT`, `FORM_EXPOSE`, `FORM_DELIVERED`, `FORM_RESEND` / `FORM_RESENT`, `FORM_DELIVER_TIMEOUT`, `FORM_SUBMITTED`, `FORM_FILLOUT_TIMEOUT` (plus app `FORM_LINK_READY`).
-7. HTML helper: `renderFormHtml(handle)` / `renderFormThanksHtml()` / `renderFormGoneHtml()` — JSON fields → page; apps own the HTTP routes.
+7. HTML helper: `renderFormHtml(handle)` / `renderFormThanksHtml()` / `renderFormGoneHtml()` — JSON fields → page; apps own the HTTP routes. Every visible string and `lang` is an option; the English text is a starter default.
 8. `ctx.forms.hasPending()` / `hasUnclaimedSubmit()` / `claimSubmitted()` / `resend()` — ghosting must no-op while pending; claim after submit on the open path; resend when delivery failed on the caller’s device.
 
 Default dispose is **noop** (`branch: unavailable` — ACK never arrives → Nodes fall back to voice).
@@ -430,6 +432,7 @@ Stock adapters:
 | `model` | yes | Provider model id, passed through as-is. Missing → adapter throws (scan → unknown). |
 | `providerOptions` | no | Merged into the provider request body (plain objects one level deep). Studio sends **no** sampling settings itself — add `temperature`, `reasoning_effort`, Gemini `generationConfig`, … here as your model allows. |
 | `confidenceThreshold` | no | Scan floor, default `0.4`. |
+| `timeoutMs` | no | Abort one provider round-trip after this many ms → unknown transition. Default `3000`; set it from the model's measured latency. |
 
 ```ts
 brain: {

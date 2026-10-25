@@ -8,7 +8,6 @@ import {
 import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
-  JSON_LLM_BRAIN_TIMEOUT_MS,
   type JsonLlmCompleteInput,
 } from './json-llm-brain.base';
 
@@ -59,7 +58,7 @@ export class ClaudeBrainAdapter extends JsonLlmBrainAdapter {
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
       },
-      signal: AbortSignal.timeout(JSON_LLM_BRAIN_TIMEOUT_MS),
+      signal: this.requestSignal(),
       body: this.requestBody({
         model: input.model.id,
         max_tokens: 1024,

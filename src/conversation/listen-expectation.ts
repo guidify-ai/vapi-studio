@@ -257,14 +257,9 @@ const MOCK_NAME_STOPWORDS = new Set([
 const MOCK_NAME_INTENT_WORDS = new Set([
   'need',
   'want',
-  'estimate',
-  'roof',
-  'roofs',
   'help',
   'calling',
   'about',
-  'appointment',
-  'quote',
   'today',
 ]);
 
@@ -311,7 +306,7 @@ function nameTokensFromUtterance(userText: string): string[] | undefined {
 /**
  * Pull a plausible person name from ASR text.
  * Accepts "Mark." / "yeah Mark" from voice ASR. Rejects pronouns and
- * intent sentences (e.g. "I need my roof estimate").
+ * intent sentences (e.g. "I need some help").
  */
 export function mockExtractPersonName(
   userText: string,

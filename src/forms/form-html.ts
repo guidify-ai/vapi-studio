@@ -13,6 +13,8 @@ export interface RenderFormHtmlOptions {
   submitLabel?: string;
   /** Optional error banner (e.g. missing required field). */
   error?: string;
+  /** Document language (`<html lang>`). Default `en`. */
+  lang?: string;
 }
 
 function escapeHtml(raw: string): string {
@@ -68,9 +70,10 @@ export function renderFormHtml(
     ? `<p class="error" role="alert">${escapeHtml(options.error)}</p>`
     : '';
   const fields = handle.fields.map(renderField).join('\n');
+  const lang = escapeHtml(options.lang ?? 'en');
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -115,8 +118,11 @@ export function renderFormThanksHtml(options?: {
   /** Optional absolute or relative href shown under the body. */
   backHref?: string;
   backLabel?: string;
+  /** Document language (`<html lang>`). Default `en`. */
+  lang?: string;
 }): string {
   const title = escapeHtml(options?.title ?? 'Thanks');
+  const lang = escapeHtml(options?.lang ?? 'en');
   const body = escapeHtml(
     options?.body ??
       'We received your details. You can return to the call — we are still on the line.',
@@ -126,7 +132,7 @@ export function renderFormThanksHtml(options?: {
       ? `<p><a href="${escapeHtml(options.backHref)}">${escapeHtml(options.backLabel ?? 'Back')}</a></p>`
       : '';
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${lang}">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -149,13 +155,18 @@ export function renderFormThanksHtml(options?: {
 </html>`;
 }
 
-/** Simple not-found / expired page. */
-export function renderFormGoneHtml(message?: string): string {
+/** Simple not-found / expired page. A string argument sets the message only. */
+export function renderFormGoneHtml(
+  options?: string | { title?: string; message?: string; lang?: string },
+): string {
+  const opts = typeof options === 'string' ? { message: options } : options ?? {};
+  const title = escapeHtml(opts.title ?? 'Form unavailable');
   const body = escapeHtml(
-    message ?? 'This form link is missing or has already been completed.',
+    opts.message ?? 'This form link is missing or has already been completed.',
   );
+  const lang = escapeHtml(opts.lang ?? 'en');
   return `<!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Form unavailable</title>
+<html lang="${lang}"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>${title}</title>
 <style>body{font-family:ui-sans-serif,system-ui,sans-serif;padding:2rem;color:#14213d;background:#f4f6f8}p{color:#5c6b7a}</style>
-</head><body><h1>Form unavailable</h1><p>${body}</p></body></html>`;
+</head><body><h1>${title}</h1><p>${body}</p></body></html>`;
 }

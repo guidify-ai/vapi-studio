@@ -26,12 +26,18 @@ export interface StudioBrainConfig {
    * `{ temperature: 0 }`. Studio sends no sampling settings on its own.
    */
   providerOptions?: Record<string, unknown>;
+  /**
+   * Abort a provider round-trip after this many ms (then unknown transition).
+   * Default 3000. Pick it from the model's real latency and the call's budget.
+   */
+  timeoutMs?: number;
 }
 
 export type ResolvedStudioBrainConfig = {
   model?: string;
   confidenceThreshold: number;
   providerOptions?: Record<string, unknown>;
+  timeoutMs?: number;
 };
 
 export function resolveStudioBrainConfig(
@@ -45,6 +51,12 @@ export function resolveStudioBrainConfig(
         ? input.confidenceThreshold
         : DEFAULT_BRAIN_CONFIDENCE_THRESHOLD,
     providerOptions: input?.providerOptions,
+    timeoutMs:
+      typeof input?.timeoutMs === 'number' &&
+      Number.isFinite(input.timeoutMs) &&
+      input.timeoutMs > 0
+        ? Math.floor(input.timeoutMs)
+        : undefined,
   };
 }
 
