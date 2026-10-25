@@ -17,7 +17,7 @@ Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a differen
 
 ## No IVR menus (hard rule)
 
-Never read options as a numbered menu (“1) instant estimate, 2) wrap up”) or ask the caller to “press” or “say one”. That is a phone tree, not a conversation. Name the options in a sentence and ask:
+Never read options as a numbered menu (“1) instant estimate, 2) wrap up”) or ask the caller to “press” or “say one”. That is a phone tree, not a conversation — and on a phone, numbers invite callers to press 1, 2, 3 on the keypad, which the assistant does not hear as an answer. Just name the options in a sentence and ask:
 
 | Bad | Good |
 | --- | --- |
