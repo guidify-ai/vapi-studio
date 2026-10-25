@@ -355,7 +355,7 @@ export class UsePhoneNode extends AgentNode<Schema> {
 
 Listen timeout is documented above.
 
-**Closed choice (`resolveIntention`)** — after the bot listed numbered options, attach a cheap matcher on the listen. If it returns an intention name that is on that listen, Supervisor **skips Brain** and walks that intention at confidence 1 (no 3s abort). Return `null` to fall through to Brain so portals and unknown still work. Use this for pick-N / neither, not for free-form answers. A skipped scan still advances `brainSequenceIndex` so MockBrain sequences stay aligned.
+**Closed choice (`resolveIntention`)** — after the bot offered a few options, attach a cheap matcher on the listen. If it returns an intention name that is on that listen, Supervisor **skips Brain** and walks that intention at confidence 1 (no 3s abort). Return `null` to fall through to Brain so portals and unknown still work. Use this for picking an option (its words or an ordinal like “the second one”) or neither, not for free-form answers. A skipped scan still advances `brainSequenceIndex` so MockBrain sequences stay aligned.
 
 ```ts
 return ctx.output.sayAndListen('I have two matches. Which one is correct?', {

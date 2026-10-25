@@ -15,13 +15,24 @@ Ask **one** clear call-to-action per assistant turn. Never combine unrelated dec
 
 Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a different number”) — that is still one decision: confirm destination vs provide another.
 
+## No IVR menus (hard rule)
+
+Never read options as a numbered menu (“1) instant estimate, 2) wrap up”) or ask the caller to “press” or “say one”. That is a phone tree, not a conversation. Name the options in a sentence and ask:
+
+| Bad | Good |
+| --- | --- |
+| “I have a few openings: 1) 9am, and 2) 10am, and 3) 11am. Which time works?” | “I have openings at 9, 10, or 11 am. Which works for you?” |
+| “1) instant estimate, and 2) wrap up. Which one works for you?” | “I can give you an instant estimate now, or we can wrap up here. What would you prefer?” |
+
+Callers still answer with ordinals (“the first one”, “second”) — the listen's `resolveIntention` should accept those alongside the option's own words. Keep lists short (two or three options); more than that belongs in a form or a follow-up question.
+
 ## Conversations must end (hard rule)
 
 There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye (your required `limits.endMessage`) + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise them in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room — any finite value; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
 
 ## Fail closed on constrained fields
 
-If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, listed choice 1…N), the Node that reads the answer must:
+If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, one of the listed options), the Node that reads the answer must:
 
 1. Know the constraint (local parser, and the field `description` when it uses `ctx.clarify`).
 2. Accept only valid recoveries (e.g. strip `+1`, take first 10 digits, drop trailing “hello”).

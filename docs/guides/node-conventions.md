@@ -31,7 +31,7 @@ Doctrine: [nodes-and-listens.md](../best-practices/nodes-and-listens.md#prefer-b
 
 ## Listed choices
 
-After numbered options, always the same closing question pattern via `listedChoiceQuestion` / `listedChoiceListen` — pick N or neither.
+Speak options as a person would — “9, 10, or 11 am — which works?” — never as an IVR menu (“1) …, 2) …”). Keep a cheap `resolveIntention` that accepts the option's words, ordinals (“the first one”, “second”) and “neither”, even though no numbers were spoken.
 
 Soft affirmatives that do **not** pick N (“yeah, why not”, bare “sure”) are not a choice — re-ask which option with cheap `resolveIntention`; do not send them to Brain/unknown ([conversation-design.md](../best-practices/conversation-design.md#do-not-auto-pick-lanes)).
 
