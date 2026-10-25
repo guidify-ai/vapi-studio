@@ -29,6 +29,8 @@ export interface FlowDefinition {
   nodes: Record<string, FlowNodeDefinition>;
   /** Declarative memory/variable gates — evaluated before listen/Brain when force. */
   transitions: CompiledConditionTransition[];
+  /** Intention name → short scanner description (flow.yaml `intentions`). */
+  intentionDescriptions: Record<string, string>;
 }
 
 export interface RawFlowFile {
@@ -53,6 +55,8 @@ export interface RawFlowFile {
     priority?: number;
     reason?: string;
   }>;
+  /** Scanner descriptions: `name: "…"` or `name: { description: "…" }`. */
+  intentions?: Record<string, string | { description?: string }>;
 }
 
 /** Synthetic intention → execute a node by id (condition transitions / goto). */
@@ -145,14 +149,26 @@ export class FlowLoader {
       });
     }
 
+    const intentionDescriptions: Record<string, string> = {};
+    for (const [name, value] of Object.entries(raw.intentions ?? {})) {
+      const text = (typeof value === 'string' ? value : value?.description ?? '').trim();
+      if (text) intentionDescriptions[name] = text;
+    }
+
     this.flow = {
       version: raw.version ?? 1,
       id: raw.flow.id,
       start: raw.flow.start,
       nodes,
       transitions,
+      intentionDescriptions,
     };
     return this.flow;
+  }
+
+  /** flow.yaml description for an intention, if declared. */
+  public intentionDescription(name: string): string | undefined {
+    return this.flow?.intentionDescriptions[name];
   }
 
   public getFlow(): FlowDefinition {

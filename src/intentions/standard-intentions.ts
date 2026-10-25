@@ -25,3 +25,17 @@ export const STANDARD_INTENTIONS = {
 
 export type StandardIntention =
   (typeof STANDARD_INTENTIONS)[keyof typeof STANDARD_INTENTIONS];
+
+/** Scanner descriptions for the framework intentions (apps may override per listen). */
+export const STANDARD_INTENTION_DESCRIPTIONS: Record<StandardIntention, string> = {
+  'studio.isGoodbye': 'The caller wants to end the call or is saying goodbye.',
+  'studio.isTransferToHuman': 'The caller asks to speak with a real person, agent, or human.',
+  'studio.isPause': 'The caller asks to hold on, wait, or pause for a moment.',
+  'studio.isMad': 'The caller is angry, upset, hostile, or swearing at the assistant.',
+  'studio.isUnknownTransition':
+    'None of the other listed intentions fits what the caller said, or it is off-topic or unintelligible.',
+  'studio.isPositive': 'The caller answers affirmatively: yes, correct, sure, okay.',
+  'studio.isNegative': 'The caller answers negatively: no, incorrect, or declines.',
+  'studio.isStillThere': 'The caller has gone silent and the assistant is checking they are still there.',
+  'studio.isToolResult': 'The channel returned results for a pending tool call.',
+};

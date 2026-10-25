@@ -60,6 +60,22 @@ Code intentions (`phase: 'force'`) run in the same cascade tier.
 
 Naming rules: [Node conventions](../guides/node-conventions.md)
 
+## `intentions` (descriptions)
+
+Optional top-level map: intention name → one-sentence meaning the Brain scanner
+sees next to the name. Required (from some source) for decision Brain drivers —
+see [Runtime API](./runtime-api.md) and [ARD-0006](../ards/ARD-0006-decision-brain-drivers.md).
+
+```yaml
+intentions:
+  isRequestedRoofEstimate: Caller wants a price estimate for roof work.
+  isCollectedFirstName:
+    description: Caller states their first name.
+```
+
+Listen `intentions[].description` and `CodeIntention.description` override this;
+built-in `studio.*` intentions have framework descriptions.
+
 ## `continueTo` vs YAML
 
 - **`output.continueTo({ nodeId })`** — imperative lane jump (same flow file)

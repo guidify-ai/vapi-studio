@@ -6,6 +6,12 @@ export interface ListenIntentionBoost {
   /** Intention name to prioritize (e.g. isAcknowledge, studio.isGoodbye). */
   name: string;
   /**
+   * Short meaning of the intention for the scanner (one sentence). Wins over
+   * `CodeIntention.description` / flow.yaml `intentions`. Required by decision
+   * Brain drivers (from some source).
+   */
+  description?: string;
+  /**
    * Extra weight for Brain scoring (hint only — does not change Supervisor walk order).
    * Higher = more preferred by the scanner. Default when listed: 10.
    */

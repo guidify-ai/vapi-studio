@@ -1,4 +1,7 @@
-export { STANDARD_INTENTIONS } from './intentions/standard-intentions';
+export {
+  STANDARD_INTENTIONS,
+  STANDARD_INTENTION_DESCRIPTIONS,
+} from './intentions/standard-intentions';
 export type { StandardIntention } from './intentions/standard-intentions';
 
 export { VapiStudioModule } from './vapi-studio.module';
@@ -166,18 +169,35 @@ export type {
 export type { BrainModelRef, TokenUsage } from './brain/brain-model';
 export {
   STUDIO_BRAIN_CONFIG,
+  STUDIO_BRAIN_DELEGATE,
   resolveStudioBrainConfig,
   mergeProviderOptions,
+  delegateBrainConfig,
+  scannerMemorySnapshot,
 } from './brain/brain-config';
 export type {
   StudioBrainConfig,
   ResolvedStudioBrainConfig,
+  BrainDelegateConfig,
+  BrainDelegateAdapterClass,
   CheapOpenAiModelId,
   CheapClaudeModelId,
   CheapGeminiModelId,
   CheapGrokModelId,
 } from './brain/brain-config';
 export { detectUserSpeechSeries } from './brain/adapters/json-llm-brain.base';
+export {
+  DecisionBrainAdapter,
+  scanTask as decisionScanTask,
+  predicateInstructions as decisionPredicateInstructions,
+} from './brain/adapters/decision-brain.base';
+export type {
+  DecisionQuestion,
+  DecisionEvaluateInput,
+  DecisionEvaluateResult,
+} from './brain/adapters/decision-brain.base';
+export { OpenAiDecisionsBrainAdapter } from './brain/adapters/openai-decisions-brain.adapter';
+export { TypeSafeJevBrainAdapter } from './brain/adapters/typesafe-jev-brain.adapter';
 export {
   clarifiableInputToString,
   filterClarifyAnswer,

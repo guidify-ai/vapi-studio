@@ -12,13 +12,16 @@ App identity: **`config/project.identity.json`** (`slug` / `name`). App boot ups
 | Claude | `ClaudeBrainAdapter` | `ANTHROPIC_API_KEY` |
 | Gemini | `GeminiBrainAdapter` | `GOOGLE_API_KEY` (alias `GEMINI_API_KEY`) |
 | Grok | `GrokBrainAdapter` | `XAI_API_KEY` |
+| OpenAI Decisions | `OpenAiDecisionsBrainAdapter` | `OPENAI_API_KEY` (+ the `brain.delegate` adapter's key) |
+| TypeSafe Jev | `TypeSafeJevBrainAdapter` | `TYPESAFE_API_KEY` (+ the `brain.delegate` adapter's key) |
 | Mock | `MockBrainAdapter` / `Mock*BrainAdapter` | none |
 
 **Brain model and confidence** are set in `VapiStudioModule.forRoot({ brain })` — not env.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `OPENAI_API_KEY` | — | ChatGPT Brain adapter |
+| `OPENAI_API_KEY` | — | ChatGPT and OpenAI Decisions Brain adapters |
+| `TYPESAFE_API_KEY` | — | TypeSafe Jev Brain adapter |
 | `ANTHROPIC_API_KEY` | — | Claude Brain adapter |
 | `GOOGLE_API_KEY` | — | Gemini Brain adapter (alias: `GEMINI_API_KEY`) |
 | `XAI_API_KEY` | — | Grok Brain adapter |

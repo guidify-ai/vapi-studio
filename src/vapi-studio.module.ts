@@ -26,6 +26,8 @@ import {
 } from './intention/code-intention';
 import {
   STUDIO_BRAIN_CONFIG,
+  STUDIO_BRAIN_DELEGATE,
+  delegateBrainConfig,
   resolveStudioBrainConfig,
   type StudioBrainConfig,
 } from './brain/brain-config';
@@ -164,6 +166,18 @@ export class VapiStudioModule {
         BrainAdapterClass,
         { provide: BRAIN_SERVICE, useExisting: BrainAdapterClass },
         { provide: STUDIO_BRAIN_CONFIG, useValue: brainConfig },
+        {
+          provide: STUDIO_BRAIN_DELEGATE,
+          useFactory: (usage: BrainUsageTracker, events: EventService) =>
+            brainConfig.delegate
+              ? new brainConfig.delegate.adapter(
+                  usage,
+                  events,
+                  delegateBrainConfig(brainConfig.delegate),
+                )
+              : null,
+          inject: [BrainUsageTracker, EventService],
+        },
         { provide: STUDIO_CONVERSATION_LIMITS, useValue: conversationLimits },
         SupervisedConversationRegistry,
         ConversationRepository,

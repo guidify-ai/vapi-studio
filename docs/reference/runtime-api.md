@@ -433,11 +433,41 @@ Stock adapters:
 | `providerOptions` | no | Merged into the provider request body (plain objects one level deep). Studio sends **no** sampling settings itself — add `temperature`, `reasoning_effort`, Gemini `generationConfig`, … here as your model allows. |
 | `confidenceThreshold` | no | Scan floor, default `0.4`. |
 | `timeoutMs` | no | Abort one provider round-trip after this many ms → unknown transition. Default `3000`; set it from the model's measured latency. |
+| `memorySnapshot` | no | `(memory) => object` — what the scanner sees of memory. Default: the whole user memory (bootstrap keys dropped). Return a trimmed / redacted copy to keep PII away from the provider. |
+| `delegate` | decision drivers | `{ adapter, model, providerOptions?, timeoutMs? }` — LLM adapter for listen extraction, `clarify`, `judge`. |
 
 ```ts
 brain: {
   model: 'gpt-6-luna',
   providerOptions: { reasoning_effort: 'none' }, // keep live scans ~1s on reasoning models
+},
+```
+
+**Live (decision models, scan only)** — [ARD-0006](../ards/ARD-0006-decision-brain-drivers.md). Decision models answer yes/no questions with a probability and are billed for input tokens only. Studio asks **one predicate per candidate intention** ("does the caller's latest turn express `<name>`? Meaning: `<description>`") over a JSON context: untrusted caller text, last 8 chat + node history entries, hints, and the memory snapshot. Scores are independent (they do not sum to 1), rounded to 6 decimals, and go through the same threshold → unknown-transition rules. Refused questions are skipped.
+
+- `OpenAiDecisionsBrainAdapter` — `POST /v1/decisions` (e.g. `model: 'gpt-6-luna'`). Env: `OPENAI_API_KEY`.
+- `TypeSafeJevBrainAdapter` — `POST https://api.typesafe.ai/v1/systemone`, `noul` questions (e.g. `model: 'jev-latest'`). Env: `TYPESAFE_API_KEY`.
+
+Decision models cannot extract or write. Listen `extract` fields go to `brain.delegate.clarify` **in parallel** with scoring; `clarify()` / `judge()` go to the delegate. No delegate → extraction is skipped (error log `BRAIN_EXTRACT_SKIPPED`) and `clarify` / `judge` throw.
+
+**Every candidate needs a description.** A missing one logs an error and the scan returns `studio.isUnknownTransition` (`reason: missing_intention_description`, `missing: [...]`). Sources, first non-empty wins: listen `intentions[].description` → `CodeIntention.description` → flow.yaml `intentions` → `STANDARD_INTENTION_DESCRIPTIONS` (built-in `studio.*`). LLM adapters also receive descriptions and memory, but do not require them.
+
+```yaml
+# flow.yaml
+intentions:
+  wantsRepair: Caller wants an existing roof repaired (leak, missing shingles).
+  wantsReplacement:
+    description: Caller wants the whole roof replaced or a new roof.
+```
+
+```ts
+brainAdapter: OpenAiDecisionsBrainAdapter,
+brain: {
+  model: 'gpt-6-luna',
+  confidenceThreshold: 0.4,
+  timeoutMs: 1_500,
+  memorySnapshot: ({ contactPhone, ...rest }) => rest,
+  delegate: { adapter: ChatGptBrainAdapter, model: 'gpt-4.1-mini', providerOptions: { temperature: 0 } },
 },
 ```
 
@@ -691,6 +721,7 @@ Export surface is `src/index.ts` (implementation modules: `vapi-studio.module.ts
 | `ANTHROPIC_API_KEY` | — | Claude Brain adapter secret |
 | `GOOGLE_API_KEY` | — | Gemini Brain adapter (or `GEMINI_API_KEY`) |
 | `XAI_API_KEY` | — | Grok Brain adapter secret |
+| `TYPESAFE_API_KEY` | — | TypeSafe Jev Brain adapter secret |
 | `STUDIO_CONSOLE_DEBUG` | on | Pretty stdout |
 | `STUDIO_FILE_LOG` | on | Daily files |
 | `LOG_DIR` | `logs` | Directory the **app** owns (project `logs/`); framework writes `dailyYYYYMMDD.log` here |

@@ -37,7 +37,12 @@ import {
 } from '../brain-ranking';
 import type { BrainModelRef, TokenUsage } from '../brain-model';
 import { BrainUsageTracker } from '../brain-usage.tracker';
-import { mergeProviderOptions, type StudioBrainConfig } from '../brain-config';
+import {
+  mergeProviderOptions,
+  scannerMemorySnapshot,
+  type StudioBrainConfig,
+} from '../brain-config';
+import { snapshotUserMemory } from '../../events/conversation-console';
 import {
   brainUntrustedInputRules,
   sanitizeExtractedFieldValue,
@@ -202,6 +207,10 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
         boost: i.boost ?? 0,
         priority: i.priority ?? 1,
       })),
+      memory: scannerMemorySnapshot(
+        snapshotUserMemory(input.runtime.memory as Record<string, unknown>),
+        this.brainConfig?.memorySnapshot,
+      ),
     });
 
     const scanStarted = Date.now();
@@ -556,6 +565,7 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
     const listen = input.listen ?? input.runtime.listenExpectation;
     return (listen?.intentions ?? []).map((i) => ({
       name: i.name,
+      description: i.description,
       boost: i.boost,
       priority: i.priority,
       source: 'listen' as const,
@@ -602,7 +612,8 @@ function buildScanSystemPrompt(input: {
     ...brainUntrustedInputRules('scan'),
     'You are the Vapi Studio Brain for a voice bot: score intentions and extract fields.',
     'Score ONLY the provided candidate intentions for the latest user utterance.',
-    'Use compact history for context; the latest untrustedCallerText is the turn to score.',
+    'Use compact history and memory (facts collected so far) for context; the latest untrustedCallerText is the turn to score.',
+    'Each candidate may carry a description of what it means — score by that meaning, not just the name.',
     'Return ONLY valid JSON of the form:',
     '{"intentions":[{"name":"<exact candidate name>","confidence":0.123456,"reason":"<short>"}],"extracted":{"<key>":"<value>"}}',
     'confidence is 0..1 inclusive with 6 decimal places. NEVER return a value above 1.',
@@ -633,6 +644,7 @@ function buildScanSystemPrompt(input: {
     `Candidates: ${JSON.stringify(
       input.candidates.map((c) => ({
         name: c.name,
+        description: c.description,
         boost: c.boost ?? 0,
         priority: c.priority ?? 1,
         source: c.source ?? 'flow',
