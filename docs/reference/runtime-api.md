@@ -448,6 +448,8 @@ brain: {
 - `OpenAiDecisionsBrainAdapter` — `POST /v1/decisions` (e.g. `model: 'gpt-6-luna'`). Env: `OPENAI_API_KEY`.
 - `TypeSafeJevBrainAdapter` — `POST https://api.typesafe.ai/v1/systemone`, `noul` questions (e.g. `model: 'jev-latest'`). Env: `TYPESAFE_API_KEY`.
 
+**Deterministic matchers come first and feed the scan.** A listen `resolveIntention` hit or a match-phase `CodeIntention` at/above the threshold routes with no scan (cheap, exact). When the scan does run, the context carries `priors`: `expected` (candidates with a listen/CodeIntention `boost`, highest first) and `localMatches` (match-phase scores that fired below the threshold). The scanner treats them as weak hints. LLM scans get `localMatches` too (boosts were already in their candidate list).
+
 Decision models cannot extract or write. Listen `extract` fields go to `brain.delegate.clarify` **in parallel** with scoring; `clarify()` / `judge()` go to the delegate. No delegate → extraction is skipped (error log `BRAIN_EXTRACT_SKIPPED`) and `clarify` / `judge` throw.
 
 **Every candidate needs a description.** A missing one logs an error and the scan returns `studio.isUnknownTransition` (`reason: missing_intention_description`, `missing: [...]`). Sources, first non-empty wins: listen `intentions[].description` → `CodeIntention.description` → flow.yaml `intentions` → `STANDARD_INTENTION_DESCRIPTIONS` (built-in `studio.*`). LLM adapters also receive descriptions and memory, but do not require them.

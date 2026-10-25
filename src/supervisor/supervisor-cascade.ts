@@ -16,7 +16,11 @@ import {
 import {
   BufferedConversationOutput,
 } from '../output/conversation-output';
-import type { BrainIntentionOption } from '../brain/brain-ranking';
+import {
+  roundConfidence,
+  type BrainIntentionOption,
+} from '../brain/brain-ranking';
+import type { BrainLocalSignal } from '../brain/brain.port';
 import { conditionGotoIntention } from '../flow/flow-loader';
 import { snapshotUserMemory } from '../events/conversation-console';
 import type { SupervisorEngine } from './supervisor.types';
@@ -157,6 +161,8 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
   userText: string;
   onSay?: (text: string) => Promise<void>;
   confidenceThreshold: number;
+  /** Collects below-threshold match scores for the Brain scan. */
+  nearMisses?: BrainLocalSignal[];
 }): Promise<
   | { kind: 'routed'; result: TurnExecutionResult }
   | { kind: 'score'; name: string; confidence: number }
@@ -179,7 +185,16 @@ export async function tryMatchIntentions(this: SupervisorEngine, input: {
     const matched = await intention.match(ctx);
     if (matched == null) continue;
     const confidence = Math.min(1, Math.max(0, matched));
-    if (confidence < input.confidenceThreshold) continue;
+    if (confidence < input.confidenceThreshold) {
+      if (confidence > 0) {
+        input.nearMisses?.push({
+          name: intention.name,
+          confidence: roundConfidence(confidence),
+          source: 'intention_match',
+        });
+      }
+      continue;
+    }
 
     const runResult = await intention.run(ctx);
     await intention.after(ctx);

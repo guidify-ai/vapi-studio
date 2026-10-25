@@ -47,7 +47,13 @@ per-question probability model needs the meaning stated.
 4. **Memory goes to the scanner by default**, behind an app hook
    (`brain.memorySnapshot`) to trim or redact. The app decides what leaves the
    process (ARD-0004: app owns content). LLM scans receive memory too.
-5. **Extraction is delegated.** `brain.delegate` names an LLM adapter + model.
+5. **Deterministic pre-ranking is context, not a competitor.** Regex/keyword
+   matchers (listen `resolveIntention`, match-phase `CodeIntention`s) still run
+   first; a confident hit routes without a scan. When the scan runs, it receives
+   `priors`: Node-author boosts on expected intentions, and match-phase scores
+   that fired below the threshold (`BrainScanInput.localSignals`). They are weak
+   hints — the model still judges the caller's words.
+6. **Extraction is delegated.** `brain.delegate` names an LLM adapter + model.
    Listen `extract` fields go to `delegate.clarify` in parallel with scoring;
    `clarify()` and `judge()` forward to it. Without a delegate, extraction is
    skipped with an error log and `clarify` / `judge` throw a configuration error.

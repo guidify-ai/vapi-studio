@@ -28,6 +28,19 @@ export interface BrainScanInput {
     chat: Array<{ role: 'user' | 'assistant'; text: string }>;
     nodes: Array<{ nodeId: string; intention: string; turnNumber: number }>;
   };
+  /**
+   * Scores from deterministic matchers (match-phase CodeIntentions) that fired
+   * this turn but stayed below the threshold. A hit at/above the threshold
+   * routes without a scan; near-misses reach the scanner as weak priors.
+   */
+  localSignals?: BrainLocalSignal[];
+}
+
+export interface BrainLocalSignal {
+  name: string;
+  /** Matcher's own 0..1 score. */
+  confidence: number;
+  source: 'intention_match';
 }
 
 /**

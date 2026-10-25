@@ -160,6 +160,7 @@ export type {
   BrainScanInput,
   BrainScanResult,
 } from './brain/brain.service';
+export type { BrainLocalSignal } from './brain/brain.port';
 export { BrainUsageTracker } from './brain/brain-usage.tracker';
 export type {
   BrainUsageRecord,

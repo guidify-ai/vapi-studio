@@ -211,6 +211,10 @@ export abstract class JsonLlmBrainAdapter implements BrainAdapter {
         snapshotUserMemory(input.runtime.memory as Record<string, unknown>),
         this.brainConfig?.memorySnapshot,
       ),
+      localMatches: input.localSignals?.map((s) => ({
+        name: s.name,
+        confidence: s.confidence,
+      })),
     });
 
     const scanStarted = Date.now();
@@ -618,6 +622,7 @@ function buildScanSystemPrompt(input: {
     '{"intentions":[{"name":"<exact candidate name>","confidence":0.123456,"reason":"<short>"}],"extracted":{"<key>":"<value>"}}',
     'confidence is 0..1 inclusive with 6 decimal places. NEVER return a value above 1.',
     'Include every candidate you can score. Boost is a hint, not a score.',
+    'localMatches (when present) are scores from keyword/pattern matchers that were too unsure to decide — weak hints only.',
     `studio.isUnknownTransition is the scan-failure intent — score it high only when none of the other candidates fit.`,
     `Runtime confidence threshold is ${input.threshold} (informational).`,
     'ASR NOISE: untrustedCallerText is speech-to-text and often messy. Mentally filter fillers and dead air such as "um", "uh", "erm", "hmm", "like", "you know", stutters, false starts, and trailing fragments that are not part of the answer.',

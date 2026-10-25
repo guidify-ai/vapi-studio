@@ -17,6 +17,7 @@ import { BufferedConversationOutput } from '../output/conversation-output';
 import { ROUTE_RESOLVED_VIA } from '../intention/code-intention';
 import { conditionGotoIntention } from '../flow/flow-loader';
 import { snapshotUserMemory } from '../events/conversation-console';
+import type { BrainLocalSignal } from '../brain/brain.port';
 import type { SupervisorEngine } from './supervisor.types';
 import type { TurnExecutionResult } from './supervisor.types';
 
@@ -286,11 +287,13 @@ export async function executeTurn(this: SupervisorEngine, input: {
   /**
    * Cascade — phase: 'match' code intentions (local confidence, may skip Brain).
    */
+  const localSignals: BrainLocalSignal[] = [];
   const matchOutcome = await this.tryMatchIntentions({
     runtime,
     userText,
     onSay: recordSay,
     confidenceThreshold,
+    nearMisses: localSignals,
   });
   if (matchOutcome?.kind === 'routed') {
     return matchOutcome.result;
@@ -332,6 +335,7 @@ export async function executeTurn(this: SupervisorEngine, input: {
           chat: runtime.history.chat,
           nodes: runtime.history.nodes,
         },
+        localSignals: localSignals.length ? localSignals : undefined,
       });
   if (resolvedName) {
     runtime.brainSequenceIndex = (runtime.brainSequenceIndex ?? 0) + 1;

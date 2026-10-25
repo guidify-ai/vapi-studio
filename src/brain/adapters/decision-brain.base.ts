@@ -16,6 +16,7 @@ import { EventService } from '../../events/event.service';
 import { snapshotUserMemory } from '../../events/conversation-console';
 import type {
   BrainAdapter,
+  BrainLocalSignal,
   BrainScanInput,
   BrainScanResult,
 } from '../brain.port';
@@ -216,6 +217,7 @@ export abstract class DecisionBrainAdapter implements BrainAdapter {
         snapshotUserMemory(input.runtime.memory as Record<string, unknown>),
         this.brainConfig?.memorySnapshot,
       ),
+      priors: scanPriors(candidates, input.localSignals),
     };
 
     const started = Date.now();
@@ -458,12 +460,36 @@ export function scanTask(series: boolean): string {
     'The context JSON holds the latest caller utterance (untrustedCallerText, speech-to-text, may be messy), recent chat and node history, and memory: facts collected so far in the call.',
     'Answer each question independently for the latest caller turn, using history and memory only as context.',
     'Ignore ASR fillers ("um", "uh", "like"), stutters, false starts, and unrelated asides.',
+    'priors (when present) are weak hints, not answers: expected lists what the current step anticipates (higher boost = more likely), and localMatches holds scores from keyword/pattern matchers that were too unsure to decide. Judge from what the caller actually said.',
     series
       ? 'The caller spoke several times in quick succession (userSpeechSeries): treat the parts as one answer, preferring the latest clear meaning.'
       : '',
   ]
     .filter(Boolean)
     .join('\n');
+}
+
+/**
+ * Deterministic pre-ranking for the scanner: Node-author boosts on expected
+ * intentions and below-threshold match-phase scores. Undefined when empty.
+ */
+export function scanPriors(
+  candidates: BrainIntentionOption[],
+  localSignals?: BrainLocalSignal[],
+): Record<string, unknown> | undefined {
+  const expected = candidates
+    .filter((c) => (c.boost ?? 0) > 0)
+    .sort((a, b) => (b.boost ?? 0) - (a.boost ?? 0))
+    .map((c) => ({ name: c.name, boost: c.boost }));
+  const localMatches = (localSignals ?? []).map((s) => ({
+    name: s.name,
+    confidence: roundConfidence(s.confidence),
+  }));
+  if (!expected.length && !localMatches.length) return undefined;
+  return {
+    expected: expected.length ? expected : undefined,
+    localMatches: localMatches.length ? localMatches : undefined,
+  };
 }
 
 export function predicateInstructions(c: BrainIntentionOption): string {

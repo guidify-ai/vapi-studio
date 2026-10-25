@@ -91,6 +91,37 @@ test('OpenAI Decisions: one predicate per candidate, JSON context with memory, 6
   );
 });
 
+test('priors: node boosts and below-threshold match scores reach the scanner as hints', async () => {
+  const a = make(OpenAiDecisionsBrainAdapter);
+  const boosted = [
+    { ...candidates[0], boost: 10 },
+    { ...candidates[1], boost: 22 },
+    candidates[2],
+  ];
+  const { calls } = await withFetch(decisionsReply, () =>
+    a.scan({
+      runtime: runtime(),
+      userText: 'new roof maybe',
+      candidates: boosted,
+      localSignals: [
+        { name: 'wantsReplacement', confidence: 0.3500001, source: 'intention_match' },
+      ],
+    }),
+  );
+  const { priors } = calls[0].body.input[1].content[0].data;
+  assert.deepEqual(priors.expected, [
+    { name: 'wantsReplacement', boost: 22 },
+    { name: 'wantsRepair', boost: 10 },
+  ]);
+  assert.deepEqual(priors.localMatches, [{ name: 'wantsReplacement', confidence: 0.35 }]);
+  assert.match(calls[0].body.input[0].content, /priors .* weak hints/);
+
+  const { calls: plain } = await withFetch(decisionsReply, () =>
+    a.scan({ runtime: runtime(), userText: 'fix it', candidates }),
+  );
+  assert.equal(plain[0].body.input[1].content[0].data.priors, undefined);
+});
+
 test('memorySnapshot hook trims what the scanner sees', async () => {
   const a = make(OpenAiDecisionsBrainAdapter, {
     memorySnapshot: ({ ssn, ...rest }) => rest,
