@@ -29,7 +29,7 @@ Opt-in helpers (HTML form pages, spoken-email parsing) may ship starter defaults
 for app content, because the app chooses to call them — but every visible string
 must be an option.
 
-### Inventory (0.1.3)
+### Inventory (0.2.0)
 
 **Changed:**
 

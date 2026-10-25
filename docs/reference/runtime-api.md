@@ -23,7 +23,7 @@ Application-specific agent steps, copy, and flows do **not** belong in this repo
 ```json
 {
   "dependencies": {
-    "@guidify-ai/vapi-studio": "0.1.3"
+    "@guidify-ai/vapi-studio": "0.2.0"
   }
 }
 ```
