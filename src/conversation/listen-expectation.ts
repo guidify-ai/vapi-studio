@@ -54,9 +54,16 @@ export interface ListenExpectation {
    * Cheap closed-set match **before** Brain scan. If this returns an intention
    * name that is on this listen, Supervisor skips OpenAI and walks that
    * intention at confidence 1. Return null to fall through to Brain (portals,
-   * unknown, free-form). Use after the bot listed numbered options.
+   * unknown, free-form). Use after the bot named a few options in a sentence.
    */
   resolveIntention?: ListenResolveIntention;
+  /**
+   * Text spoken by the `sayAndListen` that opened this listen. Set by the
+   * Supervisor. When a portal returns to its origin (Continue / still-there
+   * "yes"), the origin repeats this question instead of treating the
+   * caller's agreement as an answer to it.
+   */
+  question?: string;
 }
 
 /** Options passed to `sayAndListen` for the next answer's listen. */

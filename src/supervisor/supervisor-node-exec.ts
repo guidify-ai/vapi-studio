@@ -107,10 +107,13 @@ export async function executeNodeWithCatch(this: SupervisorEngine, input: {
     if (pendingError !== undefined) throw pendingError;
     const result = await node.run(ctx);
     if (result.kind === 'sayAndListen') {
-      runtime.listenExpectation = mergeSayAndListenOptions(
+      const merged = mergeSayAndListenOptions(
         runtime.listenExpectation,
         result.sayAndListen,
-      );
+      ) ?? { intentions: [] };
+      runtime.listenExpectation = result.text?.trim()
+        ? { ...merged, question: result.text.trim() }
+        : merged;
       this.stampListenTimeout(
         runtime,
         node,

@@ -270,8 +270,6 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
       'isMultiSayTest',
       STANDARD_INTENTIONS.isPause,
       'isContinue',
-      // Re-scan of the same utterance after silent portal exit (no filler say).
-      'isMultiSayTest',
       STANDARD_INTENTIONS.isGoodbye,
     ]);
     brain.setActiveProfile('pause-resume');
@@ -295,11 +293,10 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
     const t4 = await streamTurn(supervisor, runtime, 'okay continue');
     assert.equal(runtime.portalState.activePortalId, null);
     assert.equal(t4.turn.selectedNodeId, 'multiSay');
-    // Must not speak filler “Okay, continuing.” — origin node speaks instead.
-    assert.ok(!contents(t4.events).includes('Okay, continuing.'));
-    assert.ok(
-      contents(t4.events).some((c) => c.includes('Give me a moment')),
-    );
+    // No filler “Okay, continuing.” — the origin repeats its sayAndListen line.
+    assert.deepEqual(contents(t4.events), [
+      'Here it is. This proves I can send multiple messages during one turn.',
+    ]);
   });
 
   it('Scenario 2: transfer re-engage then transferCall tool', async () => {
