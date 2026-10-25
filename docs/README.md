@@ -53,6 +53,7 @@
 | [SpecKit](./guides/speckit.md) | Framework specify → plan → tasks |
 | [ARDs](./ards/README.md) | Architecture decision records (PR requirement) |
 | [Releases](./releases/README.md) | Per-version articles: features, reasoning, testing, upgrade guide |
+| [Articles](./articles/README.md) | Tested patterns — e.g. SMS form during a live call |
 | [Node conventions](./guides/node-conventions.md) | Naming, lifecycle, Brain SLOs |
 | [Extending events](./guides/extending-events.md) | Attach logic to the event bus (Nest + Redis samples) |
 | [Event samples](./samples/events/) | Copy-paste `onStudioEvent` / Nest listener examples |

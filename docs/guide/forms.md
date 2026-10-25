@@ -102,5 +102,6 @@ Full rules: [Identity and PII](../best-practices/identity-and-pii.md)
 
 ## Related
 
+- [Text the form, keep the call](../articles/sms-form-during-the-call.md) — the full on-call pattern; Google Forms and Formester recipes
 - [Runtime API](../reference/runtime-api.md) — forms contracts
 - [Identity and PII](../best-practices/identity-and-pii.md)
