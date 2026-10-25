@@ -94,6 +94,9 @@ export abstract class CodeIntention<
   /** Stable id — same string flow.yaml / listen lists / Brain candidates use. */
   public abstract readonly name: string;
 
+  /** Short meaning shown to the Brain scanner next to `name` (one sentence). */
+  public description?: string;
+
   /**
    * Cascade phase. Default `scan` preserves today’s string-only intentions.
    * Set `force` for Brain-free gates (phone missing, consent gap, …).

@@ -59,11 +59,13 @@ Each send (dry-run or live) goes through `EventService.persist` as `OUTBOUND_NOT
 
 ```ts
 disposeContext: {
-  contactPhone: '5550100999', // or E.164 / `to` / `phone`
+  contactPhone: '+15550100999', // E.164 only (aliases `to` / `phone`)
+  body: 'Here is your form: {formUrl}', // required — your words, your language
   // formUrl optional — defaults to `{PUBLIC_BASE_URL}/forms/{exposeId}`
-  // body?: 'optional custom SMS text'
 }
 ```
+
+Studio does not guess a country for national numbers (`5550100999` is rejected) and ships no SMS wording — both are the app's call ([ARD-0004](../ards/ARD-0004-framework-decision-boundary.md)).
 
 Set `PUBLIC_BASE_URL` (ngrok/public HTTPS origin) so the texted link is reachable. Override with an explicit `formUrl` when the fill page lives elsewhere.
 
@@ -82,6 +84,8 @@ Set `PUBLIC_BASE_URL` (ngrok/public HTTPS origin) so the texted link is reachabl
 - `renderFormHtml(handle)` — JSON fields → fillable page
 - `renderFormThanksHtml()` / `renderFormGoneHtml()`
 
+All visible strings and `lang` are options. The English text is a starter default — pass your own copy.
+
 Apps own HTTP routes (`GET/POST /forms/:exposeId`). Document routes in the application repository.
 
 ## Timeouts
@@ -98,5 +102,6 @@ Full rules: [Identity and PII](../best-practices/identity-and-pii.md)
 
 ## Related
 
+- [Text the form, keep the call](../articles/sms-form-during-the-call.md) — the full on-call pattern; Google Forms and Formester recipes
 - [Runtime API](../reference/runtime-api.md) — forms contracts
 - [Identity and PII](../best-practices/identity-and-pii.md)

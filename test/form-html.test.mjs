@@ -74,4 +74,17 @@ describe('renderFormHtml', () => {
     assert.match(renderFormThanksHtml(), /We received your details/);
     assert.match(renderFormGoneHtml(), /Form unavailable/);
   });
+
+  it('app overrides copy and document language', () => {
+    const gone = renderFormGoneHtml({ title: 'Formulaire indisponible', message: 'Lien expiré.', lang: 'fr' });
+    assert.match(gone, /<html lang="fr">/);
+    assert.match(gone, /<h1>Formulaire indisponible<\/h1>/);
+    assert.ok(!gone.includes('Form unavailable'));
+    assert.match(renderFormGoneHtml('Gone.'), /<p>Gone\.<\/p>/);
+    assert.match(renderFormThanksHtml({ title: 'Merci', lang: 'fr' }), /<html lang="fr">/);
+    assert.match(
+      renderFormHtml({ exposeId: 'abcdefgh-1', formId: 'f', fields: [] }, { lang: 'es' }),
+      /<html lang="es">/,
+    );
+  });
 });

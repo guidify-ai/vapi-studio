@@ -241,17 +241,10 @@ export async function resolveOriginListenForReplay(this: SupervisorEngine, input
 }
 
 /**
- * Exit the active portal (if any), restore the origin Node, refresh its
- * listen, re-scan the same user text, and route again — without speaking a
- * filler “Okay, continuing.”
- */
-
-
-
-/**
- * Exit the active portal (if any), restore the origin Node, refresh its
- * listen, re-scan the same user text, and route again — without speaking a
- * filler “Okay, continuing.”
+ * Exit the active portal (if any), restore the origin Node and its listen,
+ * and repeat the origin's question (`listen.question`). Without a saved
+ * question, re-scan the same user text against the origin listen and route
+ * again. Never speaks a filler “Okay, continuing.”
  */
 export async function replayOriginAfterContinue(this: SupervisorEngine, input: {
   runtime: SupervisedConversation;
@@ -342,6 +335,29 @@ export async function replayOriginAfterContinue(this: SupervisorEngine, input: {
   }
   runtime.listenExpectation = listenExpectation;
   this.stampListenTimeout(runtime, originNode);
+
+  // The utterance answered the portal ("okay, I'll stay"), not the origin.
+  // Re-ask the origin's question rather than scan agreement words against a
+  // yes/no listen.
+  const question = savedListen?.question?.trim();
+  if (question) {
+    this.events.log('info', 'CONTINUE_REASK_ORIGIN', {
+      conversationId: runtime.conversationId,
+      runtimeInstanceId: runtime.runtimeInstanceId,
+      fromNodeId,
+      originNodeId: targetId,
+      userText,
+      forceHop,
+      via: input.resolvedVia ?? ROUTE_RESOLVED_VIA.Continue,
+    });
+    const result = await output.sayAndListen(question);
+    return {
+      selectedNodeId: targetId,
+      selectedClass: originCandidate.class,
+      result,
+      portalOriginRestored,
+    };
+  }
 
   const confidenceThreshold = resolveConfidenceThreshold(
     this.brainConfig?.confidenceThreshold,

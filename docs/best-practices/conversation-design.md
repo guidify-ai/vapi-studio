@@ -11,19 +11,30 @@ Ask **one** clear call-to-action per assistant turn. Never combine unrelated dec
 | “Is it okay if I text you a form? What’s the best mobile?” | Turn 1: “OK to text a short form?” → Turn 2: “Best mobile?” |
 | “Do you want an appointment or an estimate, and what’s your address?” | Offer **or** collect address — not both |
 
-**Prefer more Nodes** (or `continueTo` hops) over stuffing two CTAs into one `sayAndListen`. Combined prompts cause ambiguous answers, wrong intention routing, and extract pollution.
+**Prefer more Nodes** (or `continueTo` hops) over stuffing two CTAs into one `sayAndListen`. Combined prompts cause ambiguous answers, wrong intention routing, and polluted data.
 
 Answer shapes on **one** CTA can still vary (e.g. “Say yes, or give a different number”) — that is still one decision: confirm destination vs provide another.
 
+## No IVR menus (hard rule)
+
+Never read options as a numbered menu (“1) instant estimate, 2) wrap up”) or ask the caller to “press” or “say one”. That is a phone tree, not a conversation — and on a phone, numbers invite callers to press 1, 2, 3 on the keypad, which the assistant does not hear as an answer. Just name the options in a sentence and ask:
+
+| Bad | Good |
+| --- | --- |
+| “I have a few openings: 1) 9am, and 2) 10am, and 3) 11am. Which time works?” | “I have openings at 9, 10, or 11 am. Which works for you?” |
+| “1) instant estimate, and 2) wrap up. Which one works for you?” | “I can give you an instant estimate now, or we can wrap up here. What would you prefer?” |
+
+Callers still answer with ordinals (“the first one”, “second”) — the listen's `resolveIntention` should accept those alongside the option's own words. Keep lists short (two or three options); more than that belongs in a form or a follow-up question.
+
 ## Conversations must end (hard rule)
 
-There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise within hard ceilings in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
+There is **no unlimited conversation**. The framework enforces `limits.maxTurns` (default 40) and `limits.maxDurationMs` (default 20 minutes) on every call — fail-closed goodbye (your required `limits.endMessage`) + `endCall`, event `CONVERSATION_LIMIT_EXCEEDED`. Raise them in `VapiStudioModule.forRoot({ limits })` when a product path legitimately needs more room — any finite value; never remove the caps. Design flows so a successful path finishes well under the defaults, and rely on still-there / goodbye portals for polite early exits.
 
 ## Fail closed on constrained fields
 
-If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, listed choice 1…N), the extractor must:
+If a field has a hard shape (NA mobile = **exactly 10 digits**, email must parse, one of the listed options), the Node that reads the answer must:
 
-1. Know the constraint (local parser **and** Brain extract `description`).
+1. Know the constraint (local parser, and the field `description` when it uses `ctx.clarify`).
 2. Accept only valid recoveries (e.g. strip `+1`, take first 10 digits, drop trailing “hello”).
 3. **Fail** (re-ask that same single CTA) when recovery is impossible — never invent or store junk.
 4. For spoken phones: **always read back and confirm** before using the number (separate CTA).
@@ -101,7 +112,7 @@ Example apps (`/flow`) should follow this layout instead of a cramped vertical g
 
 | OK (caller-facing) | Internal only (never spoken) |
 | --- | --- |
-| “roof estimate”, “appointment”, “text you a form” | `routerTriage`, `askSmsPhone`, `isRouterReady` |
+| “estimate”, “appointment”, “text you a form” | `routerTriage`, `askSmsPhone`, `isRouterReady` |
 | “Are you still there?” (when the **still-there portal** owns the turn) | “stillThere portal attempt 2” |
 | “Let me connect you to someone.” | `transferToHuman`, `WORKFLOW_HANDOFF` |
 

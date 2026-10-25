@@ -35,8 +35,8 @@ import {
  *
  * Wire: `VapiStudioModule.forRoot({ formDisposeAdapter: TwilioSmsFormDisposeAdapter })`.
  * Install peer `twilio` only when leaving dry-run for live sends.
- * `disposeContext.contactPhone` required; `formUrl` optional (falls back to
- * `{PUBLIC_BASE_URL}/forms/{exposeId}`).
+ * `disposeContext.contactPhone` (E.164) and `body` (`{formUrl}` placeholder)
+ * required; `formUrl` optional (falls back to `{PUBLIC_BASE_URL}/forms/{exposeId}`).
  */
 @Injectable()
 export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
@@ -62,7 +62,7 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
     const to = pickSmsDestination(payload.disposeContext);
     if (!to) {
       const reason =
-        'Twilio SMS dispose needs disposeContext.contactPhone (E.164 or 10-digit NA)';
+        'Twilio SMS dispose needs disposeContext.contactPhone in E.164 (e.g. +15550100999)';
       await this.persistOutboundError(payload, reason);
       throw new FormChannelUnavailableError(reason);
     }
@@ -77,6 +77,12 @@ export class TwilioSmsFormDisposeAdapter implements FormDisposeAdapter {
       throw new FormChannelUnavailableError(reason);
     }
     const body = resolveSmsBody(payload.disposeContext, formUrl);
+    if (!body) {
+      const reason =
+        'Twilio SMS dispose needs disposeContext.body (use {formUrl} for the link)';
+      await this.persistOutboundError(payload, reason);
+      throw new FormChannelUnavailableError(reason);
+    }
 
     const sender =
       this.senderOverride ?? createTwilioSmsSender(resolved.config);

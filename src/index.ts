@@ -1,4 +1,7 @@
-export { STANDARD_INTENTIONS } from './intentions/standard-intentions';
+export {
+  STANDARD_INTENTIONS,
+  STANDARD_INTENTION_DESCRIPTIONS,
+} from './intentions/standard-intentions';
 export type { StandardIntention } from './intentions/standard-intentions';
 
 export { VapiStudioModule } from './vapi-studio.module';
@@ -60,9 +63,6 @@ export {
   STUDIO_CONVERSATION_LIMITS,
   DEFAULT_MAX_CONVERSATION_TURNS,
   DEFAULT_MAX_CONVERSATION_DURATION_MS,
-  HARD_MAX_CONVERSATION_TURNS,
-  HARD_MAX_CONVERSATION_DURATION_MS,
-  DEFAULT_CONVERSATION_LIMIT_MESSAGE,
   resolveConversationLimits,
   evaluateConversationLimits,
 } from './conversation/conversation-limits';
@@ -160,68 +160,46 @@ export type {
   BrainScanInput,
   BrainScanResult,
 } from './brain/brain.service';
+export type { BrainLocalSignal } from './brain/brain.port';
 export { BrainUsageTracker } from './brain/brain-usage.tracker';
 export type {
   BrainUsageRecord,
   BrainUsageSummary,
   BrainCallKind,
 } from './brain/brain-usage.tracker';
+export type { BrainModelRef, TokenUsage } from './brain/brain-model';
 export {
-  DEFAULT_CHEAP_OPENAI_MODEL,
-  CHEAP_OPENAI_MODELS,
-  CHEAP_OPENAI_MODEL_IDS,
-  resolveCheapOpenAiModel,
-  isCheapOpenAiModel,
-} from './brain/openai-cheap-models';
-export type {
-  CheapOpenAiModelId,
-  CheapModelPricing,
-} from './brain/openai-cheap-models';
-export {
-  DEFAULT_CHEAP_CLAUDE_MODEL,
-  CHEAP_CLAUDE_MODELS,
-  CHEAP_CLAUDE_MODEL_IDS,
-  resolveCheapClaudeModel,
-  isCheapClaudeModel,
-} from './brain/claude-cheap-models';
-export type {
-  CheapClaudeModelId,
-  CheapClaudeModelPricing,
-} from './brain/claude-cheap-models';
-export {
-  DEFAULT_CHEAP_GEMINI_MODEL,
-  CHEAP_GEMINI_MODELS,
-  CHEAP_GEMINI_MODEL_IDS,
-  resolveCheapGeminiModel,
-  isCheapGeminiModel,
-} from './brain/gemini-cheap-models';
-export type {
-  CheapGeminiModelId,
-  CheapGeminiModelPricing,
-} from './brain/gemini-cheap-models';
-export {
-  DEFAULT_CHEAP_GROK_MODEL,
-  CHEAP_GROK_MODELS,
-  CHEAP_GROK_MODEL_IDS,
-  resolveCheapGrokModel,
-  isCheapGrokModel,
-} from './brain/grok-cheap-models';
-export type {
-  CheapGrokModelId,
-  CheapGrokModelPricing,
-} from './brain/grok-cheap-models';
-export {
-  estimateUsdCost,
-  estimateUsdFromPricing,
-  lookupModelPricing,
-} from './brain/llm-model-pricing';
-export type { LlmModelPricing, TokenUsage } from './brain/llm-model-pricing';
-export { STUDIO_BRAIN_CONFIG, resolveStudioBrainConfig } from './brain/brain-config';
+  STUDIO_BRAIN_CONFIG,
+  STUDIO_BRAIN_LLM,
+  resolveStudioBrainConfig,
+  mergeProviderOptions,
+  llmBrainConfig,
+  routeBrainLlm,
+  scannerMemorySnapshot,
+} from './brain/brain-config';
 export type {
   StudioBrainConfig,
   ResolvedStudioBrainConfig,
+  BrainLlmConfig,
+  BrainLlmAdapterClass,
+  CheapOpenAiModelId,
+  CheapClaudeModelId,
+  CheapGeminiModelId,
+  CheapGrokModelId,
 } from './brain/brain-config';
 export { detectUserSpeechSeries } from './brain/adapters/json-llm-brain.base';
+export {
+  DecisionBrainAdapter,
+  scanTask as decisionScanTask,
+  predicateInstructions as decisionPredicateInstructions,
+} from './brain/adapters/decision-brain.base';
+export type {
+  DecisionQuestion,
+  DecisionEvaluateInput,
+  DecisionEvaluateResult,
+} from './brain/adapters/decision-brain.base';
+export { OpenAiDecisionsBrainAdapter } from './brain/adapters/openai-decisions-brain.adapter';
+export { TypeSafeJevBrainAdapter } from './brain/adapters/typesafe-jev-brain.adapter';
 export {
   clarifiableInputToString,
   filterClarifyAnswer,
@@ -286,25 +264,18 @@ export {
 export {
   applyListenBoosts,
   mergeSayAndListenOptions,
-  missingRequiredExtractKeys,
-  mockExtractFromUserText,
   mockExtractPersonName,
   tryResolveListenIntention,
 } from './conversation/listen-expectation';
 export type {
   ListenExpectation,
   ListenIntentionBoost,
-  ListenExtractField,
-  ListenExtractSpec,
-  ListenExtractHandler,
-  ListenExtractApplyContext,
   ListenResolveIntention,
   SayAndListenOptions,
 } from './conversation/listen-expectation';
 export {
   DEFAULT_LISTEN_TIMEOUT_SECONDS,
   MIN_LISTEN_TIMEOUT_SECONDS,
-  MAX_LISTEN_TIMEOUT_SECONDS,
   clampListenTimeoutSeconds,
   resolveListenTimeoutSeconds,
   listenTimeoutSecondsToMs,
@@ -450,8 +421,8 @@ export {
   pickSmsDestination,
   pickSmsFormUrl,
   resolveSmsFormUrl,
-  buildDefaultSmsBody,
   resolveSmsBody,
+  SMS_FORM_URL_PLACEHOLDER,
 } from './forms/twilio-sms.env';
 export type {
   TwilioSmsConfig,

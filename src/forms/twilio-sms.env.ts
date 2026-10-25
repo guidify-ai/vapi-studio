@@ -96,26 +96,32 @@ export function resolveTwilioSmsConfig(
   return { ok: true, config };
 }
 
-/** Normalize NA mobile / E.164 for Twilio `to`. */
+/**
+ * Accept an E.164 number (`+` country code + subscriber), tolerating spaces,
+ * dashes, dots and parentheses. National formats are rejected — the country
+ * is the app's knowledge, so the app normalizes before dispose.
+ */
 export function normalizeSmsToE164(raw: string): string | null {
   const trimmed = raw.trim();
-  if (!trimmed) return null;
-  if (/^\+[1-9]\d{7,14}$/.test(trimmed)) return trimmed;
-  const digits = trimmed.replace(/\D/g, '');
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
-  if (digits.length >= 8 && digits.length <= 15) return `+${digits}`;
-  return null;
+  if (!trimmed.startsWith('+')) return null;
+  const compact = `+${trimmed.slice(1).replace(/[\s().-]/g, '')}`;
+  return /^\+[1-9]\d{7,14}$/.test(compact) ? compact : null;
 }
 
+/** Placeholder replaced with the form URL inside `disposeContext.body`. */
+export const SMS_FORM_URL_PLACEHOLDER = '{formUrl}';
+
 export interface TwilioSmsDisposeContext {
-  /** Destination mobile (E.164 or 10-digit NA). Aliases: `to`, `phone`. */
+  /** Destination mobile in E.164 (`+15550100999`). Aliases: `to`, `phone`. */
   contactPhone?: string;
   to?: string;
   phone?: string;
   /** Absolute HTTPS URL to the fillable form. */
   formUrl?: string;
-  /** Optional full SMS body (otherwise a short default with formUrl). */
+  /**
+   * SMS text (required). `{formUrl}` is replaced with the form URL — the
+   * recipient reads it, so the app owns the wording and language.
+   */
   body?: string;
 }
 
@@ -163,16 +169,12 @@ export function resolveSmsFormUrl(
   return `${base}/forms/${id}`;
 }
 
-export function buildDefaultSmsBody(formUrl: string): string {
-  return `Please fill out this short form: ${formUrl}`;
-}
-
+/** App SMS text with `{formUrl}` filled in; null when the app sent none. */
 export function resolveSmsBody(
   ctx: Record<string, unknown> | undefined,
   formUrl: string,
-): string {
-  if (ctx && typeof ctx.body === 'string' && ctx.body.trim()) {
-    return ctx.body.trim();
-  }
-  return buildDefaultSmsBody(formUrl);
+): string | null {
+  const body = ctx && typeof ctx.body === 'string' ? ctx.body.trim() : '';
+  if (!body) return null;
+  return body.split(SMS_FORM_URL_PLACEHOLDER).join(formUrl);
 }

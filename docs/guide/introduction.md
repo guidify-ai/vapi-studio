@@ -18,6 +18,7 @@ A NestJS module that provides:
 
 - A no-code bot builder
 - A hosted SaaS
+- A channel-agnostic engine — Vapi is required; there are no adapters for other voice/agent platforms by design ([ARD-0002](../ards/ARD-0002-vapi-only-north-star.md))
 - A place for customer-specific logic — that belongs in **your application** (separate from this package)
 
 ## How apps use it
@@ -32,9 +33,10 @@ VapiStudioModule.forRoot({
   intentions: [NeedSmsPhoneIntention],
   brainAdapter: ChatGptBrainAdapter,
   brain: {
-    model: 'gpt-4.1-mini',
+    model: 'gpt-6-luna',
     confidenceThreshold: 0.4,
   },
+  limits: { endMessage: 'Thanks for calling — goodbye.' },
   formDisposeAdapter: LinkFormDisposeAdapter,
   eventListeners: [MyEventBuffer],
 })

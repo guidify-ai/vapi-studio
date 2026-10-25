@@ -16,6 +16,8 @@ export interface RankedIntentionScore {
 
 export interface BrainIntentionOption {
   name: string;
+  /** Short meaning shown to the scanner next to the name. */
+  description?: string;
   boost?: number;
   /** Supervisor walk order. Default 1. */
   priority?: number;

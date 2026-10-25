@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   DEFAULT_LISTEN_TIMEOUT_SECONDS,
-  MAX_LISTEN_TIMEOUT_SECONDS,
   MIN_LISTEN_TIMEOUT_SECONDS,
   clampListenTimeoutSeconds,
   listenTimeoutSecondsToMs,
@@ -12,10 +11,10 @@ import {
 } from '../dist/index.js';
 
 describe('listen timeout', () => {
-  it('defaults to 2.5s and clamps', () => {
+  it('defaults to 2.5s, floors at Vapi minimum, no framework ceiling', () => {
     assert.equal(DEFAULT_LISTEN_TIMEOUT_SECONDS, 2.5);
     assert.equal(clampListenTimeoutSeconds(0), MIN_LISTEN_TIMEOUT_SECONDS);
-    assert.equal(clampListenTimeoutSeconds(99), MAX_LISTEN_TIMEOUT_SECONDS);
+    assert.equal(clampListenTimeoutSeconds(30), 30);
     assert.equal(
       clampListenTimeoutSeconds(Number.NaN),
       DEFAULT_LISTEN_TIMEOUT_SECONDS,

@@ -272,19 +272,17 @@ export class ConversationBootstrapService {
     this.registry.delete(providerCallId);
     this.turnQueues.delete(providerCallId);
 
-    const cost = this.brainUsage.summary(providerCallId);
-    if (cost && cost.calls > 0) {
-      this.events.log('info', 'BRAIN_COST_SUMMARY', {
+    const usage = this.brainUsage.summary(providerCallId);
+    if (usage && usage.calls > 0) {
+      this.events.log('info', 'BRAIN_USAGE_SUMMARY', {
         providerCallId,
         conversationId: runtime.conversationId,
         runtimeInstanceId: runtime.runtimeInstanceId,
-        calls: cost.calls,
-        promptTokens: cost.promptTokens,
-        completionTokens: cost.completionTokens,
-        totalTokens: cost.totalTokens,
-        estimatedUsd: cost.estimatedUsd,
-        money: this.brainUsage.formatMoney(cost.estimatedUsd),
-        byModel: cost.byModel,
+        calls: usage.calls,
+        promptTokens: usage.promptTokens,
+        completionTokens: usage.completionTokens,
+        totalTokens: usage.totalTokens,
+        byModel: usage.byModel,
       });
     }
     this.brainUsage.clear(providerCallId);

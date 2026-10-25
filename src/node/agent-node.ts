@@ -152,7 +152,7 @@ export interface NodeContext<
  *   listen()  → register listen expectation before speech (no I/O)
  *   run()     → speech + one terminal output (do not overload with integrations)
  *   after()   → teardown for this Node execution (non-speech)
- *   catch()   → recover from FlowUncertainError / other errors
+ *   catch()   → recover from errors thrown in before() / run()
  */
 export abstract class AgentNode<
   TSchema extends ConversationSchema = DefaultConversationSchema,
@@ -171,7 +171,9 @@ export abstract class AgentNode<
   public interruptible: boolean = true;
 
   /**
-   * CAN gate + prepare. Return false to reject this candidate.
+   * CAN gate + prepare. Return false to reject this candidate ("not my turn").
+   * Prepare here, e.g. read the data this Node needs from `ctx.userText`; throw
+   * when the answer breaks this Node's expectations — catch() decides what next.
    * Prefer async prep / warms here (spawn without await when speech must stay fast).
    */
   public async before(_ctx: NodeContext<TSchema>): Promise<boolean> {
@@ -194,7 +196,8 @@ export abstract class AgentNode<
   }
 
   /**
-   * Handle errors thrown from run() (e.g. FlowUncertainError).
+   * Handle errors thrown from before() or run() — e.g. the caller's answer
+   * breaks what this Node expects (FlowUncertainError or your own error).
    * Return restartNode() / forceIntention(...) / catchResult(...) / rethrowCatch().
    * Default: rethrow.
    */

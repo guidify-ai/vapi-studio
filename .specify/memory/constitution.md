@@ -7,13 +7,46 @@ document those in the app repo, not in this package.
 Use SpecKit (`.specify/`) + **Architecture Decision Records (ARDs)** under
 `docs/ards/` when changing framework architecture. See [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
+## North Star
+
+**Vapi Studio is a toolkit for building on [Vapi](https://vapi.ai).** Every
+feature exists to make Vapi assistants more deterministic, observable, and
+production-ready. Vapi is a hard requirement, not one option among many.
+
+- Vapi is the **only** voice/agent platform. An app built on Studio runs
+  behind a Vapi assistant (Custom LLM + webhook).
+- Studio is **not** a provider-agnostic or channel-agnostic conversation
+  engine. It does not aim to also drive Twilio Voice, Retell, Bland, LiveKit,
+  web chat, WhatsApp, or any other platform.
+- Companion surfaces (SMS form links, the Studio web harness, analytics,
+  CRM hooks) are in scope **only** when they serve a Vapi conversation.
+- New tools ship as **Vapi tools** (e.g. Vapi Custom Transcriber, Vapi Voice
+  Profiles, Vapi Integrations), designed around Vapi's model of assistants,
+  squads, tools, and calls.
+
+A contribution that makes Studio work better *without* Vapi, or that makes
+Vapi swappable, is out of scope regardless of code quality.
+See [ARD-0002](../../docs/ards/ARD-0002-vapi-only-north-star.md).
+
 ## Core Principles
 
 ### I. Framework-First Separation
 The framework MUST remain free of customer / use-case conversation behavior.
-Apps consume Studio only through the **public package API**. Provider wire
-protocols (Vapi HTTP, SSE, tool-calls, call IDs) MUST stay inside adapters.
+Apps consume Studio only through the **public package API**. Vapi wire
+protocols (HTTP, SSE, tool-calls, call IDs) MUST stay inside adapters.
 Application Nodes express business conversation without knowing those protocols.
+
+Adapters exist to keep Nodes clean and testable and to absorb Vapi API
+changes in one place — **not** to make Vapi replaceable. Do not generalize an
+adapter, port, or type toward hypothetical non-Vapi providers.
+
+The framework decides only **invariants** (safety, correctness, Vapi protocol)
+and **overridable mechanism defaults** (timeouts, windows, sizes). It MUST NOT
+ship app content — anything a caller hears or reads, language, country,
+business vocabulary, provider/model choice — nor copies of **remote facts**
+(prices, model catalogues). Opt-in helpers may carry starter copy only when
+every string is an option. See
+[ARD-0004](../../docs/ards/ARD-0004-framework-decision-boundary.md).
 
 **Rationale:** Reusable infrastructure; bots are separate NestJS applications.
 
@@ -39,7 +72,8 @@ injectable providers. Prefer explicit TypeScript over clever abstractions.
 
 ### IV. Smallest Justified Change
 Ship the smallest framework change that meets a stated need (tests + docs +
-ARD when architectural). Do not add speculative platform features “just in case.”
+ARD when architectural). Do not add speculative platform features “just in case,”
+including multi-provider or multi-channel abstractions (see North Star).
 
 **Rationale:** Framework surface area is a permanent maintenance cost for every
 consumer app.
@@ -70,6 +104,8 @@ provider quirks.
 ## Framework Constraints
 
 - This repository is the **`@guidify-ai/vapi-studio` package**, not a bot.
+- A Vapi account is required for live use; the Studio web harness is a dev
+  tool on the same Supervisor, not a separate production channel.
 - Package manager: Yarn. Persistence: TypeORM. Runtime: Node in Docker for apps.
 - Document required env vars and endpoints; never embed secrets in the repo.
 - Host-scoped Vapi ingress: `/vapi/webhook`, `/vapi/chat/completions` (each app
@@ -80,11 +116,18 @@ provider quirks.
 1. This constitution applies to framework contributions in this repository.
 2. Architectural changes MUST add or update an **ARD** under `docs/ards/`
    (see `.specify/templates/ard-template.md`).
-3. SpecKit plans/tasks for framework features MUST be checked against these
-   principles before merge.
+3. SpecKit plans/tasks for framework features MUST be checked against the
+   North Star and these principles before merge. First gate: *does this make
+   building on Vapi better?* If not, stop.
 4. Prefer shipped `docs/` and `docs/reference/runtime-api.md` over historical
    SpecKit dumps.
 5. Amendments bump the constitution version (MAJOR / MINOR / PATCH) with dates.
+6. Every feature MUST state its reasoning in the release article
+   (`docs/releases/vX.Y.Z.md`, ARD-0007). No reasoning, no release. No version
+   is published without maintainer sign-off on the reference apps (ARD-0005).
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-25  
+**Version**: 2.3.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-25  
+*(2.3.0 — Release articles with per-feature reasoning; sign-off before every release.)*  
+*(2.2.0 — Decision boundary: no app content or remote facts in the framework.)*  
+*(2.1.0 — North Star: Vapi-only toolkit; adapters are not a multi-provider seam.)*  
 *(2.0.0 — public framework constitution; Guidify product IP removed.)*

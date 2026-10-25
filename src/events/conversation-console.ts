@@ -248,7 +248,6 @@ function listenSummary(listen: unknown): string {
   const L = listen as {
     intentions?: Array<{ name?: string; boost?: number; priority?: number }>;
     hints?: string[];
-    extract?: { fields?: Array<{ key?: string }> };
     timeoutSeconds?: number;
   };
   const intents = (L.intentions ?? [])
@@ -261,16 +260,12 @@ function listenSummary(listen: unknown): string {
       return `${name}${boost}`;
     })
     .join(paint(ANSI.dim, ', '));
-  const fields = (L.extract?.fields ?? [])
-    .map((f) => paint(ANSI.yellow, f.key ?? '?'))
-    .join(paint(ANSI.dim, ', '));
   const timeout =
     typeof L.timeoutSeconds === 'number'
       ? paint(ANSI.dim, `${L.timeoutSeconds}s`)
       : '';
   const parts = [
     intents || paint(ANSI.dim, 'no intents'),
-    fields ? `extract[${fields}]` : '',
     timeout,
   ].filter(Boolean);
   return parts.join(paint(ANSI.dim, ' | '));
@@ -404,9 +399,6 @@ export function printConversationConsole(
         paint(ANSI.green, '→'),
         paint(ANSI.magenta + ANSI.bold, String(payload.winner ?? '?')),
         payload.reason ? paint(ANSI.dim, String(payload.reason)) : '',
-        payload.extracted
-          ? paint(ANSI.yellow, `extract=${formatValue(payload.extracted)}`)
-          : '',
         payload.durationMs != null
           ? paint(ANSI.dim, `${payload.durationMs}ms`)
           : '',
@@ -525,45 +517,41 @@ export function printConversationConsole(
           ANSI.dim,
           `in=${payload.promptTokens ?? 0} out=${payload.completionTokens ?? 0}`,
         ),
-        paint(ANSI.yellow + ANSI.bold, String(payload.money ?? '')),
         payload.durationMs != null
           ? paint(ANSI.dim, `${payload.durationMs}ms`)
           : '',
       ]);
       return;
 
-    case 'BRAIN_COST_SUMMARY': {
+    case 'BRAIN_USAGE_SUMMARY': {
       blank();
       line([
         paint(ANSI.dim, '════════'),
-        paint(ANSI.bold + ANSI.yellow, 'CALL COST'),
+        paint(ANSI.bold + ANSI.yellow, 'BRAIN TOKENS'),
         paint(ANSI.dim, '════════'),
       ]);
       line([
-        roleTag(ANSI.bgYellow, ANSI.white, ' $$$ '),
+        roleTag(ANSI.bgYellow, ANSI.white, 'TOKENS'),
         paint(
           ANSI.yellow + ANSI.bold,
-          String(payload.money ?? `$${payload.estimatedUsd ?? 0}`),
-        ),
-        paint(
-          ANSI.dim,
-          `tokens=${payload.totalTokens ?? 0} (in ${payload.promptTokens ?? 0} / out ${payload.completionTokens ?? 0})`,
+          `${payload.totalTokens ?? 0} (in ${payload.promptTokens ?? 0} / out ${payload.completionTokens ?? 0})`,
         ),
         paint(ANSI.dim, `calls=${payload.calls ?? 0}`),
       ]);
       if (payload.byModel && typeof payload.byModel === 'object') {
         for (const [model, row] of Object.entries(
-          payload.byModel as Record<string, { estimatedUsd?: number; calls?: number }>,
+          payload.byModel as Record<
+            string,
+            { calls?: number; promptTokens?: number; completionTokens?: number }
+          >,
         )) {
           line([
             paint(ANSI.dim, '       '),
             paint(ANSI.cyan, model),
             paint(ANSI.dim, `×${row.calls ?? 0}`),
             paint(
-              ANSI.yellow,
-              typeof row.estimatedUsd === 'number'
-                ? `$${row.estimatedUsd.toFixed(6)}`
-                : '',
+              ANSI.dim,
+              `in ${row.promptTokens ?? 0} / out ${row.completionTokens ?? 0}`,
             ),
           ]);
         }
@@ -581,12 +569,6 @@ export function printConversationConsole(
         line([
           paint(ANSI.dim, '       listen←'),
           listenSummary(payload.listen),
-        ]);
-      }
-      if (payload.extracted && Object.keys(payload.extracted as object).length) {
-        line([
-          paint(ANSI.dim, '       extract'),
-          formatValue(payload.extracted),
         ]);
       }
       return;
@@ -617,26 +599,6 @@ export function printConversationConsole(
         listenSummary(payload.listen),
         paint(ANSI.dim, String(payload.class ?? payload.nodeId ?? '')),
       ]);
-      return;
-
-    case 'LISTEN_EXTRACT_REGISTERED':
-      line([
-        roleTag(ANSI.bgGray, ANSI.white, 'EXTRACT'),
-        formatValue(payload.fields),
-        paint(ANSI.dim, String(payload.nodeId ?? '')),
-      ]);
-      return;
-
-    case 'LISTEN_EXTRACTED':
-      line([
-        roleTag(ANSI.bgGray, ANSI.white, 'EXTRACTED'),
-        formatValue(payload.extracted),
-        Array.isArray(payload.missingRequired) &&
-        (payload.missingRequired as unknown[]).length
-          ? paint(ANSI.red, `missing=${formatValue(payload.missingRequired)}`)
-          : '',
-      ]);
-      if (payload.memory) printMemoryDiff(payload.memory, payload);
       return;
 
     case 'NODE_AFTER':

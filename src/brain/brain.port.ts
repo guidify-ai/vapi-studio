@@ -28,16 +28,27 @@ export interface BrainScanInput {
     chat: Array<{ role: 'user' | 'assistant'; text: string }>;
     nodes: Array<{ nodeId: string; intention: string; turnNumber: number }>;
   };
+  /**
+   * Scores from deterministic matchers (match-phase CodeIntentions) that fired
+   * this turn but stayed below the threshold. A hit at/above the threshold
+   * routes without a scan; near-misses reach the scanner as weak priors.
+   */
+  localSignals?: BrainLocalSignal[];
+}
+
+export interface BrainLocalSignal {
+  name: string;
+  /** Matcher's own 0..1 score. */
+  confidence: number;
+  source: 'intention_match';
 }
 
 /**
- * Brain scan output: ranked intentions + optional structured extractions
- * declared on the active listen / sayAndListen.
+ * Brain scan output: ranked intentions only. A scan decides where the call goes;
+ * the Node that handles the answer extracts its own data (ARD-0008).
  */
 export interface BrainScanResult {
   intentions: IntentionCandidate[];
-  /** Map of ListenExtractField.key → value. */
-  extracted?: Record<string, unknown>;
 }
 
 /**

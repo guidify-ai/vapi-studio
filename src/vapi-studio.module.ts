@@ -1,10 +1,6 @@
 import { DynamicModule, Module, type Provider, type Type } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  BRAIN_SERVICE,
-  MockBrainAdapter,
-  type BrainAdapter,
-} from './brain/brain.service';
+import { BRAIN_SERVICE, type BrainAdapter } from './brain/brain.service';
 import { ConversationBootstrapService } from './conversation/conversation-bootstrap.service';
 import { ConversationResumeService } from './conversation/conversation-resume.service';
 import {
@@ -30,6 +26,9 @@ import {
 } from './intention/code-intention';
 import {
   STUDIO_BRAIN_CONFIG,
+  STUDIO_BRAIN_LLM,
+  llmBrainConfig,
+  routeBrainLlm,
   resolveStudioBrainConfig,
   type StudioBrainConfig,
 } from './brain/brain-config';
@@ -67,9 +66,10 @@ export interface VapiStudioModuleOptions {
   entryPoint?: Type<ConversationEntryPoint<object>>;
   /**
    * Brain adapter (Mock, ChatGPT, Claude, Gemini, Grok, or app-owned).
-   * Defaults to MockBrainAdapter. Supervisor depends only on BRAIN_SERVICE.
+   * Required — pass `MockBrainAdapter` explicitly for offline/dev.
+   * Supervisor depends only on BRAIN_SERVICE.
    */
-  brainAdapter?: Type<BrainAdapter>;
+  brainAdapter: Type<BrainAdapter>;
   /**
    * Nest `StudioEventListener`s (in-process only — e.g. Studio UI event buffer).
    * Remote exporters belong in app code via `onStudioEvent`, not here.
@@ -77,14 +77,14 @@ export interface VapiStudioModuleOptions {
   eventListeners?: Array<Type<StudioEventListener>>;
   /**
    * Brain settings (model, scan threshold). Code layer — not .env.
-   * `model` must be on the cheap whitelist. Default gpt-4.1-nano / 0.4.
+   * `model` is any provider model id (required by stock LLM adapters); threshold default 0.4.
    */
   brain?: StudioBrainConfig;
   /**
-   * Hard conversation caps (turns + wall-clock). Always on — defaults 40 turns /
-   * 20 minutes. Cannot be disabled; values are clamped to safe ceilings.
+   * Conversation bounds (turns + wall-clock). Always on — defaults 40 turns /
+   * 20 minutes; the app may set any finite values. `endMessage` is required.
    */
-  limits?: ConversationLimitsConfig;
+  limits: ConversationLimitsConfig;
   /**
    * How to dispose `forms.expose` to the active channel.
    * Default: noop (ACK never arrives → Nodes fall back to voice).
@@ -99,7 +99,13 @@ export class VapiStudioModule {
     const nodeProviders: Provider[] = options.nodes.map((n) => n.useClass);
     const intentionDefs = options.intentions ?? [];
     const intentionProviders: Provider[] = intentionDefs.map((c) => c);
-    const BrainAdapterClass = options.brainAdapter ?? MockBrainAdapter;
+    const BrainAdapterClass = options.brainAdapter;
+    if (!BrainAdapterClass) {
+      throw new Error(
+        'VapiStudioModule.forRoot({ brainAdapter }) is required — ' +
+          'pass MockBrainAdapter explicitly for offline/dev.',
+      );
+    }
     const extraListeners = options.eventListeners ?? [];
     const brainConfig = resolveStudioBrainConfig(options.brain);
     const conversationLimits = resolveConversationLimits(options.limits);
@@ -159,8 +165,25 @@ export class VapiStudioModule {
         },
         FlowLoader,
         BrainAdapterClass,
-        { provide: BRAIN_SERVICE, useExisting: BrainAdapterClass },
+        {
+          provide: BRAIN_SERVICE,
+          useFactory: (scanner: BrainAdapter, llm: BrainAdapter | null) =>
+            routeBrainLlm(scanner, llm),
+          inject: [BrainAdapterClass, STUDIO_BRAIN_LLM],
+        },
         { provide: STUDIO_BRAIN_CONFIG, useValue: brainConfig },
+        {
+          provide: STUDIO_BRAIN_LLM,
+          useFactory: (usage: BrainUsageTracker, events: EventService) =>
+            brainConfig.llm
+              ? new brainConfig.llm.adapter(
+                  usage,
+                  events,
+                  llmBrainConfig(brainConfig.llm),
+                )
+              : null,
+          inject: [BrainUsageTracker, EventService],
+        },
         { provide: STUDIO_CONVERSATION_LIMITS, useValue: conversationLimits },
         SupervisedConversationRegistry,
         ConversationRepository,

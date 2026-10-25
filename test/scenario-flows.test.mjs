@@ -13,28 +13,13 @@ import {
   VapiSseCompiler,
 } from '../dist/adapters/vapi/vapi-sse.compiler.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
+import { mockExtractPersonName } from '../dist/conversation/listen-expectation.js';
 
 class AcknowledgeNode extends AgentNode {
   async run(ctx) {
     const companyName = ctx.conversation?.variables?.companyName ?? 'Acme';
     return ctx.output.sayAndListen(
       `Hi, thanks for calling ${companyName}. What's your first name?`,
-      {
-        extract: {
-          fields: [
-            {
-              key: 'firstName',
-              type: 'string',
-              required: true,
-            },
-          ],
-          onExtracted: (data) => {
-            if (typeof data.firstName === 'string') {
-              ctx.memory.callerName = data.firstName;
-            }
-          },
-        },
-      },
     );
   }
 }
@@ -47,6 +32,11 @@ class AlwaysRejectNode extends AgentNode {
   }
 }
 class MultiSayNode extends AgentNode {
+  async before(ctx) {
+    const name = mockExtractPersonName(ctx.userText);
+    if (name) ctx.memory.callerName = name;
+    return true;
+  }
   async run(ctx) {
     const name = ctx.memory?.callerName?.trim?.() ?? ctx.memory?.callerName;
     await ctx.output.say(
@@ -280,8 +270,6 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
       'isMultiSayTest',
       STANDARD_INTENTIONS.isPause,
       'isContinue',
-      // Re-scan of the same utterance after silent portal exit (no filler say).
-      'isMultiSayTest',
       STANDARD_INTENTIONS.isGoodbye,
     ]);
     brain.setActiveProfile('pause-resume');
@@ -305,11 +293,10 @@ describe('Scenario flows (MockBrain, mocked secrets)', () => {
     const t4 = await streamTurn(supervisor, runtime, 'okay continue');
     assert.equal(runtime.portalState.activePortalId, null);
     assert.equal(t4.turn.selectedNodeId, 'multiSay');
-    // Must not speak filler “Okay, continuing.” — origin node speaks instead.
-    assert.ok(!contents(t4.events).includes('Okay, continuing.'));
-    assert.ok(
-      contents(t4.events).some((c) => c.includes('Give me a moment')),
-    );
+    // No filler “Okay, continuing.” — the origin repeats its sayAndListen line.
+    assert.deepEqual(contents(t4.events), [
+      'Here it is. This proves I can send multiple messages during one turn.',
+    ]);
   });
 
   it('Scenario 2: transfer re-engage then transferCall tool', async () => {

@@ -19,6 +19,7 @@ import {
 import { AgentNode } from '../dist/node/agent-node.js';
 import { Supervisor } from '../dist/supervisor/supervisor.js';
 import { STANDARD_INTENTIONS } from '../dist/intentions/standard-intentions.js';
+import { routeBrainLlm } from '../dist/brain/brain-config.js';
 
 describe('Brain clarify', () => {
   it('stringifies clarifiable input', () => {
@@ -211,5 +212,128 @@ describe('Node catch recovery', () => {
     assert.equal(attempts, 2);
     assert.equal(turn.result.text, 'ok after 2');
     assert.ok(STANDARD_INTENTIONS.isUnknownTransition);
+  });
+
+  it('a before() error reaches catch(): the Node routes back to re-ask', async () => {
+    class AskPhoneNode extends AgentNode {
+      async run(ctx) {
+        const retry = ctx.memory.phoneProblem;
+        return ctx.output.sayAndListen(
+          retry ? `I caught ${retry}. What is the full number?` : 'What is your phone number?',
+        );
+      }
+    }
+    class UsePhoneNode extends AgentNode {
+      async before(ctx) {
+        const digits = ctx.userText.replace(/\D/g, '');
+        if (digits.length !== 10) {
+          throw new FlowUncertainError('phone needs 10 digits', { digits });
+        }
+        ctx.memory.phone = digits;
+        return true;
+      }
+      async run(ctx) {
+        return ctx.output.sayAndListen(`Thanks, saved ${ctx.memory.phone}.`);
+      }
+      async catch(ctx, error) {
+        ctx.memory.phoneProblem = error.details?.digits;
+        return forceIntention('isRetryPhone');
+      }
+    }
+
+    const brain = new MockBrainAdapter();
+    brain.setSequence('before-catch', ['isCollectedPhone']);
+    brain.setActiveProfile('before-catch');
+    const flow = new FlowLoader();
+    flow.loadFromObject({
+      version: 1,
+      flow: { id: 'before-catch', start: 'askPhone' },
+      nodes: {
+        askPhone: { class: 'AskPhoneNode', intentions: ['isRetryPhone'] },
+        usePhone: { class: 'UsePhoneNode', intentions: ['isCollectedPhone'] },
+      },
+    });
+    const supervisor = new Supervisor(
+      brain,
+      flow,
+      new Map([
+        ['AskPhoneNode', new AskPhoneNode()],
+        ['UsePhoneNode', new UsePhoneNode()],
+      ]),
+      { log: mock.fn(), persist: mock.fn(async () => undefined) },
+    );
+    const runtime = new SupervisedConversation({
+      conversationId: 'c-before',
+      providerCallId: 'p-before',
+      flowId: 'before-catch',
+      brainProfileId: 'before-catch',
+      startNodeId: 'askPhone',
+    });
+
+    const opening = await supervisor.handleTurn({ runtime, userText: '' });
+    assert.equal(opening.result.text, 'What is your phone number?');
+    const turn = await supervisor.handleTurn({ runtime, userText: '416 555 01' });
+    assert.equal(turn.selectedNodeId, 'askPhone');
+    assert.equal(turn.result.text, 'I caught 41655501. What is the full number?');
+    assert.equal(runtime.memory.phone, undefined);
+  });
+
+  it('a before() error with the default catch() breaks the turn', async () => {
+    class StrictNode extends AgentNode {
+      async before() {
+        throw new Error('node expectations breached');
+      }
+      async run() {
+        throw new Error('must not run');
+      }
+    }
+    const brain = new MockBrainAdapter();
+    brain.setSequence('before-rethrow', ['isStrict']);
+    brain.setActiveProfile('before-rethrow');
+    const flow = new FlowLoader();
+    flow.loadFromObject({
+      version: 1,
+      flow: { id: 'before-rethrow', start: 'strict' },
+      nodes: { strict: { class: 'StrictNode', intentions: ['isStrict'] } },
+    });
+    const supervisor = new Supervisor(
+      brain,
+      flow,
+      new Map([['StrictNode', new StrictNode()]]),
+      { log: mock.fn(), persist: mock.fn(async () => undefined) },
+    );
+    const runtime = new SupervisedConversation({
+      conversationId: 'c-rethrow',
+      providerCallId: 'p-rethrow',
+      flowId: 'before-rethrow',
+      brainProfileId: 'before-rethrow',
+      startNodeId: 'strict',
+    });
+    await assert.rejects(
+      supervisor.handleTurn({ runtime, userText: 'hi' }),
+      /node expectations breached/,
+    );
+  });
+});
+
+describe('brain.llm routing', () => {
+  it('scans stay on the scanner; clarify / judge go to brain.llm', async () => {
+    const calls = [];
+    const scanner = {
+      scan: async () => (calls.push('scan'), { intentions: [] }),
+      clarify: async () => (calls.push('scanner.clarify'), { answer: {} }),
+      judge: async () => (calls.push('scanner.judge'), { passed: false }),
+    };
+    const llm = {
+      scan: async () => (calls.push('llm.scan'), { intentions: [] }),
+      clarify: async () => (calls.push('llm.clarify'), { answer: {} }),
+      judge: async () => (calls.push('llm.judge'), { passed: true }),
+    };
+    const brain = routeBrainLlm(scanner, llm);
+    await brain.scan({});
+    await brain.clarify({});
+    await brain.judge({});
+    assert.deepEqual(calls, ['scan', 'llm.clarify', 'llm.judge']);
+    assert.equal(routeBrainLlm(scanner, null), scanner);
   });
 });

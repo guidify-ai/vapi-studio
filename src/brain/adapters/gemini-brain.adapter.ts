@@ -5,14 +5,9 @@ import {
   STUDIO_BRAIN_CONFIG,
   type StudioBrainConfig,
 } from '../brain-config';
-import {
-  resolveCheapGeminiModel,
-  type CheapGeminiModelPricing,
-} from '../gemini-cheap-models';
-import type { TokenUsage } from '../llm-model-pricing';
+import type { TokenUsage } from '../brain-model';
 import {
   JsonLlmBrainAdapter,
-  JSON_LLM_BRAIN_TIMEOUT_MS,
   type JsonLlmCompleteInput,
 } from './json-llm-brain.base';
 
@@ -28,7 +23,7 @@ type GeminiGenerateResponse = {
 };
 
 /**
- * Vapi Studio Gemini Brain — Google Generative Language API on a **cheap Flash whitelist**.
+ * Vapi Studio Gemini Brain — Google Generative Language API with the app's `brain.model`.
  *
  * Env: `GOOGLE_API_KEY` (or `GEMINI_API_KEY`). Same scan/clarify/judge contracts (3s timeout).
  */
@@ -60,10 +55,6 @@ export class GeminiBrainAdapter extends JsonLlmBrainAdapter {
     return apiKey;
   }
 
-  protected resolveModel(override?: string | null): CheapGeminiModelPricing {
-    return resolveCheapGeminiModel(override || this.brainConfig?.model);
-  }
-
   protected async completeJson(
     input: JsonLlmCompleteInput,
   ): Promise<{ content: string; usage: TokenUsage }> {
@@ -76,8 +67,8 @@ export class GeminiBrainAdapter extends JsonLlmBrainAdapter {
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      signal: AbortSignal.timeout(JSON_LLM_BRAIN_TIMEOUT_MS),
-      body: JSON.stringify({
+      signal: this.requestSignal(),
+      body: this.requestBody({
         systemInstruction: {
           parts: [{ text: input.system }],
         },
@@ -88,7 +79,6 @@ export class GeminiBrainAdapter extends JsonLlmBrainAdapter {
           },
         ],
         generationConfig: {
-          temperature: 0,
           responseMimeType: 'application/json',
         },
       }),

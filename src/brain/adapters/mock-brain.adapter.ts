@@ -2,7 +2,6 @@ import { readFileSync } from 'fs';
 import { Injectable } from '@nestjs/common';
 import { parse as parseYaml } from 'yaml';
 import type { IntentionCandidate } from '../../conversation/types';
-import { mockExtractFromUserText } from '../../conversation/listen-expectation';
 import { DEFAULT_INTENTION_PRIORITY } from '../../conversation/conversation-history';
 import { roundConfidence } from '../brain-ranking';
 import type {
@@ -30,7 +29,7 @@ interface BrainProfileFile {
 
 /**
  * Deterministic Brain adapter for PoC / tests.
- * No network, no ChatGPT — sequence-driven intentions + listen boosts/hints + mock extract.
+ * No network, no ChatGPT — sequence-driven intentions + listen boosts/hints.
  */
 @Injectable()
 export class MockBrainAdapter implements BrainAdapter {
@@ -125,15 +124,7 @@ export class MockBrainAdapter implements BrainAdapter {
       }
     }
 
-    const extracted = mockExtractFromUserText(
-      input.userText,
-      listen?.extract?.fields,
-    );
-
-    return {
-      intentions: candidates,
-      extracted: Object.keys(extracted).length ? extracted : undefined,
-    };
+    return { intentions: candidates };
   }
 
   /**

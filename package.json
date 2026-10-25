@@ -1,6 +1,6 @@
 {
   "name": "@guidify-ai/vapi-studio",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Vapi Studio — deterministic voice agents for Vapi (NestJS). Official Guidify team available to build your solution with forwarded engineers and full professional services.",
   "license": "MIT",
   "engines": {
