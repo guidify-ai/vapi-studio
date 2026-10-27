@@ -1,6 +1,6 @@
 # Text the form, keep the call: collecting caller details by SMS mid-call
 
-- **Status:** Draft
+- **Status:** Published 2026-10-26
 - **Applies to:** Vapi Studio 0.2.0
 - **Tested variant:** self-hosted HTML form + Twilio SMS + Vapi Live Call Control
 
